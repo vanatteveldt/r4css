@@ -40,7 +40,7 @@ jobs:
             libicu-dev
 
       - name: Restore renv packages
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-renv@v2
         with:
           # cache-version can be bumped to force a clean cache
           cache-version: 1
