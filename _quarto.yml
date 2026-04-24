@@ -1,6 +1,8 @@
 project:
   type: book
   output-dir: _book
+  resources:
+    - data/
 
 book:
   title: "Text Analysis in R for Media and Communication"

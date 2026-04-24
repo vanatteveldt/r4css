@@ -6,9 +6,6 @@
 *.Rhistory
 .Rdata
 .httr-oauth
-data/*.csv
-data/*.rds
-data/*.rda
 models/
 .Rproj.user
 

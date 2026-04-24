@@ -1,5 +1,8 @@
 ---
 title: "Fun with R: A look at the Dutch voter"
+webr:
+  resources:
+    - ../data/dutch_demographics.csv
 ---
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
@@ -36,7 +39,7 @@ figures](https://opendata.cbs.nl/statline/#/CBS/nl/dataset/70072ned/table?ts=169
 
 ```{webr}
 library(tidyverse)
-demographics <- read_csv("https://raw.githubusercontent.com/vanatteveldt/ccslearnr/master/data/dutch_demographics.csv")
+demographics <- read_csv("data/dutch_demographics.csv")
 demographics
 ```
 
@@ -118,7 +121,7 @@ For this section, we will use the same data as above:
 ``` r
 library(tidyverse)
 results <- read_csv("https://raw.githubusercontent.com/vanatteveldt/ccslearnr/master/data/dutch_elections_2023.csv")
-demographics <- read_csv("https://raw.githubusercontent.com/vanatteveldt/ccslearnr/master/data/dutch_demographics.csv")
+demographics <- read_csv("data/dutch_demographics.csv")
 ```
 
 ### A first scatter plots
