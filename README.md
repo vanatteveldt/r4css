@@ -88,13 +88,21 @@ Both are declared in [`DESCRIPTION`](DESCRIPTION):
 - **`Imports:`** — *production* dependencies. Packages used by the book itself (e.g. `tidyverse`). These go into `renv.lock` and are installed by CI when rendering the book.
 - **`Suggests:`** — *development* dependencies. Tooling that is useful while authoring but not needed to render (e.g. `languageserver` for VS Code / LSP support). These are **not** written to `renv.lock` and are not installed in CI.
 
-The separation is enforced by the `snapshot.dev: false` setting in [`renv/settings.json`](renv/settings.json), which tells `renv::snapshot()` to ignore `Suggests` when writing the lockfile.
+### How this is configured
+
+Two settings in [`renv/settings.json`](renv/settings.json) make DESCRIPTION the single source of truth:
+
+- **`snapshot.type: "explicit"`** — `renv::snapshot()` only records packages listed in `DESCRIPTION` (plus their transitive production deps). Packages installed locally for experimentation never sneak into `renv.lock`. Without this setting, renv's default behavior is to scan every `.R`/`.qmd` file for `library()` calls and record whatever it finds, which makes the lockfile responsive to any experimental code still in the working tree.
+- **`snapshot.dev: false`** — `renv::snapshot()` ignores the `Suggests` field. This is what keeps development tooling out of `renv.lock` even when it's installed in the local library.
+
+Together these mean: what ends up in `renv.lock` is exactly the closure of `DESCRIPTION`'s `Imports` field, nothing more.
 
 ### Adding a new package
 
 1. Add the package to [`DESCRIPTION`](DESCRIPTION):
    - Under `Imports:` if it's used in the book itself.
    - Under `Suggests:` if it's only needed for development (editor tooling, linters, etc.).
+   - Optionally, add a minimum-version constraint when the book relies on a specific API, e.g. `quanteda (>= 4.0)`.
 2. Install it locally:
    ```r
    renv::install()
@@ -104,6 +112,36 @@ The separation is enforced by the `snapshot.dev: false` setting in [`renv/settin
    renv::snapshot()
    ```
    This updates `renv.lock` for production packages. Dev-only packages (under `Suggests`) are deliberately not written to the lockfile, so this is a no-op for them.
+
+### Updating packages
+
+Package versions are pinned in `renv.lock` and never upgrade automatically — CI always installs the exact versions recorded there, and `renv::install()` is a no-op for packages that are already present. Version bumps only happen when someone deliberately updates them.
+
+A periodic update review (e.g. quarterly, or when a major release lands for a package the book relies on heavily) looks like this:
+
+1. See what's out of date:
+   ```r
+   renv::status()
+   old.packages(lib.loc = renv::paths$library())
+   ```
+2. Pull updates into the library:
+   ```r
+   renv::update()              # all packages
+   # or: renv::update("quanteda")   # one package
+   ```
+3. Re-render the book to check nothing broke:
+   ```sh
+   quarto render
+   ```
+4. If the render succeeded, commit the bumped lockfile:
+   ```r
+   renv::snapshot()
+   ```
+   Then `git add renv.lock && git commit`. The PR diff shows exactly which versions moved.
+5. If something broke, roll back without commiting:
+   ```r
+   renv::restore()             # re-installs the previous pinned versions
+   ```
 
 ### Everyday commands
 
