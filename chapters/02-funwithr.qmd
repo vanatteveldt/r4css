@@ -7,6 +7,11 @@ webr:
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 
+```{webr}
+#| autorun: true
+#| include: false
+library(tidyverse)
+```
 
 ## CBS and Voting data
 
@@ -36,7 +41,6 @@ figures](https://opendata.cbs.nl/statline/#/CBS/nl/dataset/70072ned/table?ts=169
 
 ```{webr}
 #| warning: false
-
 library(tidyverse)
 demographics <- read_csv("data/dutch_demographics.csv")
 demographics
