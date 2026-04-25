@@ -15,8 +15,8 @@ book:
     - index.qmd
     - part: "Foundations"
       chapters:
-        - chapters/01-introduction.qmd
-        - chapters/02-funwithr.qmd
+        - chapters/02-introduction.qmd
+        - chapters/03-funwithr.qmd
     - chapters/references.qmd
 
 bibliography: references.bib

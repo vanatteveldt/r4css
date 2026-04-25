@@ -88,13 +88,22 @@ visualization suite called `ggplot`. Although this can be hard to
 master, there are many useful resources to learn more and it can be very
 rewarding (and fun!) to make nice visualizations.
 
-For this section, we will use the same data as above:
+Let's start with a bar chart of the vote share of the top-10 parties in Amsterdam:
 
-``` r
+```{webr}
+#| setup: true
+#| exercise: simple_bar
 library(tidyverse)
-results <- read_csv("https://raw.githubusercontent.com/vanatteveldt/ccslearnr/master/data/dutch_elections_2023.csv")
-demographics <- read_csv("data/dutch_demographics.csv")
+votes <- read_csv("data/dutch_elections_2023.csv")
 ```
+```{webr}
+#| exercise: simple_bar
+votes |>
+  filter(municipality == "Amsterdam") |>
+  slice_max(order_by=votes, n=10) |>
+  ggplot() + geom_col(aes(y=party, x=votes))
+```
+
 
 ### A first scatter plots
 
