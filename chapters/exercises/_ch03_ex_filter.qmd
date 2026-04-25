@@ -1,5 +1,7 @@
-**Exercise**: Can you change the code to show the results for the
+::: {.exercise}
+Can you change the code to show the results for the
 municipality of Rotterdam, ordered by party (starting from A)?
+:::
 
 
 ```{webr}

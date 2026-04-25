@@ -43,3 +43,41 @@
     /* margin-bottom: 4rem; */
     padding-top: 1rem;
 }
+
+/*-- scss:rules --*/
+
+div.challenge,
+div.exercise {
+    border-radius: 4px;
+    margin: 1em 0;
+    padding: 0 1em 0.75em;
+
+    &::before {
+        display: block;
+        color: white;
+        font-weight: 600;
+        padding: 0.4em 0.9em;
+        margin: 0 -1em 0.75em -1em;
+        border-radius: 3px 3px 0 0;
+    }
+}
+
+div.challenge {
+    border: 1px solid #5B4ACE;
+    background-color: #F4F2FE;
+
+    &::before {
+        content: "🧩\0000a0\0000a0Challenge";
+        background-color: #5B4ACE;
+    }
+}
+
+div.exercise {
+    border: 1px solid #3B5AAB;
+    background-color: #EEF2FB;
+
+    &::before {
+        content: "✏️\0000a0\0000a0Exercise";
+        background-color: #3B5AAB;
+    }
+}

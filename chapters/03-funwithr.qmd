@@ -41,8 +41,10 @@ votes <- read_csv("data/dutch_elections_2023.csv")
 votes
 ```
 
+::: {.challenge}
 Can you guess what the columns mean?
 Each column lists a column `<type>` as well, do these make any sense to you?
+:::
 
 ::: {.callout-note title="Info"}
 Note that you cannot break anything in these example code boxes! Every
@@ -67,7 +69,7 @@ the `↻ Start Over` button and the original code will run.
 example, the code below shows the results for a single municipality
 (Groningen), ordered by vote share.
 
-{{< include exercises/ch02_ex_filter.qmd >}}
+{{< include exercises/_ch03_ex_filter.qmd >}}
 
 ::: {.callout-note title="Info"}
 The code box above is an exercise with a single correct solution. You
@@ -92,7 +94,9 @@ Let's start with a bar chart of the vote share of the top-10 parties in Amsterda
 
 ```{webr}
 #| setup: true
-#| exercise: simple_bar
+#| exercise:
+#|  - simple_bar
+#|  - beautiful_bar
 library(tidyverse)
 votes <- read_csv("data/dutch_elections_2023.csv")
 ```
@@ -104,6 +108,34 @@ votes |>
   ggplot() + geom_col(aes(y=party, x=votes))
 ```
 
+### Make it beautiful
+
+The graph above was functional, but not as pretty or informative as it could be.
+Let's make two simple tweaks: Order the parties by vote share,
+and fill the bars in a color that matches the party profile.
+With apologies to the americans, we color right wing parties as blue (and call them liberal!),
+and left wing parties as red:
+
+```{webr}
+#| exercise: beautiful_bar
+party_colors <- c(
+  "PvdA/GL"="#DA2128", "SP"="#ED1C24", "NSC"="#1E5AA8", "VVD"="#0A2074", "PVV"="#6F4E37",
+  "D66"="#00AA55", "PvdD"="#006233", "DENK"="#22B0B8", "Volt"="#502379", "BIJ1"="#000000",
+)
+
+votes |>
+  filter(municipality == "Amsterdam") |>
+  slice_max(order_by=votes, n=10) |>
+  ggplot() +
+  geom_col(aes(y=fct_reorder(party, votes), x=votes, fill=party)) +
+  scale_fill_manual(values=party_colors) +
+  guides(fill="none")
+```
+
+::: {.challenge}
+Can you run this graph for Groningen? Why are two parties displayed in grey?
+Can you give them nice colors?
+:::
 
 ### A first scatter plots
 
