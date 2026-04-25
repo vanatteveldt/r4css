@@ -1,4 +1,4 @@
-gm,gemeente,v01_pop,v57_density,v43_nl,v122_disposable,v132_income,v142_wealth,v153_pension,v212_distance_hospital,v216_distance_school,v225_density_restaurants,c_65plus
+gm,municipality,v01_pop,v57_density,v43_nl,v122_disposable,v132_income,v142_wealth,v153_pension,v212_distance_hospital,v216_distance_school,v225_density_restaurants,c_65plus
 GM0014,Groningen,233273,1257,75,41.2,30.8,26.9,9.42672319556914,3.4,0.7,144.4,15
 GM0034,Almere,214715,1662,55.4,49.9,33.5,93.9,8.72784854341802,4.9,0.7,32.1,12.3
 GM0037,Stadskanaal,31754,270,91.5,41.4,28.8,56.4,10.612836178119291,5.4,1,11.4,25.5

@@ -3,9 +3,11 @@ title: "Fun with R: A look at the Dutch voter"
 webr:
   resources:
     - ../data/dutch_demographics.csv
+    - ../data/dutch_elections_2023.csv
 ---
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
 ```{webr}
 #| autorun: true
@@ -13,13 +15,13 @@ webr:
 library(tidyverse)
 ```
 
-## CBS and Voting data
+## Dutch politics
 
-For this tutorial, we will use demographic data from CBS (the Dutch
+For this tutorial, we will use voting results from the Dutch 2023 parliamentary elections.
+We will later enrich this with demographic data about the various Dutch municipalities from CBS (the Dutch
 statistics bureau) and voting results from the election board. Both of
 these can be downloaded from the respective sources, but to make it easy
 we use cleaned up versions from this repository.
-
 
 ### Demographics data
 
@@ -30,20 +32,17 @@ Generally, each row represents a unit of analysis or measurement (e.g.,
 a case or respondent), and each column represents a quantity of
 information about that row, e.g., a measured or computed variable.
 
-In this case, each row represents a Dutch municipality (*gemeente*),
-with the columns being a selection of demographic information collected
-from [CBS regional
-figures](https://opendata.cbs.nl/statline/#/CBS/nl/dataset/70072ned/table?ts=1691399765879):
+In this case, each row represents a voting result from a Dutch party in a municipality:
 
 ```{webr}
 #| warning: false
 library(tidyverse)
-demographics <- read_csv("data/dutch_demographics.csv")
-demographics
+votes <- read_csv("data/dutch_elections_2023.csv")
+votes
 ```
 
 Can you guess what the columns mean?
-Each column lists a column 'type' as well, do these make any sense to you?
+Each column lists a column `<type>` as well, do these make any sense to you?
 
 ::: {.callout-note title="Info"}
 Note that you cannot break anything in these example code boxes! Every
@@ -57,54 +56,30 @@ the `↻ Start Over` button and the original code will run.
 | Variable                 | Explanation                                          |
 |--------------------------|------------------------------------------------------|
 | gm                       | Unique code for each municipality                    |
-| gemeente                 | Unique name of each municipality                     |
-| v01_pop                  | Total population                                     |
-| v57_density              | Population Density                                   |
-| v43_nl                   | Percentage of population without a migration history |
-| v122_disposable          | Average disposable income per household              |
-| v132_income              | Average standardized income per household            |
-| v142_wealth              | Median household wealth                              |
-| v153_pensioen            | Percentage of population receiving state pension     |
-| v212_distance_hospital   | Distance to nearest hospital                         |
-| v212_distance_school     | Distance to nearest primary school                   |
-| v225_density_restaurants | Density of restaurants in neighbourhood              |
-| c_65plus                 | Percentage of population older than 65               |
+| municipality             | Unique name of each municipality                     |
+| party                    | The name of the political party                      |
+| votes                    | The vote share (percentage) within that municipality |
+| count                    | The absolute number of votes for that party          |
 
-### Voting data
-
-Similar to above, we can load voting data per municipality. The code
-below will load data for each party in each municipality in the 2023
-national elections.
+### Cleaning data
 
 `R` also has powerful commands to clean up and restructure data. For
 example, the code below shows the results for a single municipality
-(Groningen), ordered by vote share. What happens if you remove the
-`desc(..)` function from arrange, i.e., change `arrange(desc(votes))`
-into `arrange(votes)`?
+(Groningen), ordered by vote share.
 
-**Exercise**: Can you change the code to show the results for the
-municipality of Amsterdam, ordered by party (starting from A)?
+{{< include exercises/ch02_ex_filter.qmd >}}
 
-``` r
-library(tidyverse)
-results <- read_csv("https://raw.githubusercontent.com/vanatteveldt/ccslearnr/master/data/dutch_elections_2023.csv")
-results |>
-  filter(gemeente == "Groningen") |>
-  arrange(desc(votes))
-```
-
-<div class="Info">
-
+::: {.callout-note title="Info"}
 The code box above is an exercise with a single correct solution. You
-need to change some code and click the `☑️Submit Answer` button to
+need to change some code and click the `► Run Code`` button to
 submit your answer. Don’t worry about making mistakes, you can try as
 often as you want and start over if needed. Some exercises (like this
-one) also contain `💡 Hints` which you can click if you are stuck. Also,
-if you submit an incorrect answer, `R` will do it’s best to pinpoint
-where the problem is (but of course it’s only a computer, so it’s not
-always very helpful…)
+one) also contain `💡 Show Hint` which you can click if you are stuck.
 
-</div>
+If you submit an incorrect answer, `R` will do it’s best to pinpoint
+where the problem is -- but of course it’s only a computer, so it’s not
+always very helpful... It will also sometimes fail to recognize a submission as correct if it's different from it's own solution. So, if you're sure you're getting the right results but R won't give you full grades for it, just congratulate yourself for being original!
+:::
 
 ## Simple visualizations
 

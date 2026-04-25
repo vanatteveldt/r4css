@@ -1,0 +1,55 @@
+**Exercise**: Can you change the code to show the results for the
+municipality of Rotterdam, ordered by party (starting from A)?
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_filter
+library(tidyverse)
+votes <- read_csv("data/dutch_elections_2023.csv")
+```
+
+```{webr}
+#| exercise: ex_filter
+votes |>
+  filter(municipality == "Amsterdam") |>
+  arrange(desc(votes))
+```
+
+::: { .hint exercise="ex_filter"}
+::: { .callout-tip title="Hint:"}
+
+You can change the name of the municipality directly, as well as the column on which to sort.
+What happens if you simply remove the `desc(..)` function, i.e. `arrange(*column*)` instead of `arrange(desc(*column*))`
+
+```r
+starwars |> filter(______)
+```
+:::
+:::
+
+::: {.solution exercise="ex_filter"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+Change the column name for the ordering, as well as the name of the municipality. Drop 'desc' to default back to ascending order:
+
+```{webr}
+#| exercise: ex_filter
+#| solution: true
+votes |>
+  filter(municipality == "Rotterdam") |>
+  arrange(party)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_filter
+#| check: true
+gradethis::grade_this_code()
+```
+
+
+Do you know the biggest parties?
+You can check the wiki pages for e.g. [PvdA/GL](https://en.wikipedia.org/wiki/GroenLinks%E2%80%93PvdA) and [PVV](https://en.wikipedia.org/wiki/Party_for_Freedom) if you're curious -- the Netherlands has an extremely interesting and dynamic party landscape: Of the top-10 parties, more than half were founded in the last years or decades!

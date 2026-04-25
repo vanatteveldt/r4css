@@ -5,4 +5,5 @@ Type: project
 Imports:
     tidyverse
 Suggests:
-    languageserver  # For vs code
+    # for VS Code integration:
+    languageserver
