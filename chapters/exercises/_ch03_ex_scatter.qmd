@@ -1,0 +1,54 @@
+::: {.exercise}
+Can you change the code to show the relation between living in a less densely populated municipality and voting for the BBB (farmer's party)?
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_scatter
+library(tidyverse)
+votes <- read_csv("data/dutch_elections_2023.csv")
+demographics <- read_csv("data/dutch_demographics.csv")
+combined = inner_join(votes, demographics)
+```
+
+```{webr}
+#| exercise: ex_scatter
+combined |>
+  filter(party == "PVV") |>
+  ggplot(mapping = aes(x = v43_nl, y = votes)) +
+  geom_point()
+```
+
+::: { .hint exercise="ex_scatter"}
+::: { .callout-tip title="Hint:"}
+
+You can change the name of the party to `"BBB"` directly, remember to put it in quotes since it's a literal text.
+The column you're looking for is `v57_density` -- no quotes needed as it's not a literal text for R, but instead it's a name for a column that R knows about
+
+:::
+:::
+
+::: {.solution exercise="ex_filter"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+Change the name of the party to `"BBB"` directly, remember to put it in quotes since it's a literal text.
+Change the `x` column in the mapping to `v57_density` -- no quotes needed as it's not a literal text for R, but instead it's a name for a column that R knows about
+
+```{webr}
+#| exercise: ex_scatter
+#| solution: true
+combined |>
+  filter(party == "BBB") |>
+  ggplot(mapping = aes(x = v57_density, y = votes)) +
+  geom_point()
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_scatter
+#| check: true
+gradethis::grade_this_code()
+```
