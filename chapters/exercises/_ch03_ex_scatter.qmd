@@ -1,5 +1,5 @@
 ::: {.exercise}
-Can you change the code to show the relation between living in a less densely populated municipality and voting for the BBB (farmer's party)?
+Change the code to show the relation between living in a less densely populated municipality and voting for the BBB (farmer's party)
 :::
 
 
