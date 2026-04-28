@@ -63,7 +63,9 @@ Moreover, if you feel that you have messed up the code, you can press
 the `↻ Start Over` button and the original code will run.
 :::
 
-### An explanation of the columns
+
+::: {.callout-note collapse="true"}
+## Columns in the voting data - click to expand
 
 | Variable                 | Explanation                                          |
 |--------------------------|------------------------------------------------------|
@@ -72,6 +74,7 @@ the `↻ Start Over` button and the original code will run.
 | party                    | The name of the political party                      |
 | votes                    | The vote share (percentage) within that municipality |
 | count                    | The absolute number of votes for that party          |
+:::
 
 ### Cleaning data
 
@@ -181,6 +184,28 @@ head(demographics)
 
 
 (The Netherlands might seem like a small country, but there's still quite a bit of regional and local diversity in terms of both demographics and voting behavior!)
+
+::: {.callout-note collapse="true"}
+## Columns in the demographics data - click to expand
+
+
+| Variable                 | Explanation                                          |
+|--------------------------|------------------------------------------------------|
+| gm                       | Unique code for each municipality                    |
+| municipality             | Unique name of each municipality                     |
+| v01_pop                  | Total population                                     |
+| v57_density              | Population density                                   |
+| v43_nl                   | Share of residents without migration history         |
+| v122_disposable          | Average disposable income                            |
+| v132_income              | Average income                                       |
+| v142_wealth              | Average household wealth                             |
+| v153_pension             | Share of residents receiving pension                 |
+| v212_distance_hospital   | Average distance to nearest hospital                 |
+| v216_distance_school     | Average distance to nearest school                   |
+| v225_density_restaurants | Density of restaurants                               |
+| c_65plus                 | Share of residents aged 65 and older                 |
+
+:::
 
 ### Combining voting and demographic data
 
