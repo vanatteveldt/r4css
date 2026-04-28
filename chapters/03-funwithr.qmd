@@ -294,7 +294,7 @@ and especially to play around with it a bit.
 
 As you can see, the final plot used a lot of additional commands after the initial `ggplot` and `geom_point` specification. In general, this is how `ggplot` works: it makes it really easy to make a decent-looking, informative graph, and you can then add additional functions to customize anything you want until you have exactly the graph you need. For more example graphs (with their source code!), see the [R Graph Gallery](https://r-graph-gallery.com/). For a more in-depth explanation of visualization principles (also with R source code), see the excellent and free book by Kieran Healy on [Data Visualization](https://socviz.co/).
 
-### Statistics
+## Simple statistics
 
 Even though this part of the book is not focused on statistics,
 it's hard to pass an opportunity to test a nice hypothesis.
