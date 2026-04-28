@@ -1,5 +1,6 @@
 ::: {.exercise}
-Change the code to show the relation between living in a less densely populated municipality and voting for the BBB (farmer's party)
+Change the code to show the relation between living in a less densely populated municipality and voting for the BBB (farmer's party).
+See the info box below for a description of columns in the data set.
 :::
 
 

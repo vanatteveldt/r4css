@@ -37,11 +37,7 @@ After running the code below with the `► Run Code` button, you will see
 a *data frame* on the screen. Data frames are the main data object in R.
 Note that it might take a while for your browser to read all the R packages needed for this page - you will see a dot next to the button while it's loading, and it will change color once it's ready to be clicked.
 
-Generally, each row represents a unit of analysis or measurement (e.g.,
-a case or respondent), and each column represents a quantity of
-information about that row, e.g., a measured or computed variable.
-
-In this case, each row represents a voting result from a Dutch party in a municipality:
+The code below downloads and reads a CSV file with Dutch election results per municipality:
 
 ```{webr}
 #| warning: false
@@ -51,9 +47,17 @@ votes <- read_csv("dutch_elections_2023.csv")
 votes
 ```
 
+
+This results in a data frame called `votes`.
+A data frame (or `tibble`) is a rectangular data structure where
+ each row generally represents a unit of analysis or measurement (e.g.,
+a case or respondent), and each column represents a quantity of
+information about that row, e.g., a measured or computed variable.
+In this case, each row represents a voting result from a Dutch party in a municipality.
+
 ::: {.challenge}
 Can you guess what the columns mean?
-Each column lists a column `<type>` as well, do these make any sense to you?
+Each column lists a column type (`<chr>`, `<dbl>`) as well, what do they stand for?
 :::
 
 ::: {.callout-note title="Info"}
@@ -67,20 +71,20 @@ the `↻ Start Over` button and the original code will run.
 ::: {.callout-note collapse="true"}
 ## Columns in the voting data - click to expand
 
-| Variable                 | Explanation                                          |
-|--------------------------|------------------------------------------------------|
-| gm                       | Unique code for each municipality                    |
-| municipality             | Unique name of each municipality                     |
-| party                    | The name of the political party                      |
-| votes                    | The vote share (percentage) within that municipality |
-| count                    | The absolute number of votes for that party          |
+| Variable                 | Type          | Explanation                                          |
+|--------------------------|---------------|------------------------------------------------------|
+| gm                       | character     | Unique code for each municipality                    |
+| municipality             | character     | Unique name of each municipality                     |
+| party                    | character     | The name of the political party                      |
+| votes                    | numeric (dbl) | The vote share (percentage) within that municipality |
+| count                    | numeric (dbl) | The absolute number of votes for that party          |
 :::
 
 ### Cleaning data
 
 `R` also has powerful commands to clean up and restructure data. For
 example, the code below shows the results for a single municipality
-(Groningen), ordered by vote share.
+(Amsterdam), ordered by vote share.
 
 {{< include exercises/_ch03_ex_filter.qmd >}}
 
@@ -148,8 +152,11 @@ votes |>
   ggplot() +
   # Note: fct_reorder reorders the factor levels in party by ascending vote
   geom_col(aes(y=fct_reorder(party, votes), x=votes, fill=party)) +
+  labs(title="Vote share in 2023 parliamentary election in Amsterdam",
+       y="", x="Vote share (percentage)") +
   scale_fill_manual(values=party_colors) +
-  guides(fill="none")
+  guides(fill="none") +
+  theme_classic()
 ```
 
 ::: {.challenge}
