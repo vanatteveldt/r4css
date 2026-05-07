@@ -1,6 +1,20 @@
 ---
 title:Tidyverse I: tidy data
+webr:
+  resources:
+    - ../data/dutch_demographics.csv
+    - ../data/dutch_elections_2023.csv
+    - ../data/shapes_nl.rds
 ---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+```{webr}
+#| autorun: true
+#| include: false
+library(tidyverse)
+```
 
 ## Introduction to Tidyverse
 
@@ -19,23 +33,66 @@ packages, which contains most of the tools we’re using below, but it
 also contains functions for reading, analysing and visualising data that
 will be explained later.
 
-### The tidyverse package
+### The data challenge: Mind the gap!
 
-Tidyverse is a package (or actually a collection of packages).
+For this example, let's have a look at the `gapminder` dataset,
+which contains collection of worldwide, long-term statistics on social, economic, and environmental development.
+
+This dataset is available in R directly in the `dslabs` (data science labs) package. Note that if you run this on your own computer you may have to install the package first with `install.packages("dslabs")`.
+Let's convert the data to a tidyverse 'tibble' (just so it displays a bit nicer) and look at the top rows:
+
+```{webr}
+#| warning: false
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+head(gap)
+```
+
+
+::: {.challenge}
+Suppose we would like to know the relation between GDP per capita and fertility in Asian countries.
+Can you think of the sequence of steps that we would need to get from this dataset
+to an answer to that question?
+
+Don't worry if you can't see the answer yet -- this chapter will take you through the steps
+to prepare the data and answer that question. Once you have all the tools in your belt,
+you will be able to answer questions like this.
+:::
+
+::: {.callout-note collapse="true"}
+## Columns in the gapminder data - click to expand
+
+| Variable         | Explanation                                          |
+|------------------|------------------------------------------------------|
+| country          | Name of the country                                  |
+| year             | Year of observation                                  |
+| infant_mortality | Infant deaths per 1,000 live births                  |
+| life_expectancy  | Life expectancy at birth, in years                   |
+| fertility        | Average number of children per woman                 |
+| population       | Total population                                     |
+| gdp              | Gross domestic product                               |
+| continent        | Continent the country belongs to                     |
+| region           | Geographic region within the continent               |
+
+:::
+
+
+## The tidyverse package
+
+Taking a step back, tidyverse is a package (or actually a collection of packages).
 This means that it's not included in R, but you need to install it separately.  You've probably already done that, but if not,
 install it with the *packages* pane in Rstudio or call `install.packages("tidyverse")`. This is only needed once on your computer, so you don't need to include this code in your scripts.
 
 What you do need to do every time is *activate* the package using
 the `library` function:
 
-
 ```{r, eval=F}
 library(tidyverse)
 ```
 
-
 ::: {.callout-note title="Common errors"}
-The two most common mistakes in R are forgetting to install a package and forgetting to activate it. In both cases, you will get an *error message*: a text displayed in red that explains what went wrong. Don't panic if you see an error: you will quickly learn to recognize the most common errors, and even if you don't, copy pasting the error into a search or chat engine (or an email to your instructor) often gives you a quick solution.
+The two most common mistakes in R are forgetting to install a package and forgetting to activate it. In both cases, you will get an *error message*: a text (often displayed in red) that explains what went wrong. Don't panic if you see an error: you will quickly learn to recognize the most common errors, and even if you don't, copy pasting the error into a search or chat engine (or an email to your instructor) often gives you a quick solution.
 
 As an example, try the following two calls:
 
@@ -44,231 +101,163 @@ library(nastyverse)
 format_log(100)
 ```
 
-Both will give you an error message! The first will tell you `there's not package called 'nastyverse'` -- this means that either you made a typing error, or you forgot to install the package. If you think the name is correct, a quick `install.packages` generally fixes the problem. The second will say `could not find function "format_log"`. Again, unless you made a typo, this generally means you forgot to activate a package, in this case the `scales` package, which you can fix with `library(scales)`. But the most important thing is to not panic, read the error message, and either fix it or search for a solution.
+Both will give you an error message! The first will tell you `there is no package called 'nastyverse'` -- this means that either you made a typing error, or you forgot to install the package. If you think the name is correct, a quick `install.packages` generally fixes the problem.
+
+The second will say `could not find function "format_log"`. Again, unless you made a typo, this generally means you forgot to activate a package, in this case the `scales` package, which you can fix with `library(scales)`. But the most important thing is to not panic, read the error message, and either fix it or search for a solution.
+
+**Asking for help:** Also, remember that error messages are actually meant to be helpful, even if they sound complicated and technical.
+The best thing to do is ask for help, including the command you tried and the full error message.
+You can copy paste this into ChatGPT (or Gemini, Claude, etc) or just into google, and it will often tell you  what the problem is and how to fix it. If you have one, you can of course also ask your instructor.
+By including the command and full error message, they will be able to help you much better than if you
+only say that "it doesn't work".
 :::
 
-## Reading Data
+### Data Frames
 
-As in most packages, the functionality in dplyr is offered through
-functions. In general, a function can be seen as a command or
-instruction to the computer to do something and (generally) return the
-result.
 
-In the tidyverse packages, almost all `functions` primarily operate on
-data sets, for example for filtering and sorting data.
-
-With a data set we mean a rectangular data frame consisting of rows
+In R, most data is in what we call a `data frame`:
+a rectangular data set consisting of rows
 (often items or respondents) and columns (often measurements of or data
-about these items). These data sets can be R `data.frames`, but
-tidyverse has its own version of data frames called `tibble`, which is
-mostly the same as a data frame but is more efficient and somewhat
-easier to use.
+about these items). In 'vanilla' R, these are called `data.frame`, but
+tidyverse has its own version of data frames called `tibble`, which will
+be the default type we use in this book.
 
-### Creating a tibble
+R and tidyverse have a number of ways to inspect the shape and contents of a data frame.
+We've already seen `head` used above, to print the first few rows of a data frame.
+In fact, when you just run the name of a tibble, it also prints the top rows (and first few columns).
+This is one of the advantages of tibbles over default ('vanilla') data frames:
+they detect the size of your screen and print in a way that fits the screen nicely.
+In general, we advise using `head(data)` rather than just `data`,
+because in a Quarto report it will otherwise print the enitre data set, which is normally not what you want.
 
-As a very simply example, the following code creates a tibble containing
-respondents with a second column listing their gender:
+Another really useful function is `glimpse`, which gives an overview of all the columns in the data and a sample of values:
 
-``` r
-respondents <- tibble(resp_id = c(1,2,3),
-                      gender = c("M","M","F"))
+```{webr}
+glimpse(gap)
 ```
 
-Let’s say our respondents are 24, 32 and 27 years old. Can you add a
-column called ‘age’ that specifies this age for the respondents?
+As you can see when you run this, it displays the total number of rows and columns, and for each column shows the name, type, and a sample of some values.
+If you're working in RStudio, you can also use `View(data)`, which opens the data in a spreadsheet-like view.
 
-``` r
-library(tidyverse)
-respondents <- tibble(resp_id = c(1,2,3),
-                      gender = c("M","M","F"))
-respondents
+::: {.callout-note title="Understanding Functions"}
+
+The main way to transform and analyse data is by calling *functions*.
+In fact, we've done this a number of times before, such as when we called
+`as_tibble(gapminder)` or `head(gap)`.
+You can recognize a function by the parentheses: `head(gap)` calls the function `head` on the data `gap`,
+displaying the top rows (the 'head' of the data).
+
+Tidyverse offers a number of functions that allow you to manipulate data frames.
+In general, a function can be seen as a command or instruction to the computer to do something.
+Tidyverse functions almost always take the data frame as a first argument, and *return* a transformed
+copy of the data. To store this transformed copy, we generally *assign* it to a new or existing object,
+such as when we assigned the result of `as_tibble(gapminder)` to the new object `gap`:
+
+```{r, eval=F}
+gap <- as_tibble(gapminder)
 ```
 
-### A note on functions and assignment
-
-In the exercise above, you used the `tibble` function to create a new
-data frame, which you then *assigned* to the respondents object. If you
-would not have assigned it to an object, R would simply print the result
-of the function on the screen and then forget all about it. So, whenever
-you want R to remember the result of a function, you need to assign it
-to an object and give it a name. You can also re-use an existing name,
-in which case the object will be over-written by the new result.
-
-When writing R code, 90% of your lines will follow this pattern of
-calling a function on some arguments (e.g. the data), and assigning it
-to an object:
-
-``` r
-my_object <- some_function(arguments)
-```
-
-### Reading data with `read_csv`
-
-The example above manually created a data set, but in most cases you
-will start with data that you get from elsewhere, such as a csv file
-(e.g. downloaded from an online dataset or exported from excel) or an
-SPSS or Stata data file.
-
-Tidyverse contains a function `read_csv` that allows you to read a csv
-file directly into a data frame. You specify the location of the file,
-either on your local drive or directly from the Internet!
-
-The example below downloads an overview of gun polls from the [data
-analytics site 538](https://fivethirtyeight.com/), and reads it into a
-tibble using the read_csv function:
-
-``` r
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-gunpolls
-```
-
-(Note that if you run this in RStudio, you will probably see a (red)
-message in the console. This is simply telling you how each column was
-parsed (as a number, text, date, etc.), and is generally safe to ignore)
-
-The tibble shows the first ten rows of the data set, and for each column
-the data type is also mentioned: `<dbl>` stands for double, which is a
-*numeric* value; `<chr>` stands for character or *textual* data.
-
-Note that on your own computer, R will print a message if not all rows
-or columns could be printed. If you want to browse through your data,
-you can also click on the name of the data.frame (gunpolls) in the
-top-right window “Environment” tab or call `View(gunpolls)`.
-
-### Exercise: downloading data
-
-A csv file of the political polls just after the fall of the Dutch
-cabinet Rutte IV can be found at <https://i.amcat.nl/peiling.csv>. Can
-you download that file and assign it to an object called `polls`?
-
-``` r
-library(tidyverse)
-polls <- ____
-polls
-```
+In fact, most of our code looks like this: call a function on a data set, and assign it to a new or existing name.
+This chapter will introduce you to a number of tidyverse functions, for example for filtering and sorting data.
+:::
 
 ## Selecting and renaming columns
 
-In the previous section, you managed to download data from the Internet.
-Often, this data needs to be cleaned before we can use it for analysis.
-
-R Tidyverse has a number of functions that can be used for data
-cleaning. As a first step, let’s learn how to use `select` and `rename`
-to change the *columns* of a data frame.
-
-In this section, we will continue with the gun polls data we used above:
-
-``` r
-library(tidyverse)
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-gunpolls
-```
+Let's return to the `gapminder` data set.
+Many datasets contain many more columns than you need,
+and sometimes also have column names that are hard to understand (like `q12`)
+or hard to use in R code because they contain spaces or start with numbers.
+So, let's look at how to select and rename columns.
 
 ### Selecting columns with `select`
 
-This contains a number of columns that we might not be interested in.
-Using `select`, we can select only the columns we are interested in:
+In data cleaning, a first step is often to *select* only the columns that you need,
+making it easier to see what's going on in the data.
+For example, if we only want to select the country, year and gdp,
+we can select these columns as follows:
 
-``` r
-select(gunpolls, Population, Support, Pollster)
+```{webr}
+d <- select(gap, country, year, gdp)
+head(d)
 ```
 
-You can also specify a range of columns, for example all columns from
-Question to Support:
+As you can see, we use the standard pattern here of `result <- verb(data, options)`:
+we *select* the specified columns from *gap*, and assign the result to *d*.
+Note that `d` is simply a name *you* assign to the result, so you can pick any name you want
+(and often, a more descriptive name is a good idea).
 
-``` r
-select(gunpolls, Question:Support)
+`select` has a couple more tricks up its sleeve: you can select column ranges
+by using `first_column:last_column`. For example, `select(gap, country:fertility)` will select the first five columns from the original data. You can also drop one or more columns by using a minus sign:
+`select(gap, -region)` will keep all columns except for region.
+
+### Renaming columns with `rename`
+
+There are two ways to rename columns.
+First, the `rename` command does just that: `rename(data, new_name=old_name)` will rename the `old_name` column into `new_name`. For example, `rename(gap, GDP=gdp)` will capitalize the GDP column.
+
+The second method is very similar: in select, you can also use `new_name=old_name` to rename a column:
+`select(gap, country, year, GDP=gdp)` will select the columns country, year, and GDP (renamed from gdp).
+The difference is that select will drop all the other columns, while rename will only rename the mentioned columns but leave the rest as is.
+
+::: {.callout-note title="Illegal names"}
+
+Renaming is especially useful for column names that cannot be directly used in R.
+Suppose that the `life_expectancy` column would instead be called `Life Expectancy` (with a space).
+If you tried to call `select(gap, Life Expectancy)`, R would throw an error because it doesn't understand that `Life Expectancy` is supposed to be a single name.
+You can work around this by placing backticks (`` ` ``) around the column name: ``select(gap, `Life Expectancy`)``.
+However, that gets old really fast, especially because the backtick is very often hard to find on a keyboard.
+
+So, the general advice is to *rename* columns that are not a legal name, e.g. by replacing spaces by underscores (`_`) or by just using a different name. In the rename (or select) command, you can place either backticks or normal quotes (`"` or `'`) around the old name. Suppose that `gap_dirty` contains the column with a space, you can simply use quotes in `select` or `rename` to rename it:
+
+```{r, eval=F}
+gap_cleaned <- rename(gap_dirty, life_expectancy = "Life Expectancy")
+# or alternatively:
+gap_cleaned <- select(gap_dirty, year, country, life_expectancy = "Life Expectancy")
 ```
 
-Finally, it is also possible to drop columns by placing a minus sign in
-front of the column name. For example, this will drop the URL column and
-keep all other columns:
+:::
 
-``` r
-select(gunpolls, -URL)
+### Assigning results to objects
+
+In the examples above, the result of the select or rename was
+assigned to a new object, `d` (and later `gap_cleaned`).
+The original data `gap` remains the same, and `d` contains the result of the function.
+
+This is a common pattern across tidyverse functions:
+they don't really change the data, they return a *changed copy* of the data.
+This gives you three options for handling the result.
+
+If you assign it to a new object, both data frames are kept and you can later
+work with either:
+
+```{r, eval=F}
+new_data <- select(gap, country, year, gdp)
 ```
 
-### Renaming columns and non-standard names
+You can also re-assign it to the same object.
+This essentially replaces the object with the transformed version,
+meaning only the new version is now available:
 
-In R, it is easiest if a column name does not contain any spaces or
-other special characters. To select such columns, you need to use
-‘backticks’ around the name (`` `like this` ``). Because this is
-inconvenient, is is often better to rename such columns so they no
-longer contain a space. Note that instead of a space, you can use an
-underscore (`_`) if desired.
-
-In R, you can use the `rename` function to change the name of one or
-more variables:
-
-``` r
-rename(gunpolls, rep = `Republican Support`, dem = `Democratic Support`)
+```{r, eval=F}
+gap <- select(gap, country, year, gdp)
 ```
 
-Very often, a first step in data cleaning is renaming some columns and
-dropping others. This can be combined in a single step by renaming in
-the `select` function:
+Finally, you can choose not to assign it to anything.
+This will cause the result to be printed on the screen, but not remembered:
 
-``` r
-select(gunpolls, Question, rep = `Republican Support`, dem = `Democratic Support`)
+```{r, eval=F}
+select(gap, country, year, gdp)
 ```
 
-Note the difference between the two functions: `rename` keeps all
-variables that are not mentioned, while `select` only keeps the
-variables that you selected.
+In general, if you only need the new version it's usually best to just replace
+the object, since otherwise you clutter your workspace with multiple versions of the same data.
+Assign to a new object if you need to do specific analyses on e.g. a subset of the data,
+but later want to return to the original for other analyses.
+Finally, if you only want to inspect the data there is no need to assign it to anything.
 
-### Note: Assigning results to objects
+### Exercise: selecting and renaming columns
 
-In the examples above, the result of the select or rename was not
-assigned to an object. This means that the results are printed on the
-screen, but not remembered. In other words, the gunpolls object will
-contain the same data after running the command.
-
-To store the results of select or rename (or any other function), you
-need to *assign* it to an object and give it a name. This can be a new
-name, in which case a *copy* of the object will be made, so both objects
-can be used later. After running the code below, both the full
-`gunpolls` object (with all columns), and the `gunpolls_clean` object
-will be remembered by R, so you can choose to continue analysing either.
-This is most useful if you want to do some analyses on the subset of the
-data, but also need to do other analyses on a different subset later.
-
-``` r
-gunpolls_clean <- select(gunpolls, Question, rep = `Republican Support`, dem = `Democratic Support`)
-gunpolls_clean
-```
-
-If you assign it to the same name, it will overwrite the data:
-
-``` r
-gunpolls <- select(gunpolls, Question, rep = `Republican Support`, dem = `Democratic Support`)
-gunpolls
-```
-
-This is useful if you will not need to data you discarded. To summarize:
-
-``` r
-some_function(data)          # <-- print on screen and forget
-data2 <- some_function(data) # <-- create a new object and keep both
-data <- some_function(data) # <-- overwrite the old object
-```
-
-### Exercise
-
-Using the gun polls data from above, rename the `Republican Support` and
-`Democratic Support` columns to `rep_support` and `dem_support`, and
-select only the Question, Pollster, and republicat/democratic support
-columns. Assign the result to the `gunpolls` object
-
-``` r
-library(tidyverse)
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-___
-
-gunpolls  # prints the result on screen
-```
+{{< include exercises/_ch04_ex_select.qmd >}}
 
 ## Subsetting (filtering) data
 

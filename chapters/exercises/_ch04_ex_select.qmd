@@ -1,0 +1,56 @@
+::: {.exercise}
+As mentioned above, we want to find the relation between GDP per capita and fertility in Asian countries.
+
+Select only the country, continent, year, fertility, population and gdp columns.
+As part of the select command, rename the gdp column to GDP.
+Assign the result to a new object named `gap_cleaned`
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_select
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+```
+
+```{webr}
+#| exercise: ex_select
+gap_cleaned <- ...
+head(gap_cleaned)
+```
+
+::: { .hint exercise="ex_select"}
+::: { .callout-tip title="Hint:"}
+
+Use the following pattern:
+```r
+new_data <- select(old_data, new_column=old_column, ...)
+```
+:::
+:::
+
+::: {.solution exercise="ex_select"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+Use `select(gap, ...)` to select columns from `gap`.
+List all the columns you want to keep.
+Rename gdp by using `GDP=gdp`.
+Assign it to `gap_cleaned` using the `<-` operator:
+
+```{webr}
+#| exercise: ex_select
+#| solution: true
+gap_cleaned <- select(gap, country, continent, year, fertility, population, GDP=gdp)
+head(gap_cleaned)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_select
+#| check: true
+gradethis::grade_this_code()
+```

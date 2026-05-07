@@ -17,6 +17,7 @@ book:
       chapters:
         - chapters/02-introduction.qmd
         - chapters/03-funwithr.qmd
+        - chapters/04-tidydata.qmd
     - chapters/references.qmd
 
 bibliography: references.bib
