@@ -1,0 +1,3 @@
+gradethis::pass_if_equal()
+.msg <- gradethis::code_feedback()
+if (is.null(.msg)) gradethis::pass() else gradethis::fail(.msg, hint = FALSE)

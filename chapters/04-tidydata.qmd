@@ -16,6 +16,7 @@ webr:
 library(tidyverse)
 ```
 
+
 ## Introduction to Tidyverse
 
 The goal of this chapter is to get you acquainted with the
@@ -229,6 +230,7 @@ This gives you three options for handling the result.
 
 If you assign it to a new object, both data frames are kept and you can later
 work with either:
+
 
 ```{r, eval=F}
 new_data <- select(gap, country, year, gdp)

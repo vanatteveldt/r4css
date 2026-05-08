@@ -52,5 +52,14 @@ head(gap_cleaned)
 ```{webr}
 #| exercise: ex_select
 #| check: true
-gradethis::grade_this_code()
+
+gradethis::grade_this({
+  # Custom anticipated mistakes and hints
+  gradethis::fail_if(!"GDP" %in% names(.result), "Did you rename gdp to GDP?")
+
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+
+})
 ```
