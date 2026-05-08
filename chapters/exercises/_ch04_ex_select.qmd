@@ -55,7 +55,9 @@ head(gap_cleaned)
 
 gradethis::grade_this({
   # Custom anticipated mistakes and hints
-  gradethis::fail_if(!"GDP" %in% names(.result), "Did you rename gdp to GDP?")
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(!"GDP" %in% names(.result), "Did you rename gdp to GDP?")
+  }
 
   # Fall back to default checking
   {{< include exercises/_check.qmd >}}

@@ -1,3 +1,12 @@
-gradethis::pass_if_equal()
 .msg <- gradethis::code_feedback()
-if (is.null(.msg)) gradethis::pass() else gradethis::fail(.msg, hint = FALSE)
+if (is.null(.msg)) {
+  # code matches the solution exactly
+  gradethis::pass_if_equal()
+  gradethis::pass()  # charitable pass if result differs but code matches
+} else {
+  # code differs from solution
+  gradethis::pass_if_equal(
+    message = "Excellent work! Your solution works, but is different from ours. If you're curious, use `ⓘ Show solution` to compare your solution with ours (you may have to click `💡 Show hint` first)."
+  )
+  gradethis::fail(.msg, hint = FALSE)
+}

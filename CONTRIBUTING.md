@@ -31,7 +31,7 @@ All R code lives in `{webr}` chunks rendered by [quarto-live](https://r-wasm.git
 **How to apply:**
 - Use `{webr}` chunks, not `{r}` chunks, for everything a student should see.
 - Don't paste expected output into the prose. If a result is worth discussing, discuss it *after* the chunk and trust the student to have run it.
-- The one exception is hidden setup chunks (`#| include: false`, `#| setup: true`) that prepare data for an exercise — see principle 7.
+- The one exception is hidden setup chunks (`#| include: false`, `#| setup: true`) that prepare data for an exercise — see principle 8.
 
 ### 2. Three kinds of code blocks: show-and-tell, exercise, challenge
 
@@ -40,7 +40,7 @@ We use three distinct framings, and the distinction matters:
 | Kind | Marker | What it asks of the student | Has a checker? |
 |---|---|---|---|
 | **Show-and-tell** | plain `{webr}` chunk | "Run this. Look at the output." | No |
-| **Exercise** (✏️) | `::: {.exercise}` block + `{webr}` with `#| exercise:` | "Modify the code to get a specific result." | Yes — `gradethis::grade_this_code()` |
+| **Exercise** (✏️) | `::: {.exercise}` block + `{webr}` with `#| exercise:` | "Modify the code to get a specific result." | Yes — see principle 3 |
 | **Challenge** (🧩) | `::: {.challenge}` block | "Think about / play with the code. There's no single right answer." | No |
 
 Concrete examples in chapter 3:
@@ -58,7 +58,32 @@ Concrete examples in chapter 3:
 
 **Open question:** is "exercise vs. challenge" pulling its weight, or could we collapse to two categories? I think three is right but happy to be argued out of it.
 
-### 3. Permission to fumble
+### 3. Exercise grading is layered: custom checks → result equality → code-feedback fallback
+
+Every exercise's `#| check: true` chunk follows the same shape: optional custom `fail_if()` checks for anticipated mistakes, then a shared `_check.qmd` snippet (via `{{< include >}}`) that handles result equality and code-level feedback. See [`_ch04_ex_select.qmd`](chapters/exercises/_ch04_ex_select.qmd) and the shared [`_check.qmd`](chapters/exercises/_check.qmd) for the canonical example
+
+**Why:**  This can give custom feedback to students for anticipated mistakes,
+but even without the custom feedback it is better than the default `grade_this_code()` because it also passes if the results are equal but the code is not (with a hint to compare to the "official" solution)
+
+**How to apply:**
+Follow this pattern for all exercise grading chunks:
+
+```r
+#| exercise: exercise_name
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(!"GDP" %in% names(.result), "Did you rename gdp to GDP?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+Note: Guard structural checks like the `"GDP" %in% names(.result)` with `if (is.data.frame(.result))` — when student code errors, .result is an error object, and unguarded checks fire misleading messages.
+
+### 4. Permission to fumble
 
 Throughout the book we explicitly tell students that mistakes are fine, the code can't break anything, they can start over, and even the autograder is sometimes wrong. This affective scaffolding is deliberate, not just friendly tone.
 
@@ -74,7 +99,7 @@ Concrete instances in chapter 3:
 - Don't oversell tool reliability. If a checker can be wrong, say so once, in plain language.
 - Frame corrections as "try again" rather than "incorrect."
 
-### 4. Examples use social-science data, and prompt about the substance
+### 5. Examples use social-science data, and prompt about the substance
 
 Data sets should be recognisable as something a social scientist would actually look at: voting results, demographics, (social) media content, survey responses. Do not use non-social toy data sets like `mtcars`/`iris`.
 
@@ -87,7 +112,7 @@ We also try to ask substantive questions alongside the technical ones, to reinfo
 - When introducing a dataset, gloss the columns (see [the collapsible "Columns in the voting data" callout at line 71](chapters/03-funwithr.qmd#L71)) so the substantive meaning is at hand.
 - In challenges, ask a substantive interpretation question alongside any technical one.
 
-### 5. Code should be readable; comments explain *why*, not *what*
+### 6. Code should be readable; comments explain *why*, not *what*
 
 Make code as clear and readable as possible. Where possible, avoid difficult technical steps unless they are the focus of the example (e.g. by preprocessing the data before introducting it). Use comments only when the code itself can't carry the meaning -- the default is to let the code speak.
 
@@ -105,7 +130,7 @@ A comment that says `# filter the votes data to Amsterdam` above `filter(municip
 - Add a comment when the code involves a non-obvious choice, an unfamiliar function whose effect isn't visible from the name, or a workaround.
 - Pick variable and column names that make the comment unnecessary where you can.
 
-### 6. Concept callouts arrive just-in-time, in the prose
+### 7. Concept callouts arrive just-in-time, in the prose
 
 When a new R or tidyverse construct first carries weight in code, follow up with a small `.callout-note` that names and explains it — *not* before. The student should see the construct doing something useful first, then read the explanation, then encounter the construct again later as a familiar tool.
 
@@ -121,7 +146,7 @@ Concrete examples in chapter 3:
 - When a new construct first appears, write the chunk so the construct is doing visible work, then add a `.callout-note` immediately after that names and explains it.
 - It's often fine to *not* explain a construct on its first appearance if the student can pattern-match from context. Save the callout for the second or third appearance — the moment the student is most likely to be wondering.
 
-### 7. Data loading: visible chunks are self-contained via `download.file()`
+### 8. Data loading: visible chunks are self-contained via `download.file()`
 
 Every visible chunk that uses a dataset should bring its own data — so a student who copy-pastes the chunk into a local RStudio session can run it immediately, with no preceding "make sure you've downloaded X first" instruction.
 
