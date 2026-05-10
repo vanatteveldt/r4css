@@ -1,0 +1,59 @@
+::: {.exercise}
+
+For data cleaning you often want to understand why certain values are missing, so it can be useful to select specific subsets for sampling.
+
+Filter the data to show rows where `gdp` is missing, and `infant_mortality` is not missing.
+:::
+
+
+
+```{webr}
+#| exercise: ex_filter_na
+filter(gap_asia, ...)
+```
+
+::: { .hint exercise="ex_filter_na"}
+::: { .callout-tip title="Hint:"}
+
+You will need to combine the information from the earlier sections: `is.na()` to test for missing values, `!` to negate an outcome, and either `&` or multiple `,`-separated arguments to combine the criteria
+:::
+:::
+
+::: {.solution exercise="ex_filter_na"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use `is.na(gdp)` to select rows where gdp is missing
+- Use `!is.na(infant_mortality)` to select rows where that value is not missing
+- Combine the two by placing in separate arguments (with `,`) or by joining with an `&`
+
+
+```{webr}
+#| exercise: ex_filter_na
+#| solution: true
+
+filter(gap_asia, is.na(gdp), !is.na(infant_mortality))
+
+# Alternatively, you can combine with `&`:
+# filter(gap_asia, is.na(gdp) & !is.na(infant_mortality))
+
+# Note that you don't need parentheses here, but you can add them if you prefer:
+# filter(gap_asia, is.na(gdp) & (!is.na(infant_mortality)))
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_filter_na
+#| check: true
+
+gradethis::grade_this({
+  # Custom anticipated mistakes and hints
+
+
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+
+})
+```

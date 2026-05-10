@@ -1,0 +1,72 @@
+::: {.exercise}
+As mentioned above, we want to find the relation between GDP per capita and fertility in Asian countries.
+
+Starting from the original `gap` dataset,
+filter the data to keep only the data from 2000 (including 2000) from either Southern or South-Eastern Asia.
+
+Assign the result to a new object named `gap_sea_recent`
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_filter_gap
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+```
+
+```{webr}
+#| exercise: ex_filter_gap
+gap_sea_recent <- ...
+head(gap_sea_recent)
+```
+
+::: { .hint exercise="ex_filter_gap"}
+::: { .callout-tip title="Hint:"}
+
+You can filter for either region by using either `region %in% c("South-Eastern Asia", "Southern Asia")` or `region == "South-Eastern Asia" | region == "Southern Asia"`
+:::
+:::
+
+::: {.solution exercise="ex_filter_gap"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use `region %in% c("South-Eastern Asia", "Southern Asia")` or `region == "South-Eastern Asia" | region == "Southern Asia"` to select the region
+- Use `year >= 2000` to select the years that are larger or equal than 2000.
+- Combine the two criteria either by listing them as separate arguments, or using the `(A | B) & C` pattern:
+
+
+```{webr}
+#| exercise: ex_filter_gap
+#| solution: true
+gap_sea_recent <- filter(gap, year >= 2000, region %in% c("South-Eastern Asia", "Southern Asia"))
+
+# Alternatively, using | instead of %in% would also work:
+# gap_sea_recent <- filter(gap, year >= 2000, region == "South-Eastern Asia" | region == "Southern Asia")
+
+
+# And you can also combine the criteria with &:
+# gap_sea_recent <- filter(gap, year >= 2000 & (region == "South-Eastern Asia" | region == "Southern Asia"))
+head(gap_sea_recent)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_filter_gap
+#| check: true
+
+gradethis::grade_this({
+  # Custom anticipated mistakes and hints
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(nrow(.result) == 0, "You filtered out all the data -- remember that you can use `|` or `%in%` to select either region. If you use `&` or put both region equalities in separate arguments with `,`, it will only select rows that are simultaneously in Southern and in SE Asia...")
+  }
+
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+
+})
+```

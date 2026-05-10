@@ -14,6 +14,10 @@ webr:
 #| autorun: true
 #| include: false
 library(tidyverse)
+library(dslabs)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+head(gap_asia)
 ```
 
 
@@ -61,8 +65,7 @@ to prepare the data and answer that question. Once you have all the tools in you
 you will be able to answer questions like this.
 :::
 
-::: {.callout-note collapse="true"}
-## Columns in the gapminder data - click to expand
+::: {.callout-note collapse="true" title="Columns in the gapminder data - click to expand"}
 
 | Variable         | Explanation                                          |
 |------------------|------------------------------------------------------|
@@ -162,7 +165,7 @@ In fact, most of our code looks like this: call a function on a data set, and as
 This chapter will introduce you to a number of tidyverse functions, for example for filtering and sorting data.
 :::
 
-## Selecting and renaming columns
+## Managing columns with `select` and `rename`
 
 Let's return to the `gapminder` data set.
 Many datasets contain many more columns than you need,
@@ -218,7 +221,7 @@ gap_cleaned <- select(gap_dirty, year, country, life_expectancy = "Life Expectan
 
 :::
 
-### Assigning results to objects
+### Assigning results to objects {#sec-assigning}
 
 In the examples above, the result of the select or rename was
 assigned to a new object, `d` (and later `gap_cleaned`).
@@ -261,104 +264,191 @@ Finally, if you only want to inspect the data there is no need to assign it to a
 
 {{< include exercises/_ch03_ex_select.qmd >}}
 
-## Subsetting (filtering) data
+## Subsetting data with `filter`
 
 In the previous section we looked at selecting columns with the `select`
 function. Another common task is selecting *rows*, which can be done
 with the `filter` function.
 
-This section also uses the gun polls data we used above:
-
-``` r
-library(tidyverse)
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-gunpolls
-```
-
 ### The `filter` function
 
-The `filter` function can be used to select a subset of rows. In the
-guns data, the `Question` column specifies which question was asked. We
-can select only those rows (polls) that asked whether the minimum
-purchase age for guns should be raised to 21:
+Looking back at the original question, we would like to determine
+the relationship between GDP and fertility in Asian countries.
+A logical cleaning step would be to make a subset of the data
+that only contain rows where `continent` equals `"Asia"`.
+This can be achieved with the following code:
 
-``` r
-age21 <- filter(gunpolls, Question == 'age-21')
-age21
+
+```{webr}
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+head(gap_asia)
 ```
 
-This call is typical for a tidyverse function: the first argument is the
-data to be used (`gunpolls`), and the remaining argument(s) contain
-information on what should be done to the data (selecting purchase age
-should be raised to 21).
+The line that does the filtering can be read as:
+"Filter the 'gap' dataset to keep only the rows where the `continent` column equals
+the text `"Asia"`, and assign the result to `gap_asia`".
 
-Note the use of `==` for comparison: In R, `=` means assingment and `==`
-means equals. Other comparisons are e.g. `>` (greather than), `<=` (less
-than or equal) and `!=` (not equal). You can also combine multiple
-conditions with logical (boolean) operators: `&` (and), `|` or, and `!`
-(not), and you can use parentheses like in mathematics.
+::: {.callout-note title="Why the double equal sign (==)?"}
 
-So, we can find all surveys where support for raising the gun age was at
-least 80%:
+Note that we use a double equals sign (`==`): in R,
+when you ask a **question** ("are two things equal?") you always use `==`.
 
-``` r
-filter(gunpolls, Question == 'age-21' & Support >= 80)
+The single equals sign (`=`) means **assignment** — giving something a name or value.
+You've already seen this with named arguments to functions:
+`rename(gap, GDP=gdp)` doesn't ask whether `gdp` equals `GDP`,
+it assigns the column `gdp` to the new name `GDP`.
+
+Note: You may also see `=` used to assign variables, e.g. `x = 5`. This works and is identical to `x <- 5`. However, `<-` is more idiomatic in R and will be used throughout this book.
+:::
+
+### Other Comparisons
+
+Besides checking for equality, we can also filter on a value being larger or smaller than
+(or just different from) another value. This is achieved using different *operators* to compare
+the values. The most common comparison operators in R are:
+
+| Operator | Meaning                  | Example                  | Reads as                                        |
+|----------|--------------------------|--------------------------|-------------------------------------------------|
+| `==`     | equal to                 | `continent == "Asia"`    | continent is exactly `"Asia"`                   |
+| `!=`     | not equal to             | `continent != "Asia"`    | continent is anything other than `"Asia"`       |
+| `<`      | less than                | `year < 1980`            | year is before 1980 (excluding 1980)            |
+| `>`      | greater than             | `gdp > 1000`             | gdp is above 1000 (excluding 1000)              |
+| `<=`     | less than or equal to    | `year <= 1980`           | year is 1980 or earlier                         |
+| `>=`     | greater than or equal to | `life_expectancy >= 70`  | life expectancy is 70 or higher                 |
+| `%in%`     | one of the values        | `continent %in% c("Asia", "Europe")` | Continent is one of the values `"Asia"` or `"Europe"` |
+
+So, for example you can select only data from countries with a population of at least 10 million using the `>=` operator:
+
+
+```{webr}
+filter(gap_asia, population >= 10000000)
 ```
 
-Note that this command did not assign the result to an object. So, as
-explained above, the result is only displayed on the screen but not
-remembered. This can be a great way to quickly inspect your data, but if
-you want to continue analysing this subset you need to assign it to an
-object, e.g. using `subset <- filter(...)`
+Note: In the code above the result of `filter` is not assigned to an object. This means that the result is shown on the screen, but not stored anywhere. This can be very useful to quickly inspect something, but remember that you need to store the result if you want to use it later. See @sec-assigning above for more detail.
+
+::: {.callout-note title="To quote or not to quote"}
+In the code above, we 'quoted' the term `Asia` by surrounding it with quotation marks (`"`).
+At the same time, we didn't quote numbers like `10000000` or `gap` or `continent`. This may seem confusing, but there is method to this madness:
+
+- You need to use quotes for *literal text*, such as the word `"Asia"`
+- You do not use quotes for *numbers*, such as `10000000`
+- You do not use quotes for *names* of data frames or columns, such as `gap` or `continent`
+
+There is one exception to the last rule: if the column is not a legal value for a name, e.g. because it contains a space or starts with a number, you need to quote it using backticks (`` ` ``). However, like we explained above, in the select and rename commands you can also use normal quotes to refer to a column containing spaces.
+:::
+
+### Combining criteria
+
+Finally, you can combine multiple criteria in a single filter call.
+This can be achieved using `&` meaning *and*, and `|` meaning *or*.
+If you combine both `&` and `|` in a single call, you should use parentheses
+to make clear what you mean:
+`(year == 2015 | year == 2016) & region == "Southern Asia"` will select all entries from Southern Asia where the year is either 2015 or 2016. If you place the parentheses differently, the meaning shifts: `year == 2015 | (year == 2016 & region == "Southern Asia")` means selecting all data from the year 2015, and data from 2016 only where the region is Southern Asia.
+
+If you give multiple criteria as separate arguments (that is, separated with a comma `,`)
+they effectively function as *and* as well. So, `filter(year==2015, country=="Brunei")` is identical to `filter(year == 2015 & country == "Brunei")`, and will only keep the rows for that specific country in that specific year.
+
+Finally, you can also use `!` to negate a condition. For example, `!(continent %in% c("Asia", "Europe"))` keeps rows where the continent is not Asia or Europe. Together, `&`, `|`,  `!`, and `()` let you build up arbitrary combinations of conditions."
+
+
+### Exercise: Filtering data
+
+{{< include exercises/_ch03_ex_filter.qmd >}}
 
 ### Removing missing values
 
 Often, data contains *missing values*, for example survey questions that
-were not answered or other data that is missing or unknown. In R, such
-values are called `NA` (Not Available), and any comparison with a
-missing value are automatically missing as well. To check if a value is
-missing, you should use the function `is.na(column)`.
+were not answered or other data that is missing or unknown.
+In the `gapminder` data, for example, the data for infant mortality, fertility, population and GDP is sometimes missing:
 
-For example, let’s look at a version of the gun polls data which has
-some missing values:
-
-``` r
-library(tidyverse)
-gunpolls_dirty <- read_csv("https://cssbook.net/d/guns-polls-dirty.csv")
-head(gunpolls_dirty)
+```{webr}
+#| autorun: true
+gap_asia
 ```
 
-As you can see, the Support column has a missing value for CBS news. To
-remove rows where Support is missing, `filter` the dataset so only
-non-missing rows are kept, i.e. where `!is.na(Support)` (you can read
-`!is.na` as ‘is not missing’):
+In R, such
+values are called `NA` (Not Available).
+Many operations in R, such as calculating descriptive statistics or running models, can give unexpected results if the data contain missing values.
+For this reason, you often have to deal with missing values explicitly, often by removing the rows that are missing crucial data.
 
-``` r
-filter(gunpolls_dirty, !is.na(Support))
+A complication here is that comparisons with
+missing values are automatically missing as well:
+if `gdp` is missing, `gdp > 100` will also be `NA`.
+This may seem strange, but the reason for this is that we don't know whether GDP is larger or smaller than 100, as we are missing that measurement. Even `gdp == NA` does not work: if gdp is missing, we don't know whether it's equal to some other value that's also missing, so the comparison will always result in `NA`.
+
+For this reason, you need to use special functions to deal with missing values: `is.na(column)` tests which values in a specific column are missing,
+while `drop_na(data)` removes data with missing values.
+
+Going back to the example, to see which rows have missing gdp data we can use `filter(is.na(gdp))`:
+
+```{webr}
+filter(gap_asia, is.na(gdp))
 ```
 
-As a shortcut to remove all rows where any column is missing, you can
-use the `na.omit` function:
+To remove all rows where gdp is missing, you can use  `filter(!is.na(gdp))`, but you can also use the special purpose function `drop_na`:
 
-``` r
-na.omit(gunpolls_dirty)
+```{webr}
+drop_na(gap_asia, gdp)
 ```
 
-### Exercise: Filtering data
+Note that if you provide multiple columns to `drop_na` it drops rows where any of the columns is missing. If you don't give any columns it will drop all rows with missing values (the equivalent to the base-R `na.omit` function).
 
-Let’s go back to the original gunpolls data. Can you select the polls
-about stricter gun laws (`stricter-gun-laws`) where the overall suppport
-was at least 70%, and assign that selection to a new object called
-`strict_polls`?
 
-``` r
-library(tidyverse)
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-___
-strict_polls
+{{< include exercises/_ch03_ex_filter_na.qmd >}}
+
+## Sorting data with `arrange`
+
+The output in the examples above were all shown in the sort order the data originally had, which turns out to be by year (starting with 1960) and then by country. In many cases, you want to sort by value so you can immediately see e.g. which countries have the highest life expectancy.
+
+### The arrange function
+
+This can be achieved with the `arrange` function:
+
+```{webr}
+arrange(gap_asia, life_expectancy)
 ```
+
+So, it turns out that Cambodia had extremely low life expectancy during the Khmer Rouge regime in the late 1970's (and if you look at the population column you can see total population actually dropped from over 7.5 million in 1975 to under 7 million from 1978!)
+
+By default, `arrange` sorts in ascending order (low to high or A-Z).
+To switch the sorting order, you can use the `desc(column)` function:
+
+```{webr}
+arrange(gap_asia, desc(life_expectancy))
+```
+
+This shows Hong Kong and Japan in the last decade of the data set to have the highest life expectancy of 83 years.
+
+Sorting also works for text columns. So, to sort by country name starting from z, you could use:
+
+```{webr}
+arrange(gap_asia, desc(country))
+```
+
+
+### Multiple sort columns
+
+Finally, you can include multiple sort columns by just giving them as additional arguments.
+For example, suppose we want to list first by year (descending) and then (for rows within the same year) by life expectancy, we can use the following:
+
+```{webr}
+arrange(gap_asia, desc(year), life_expectancy)
+```
+
+So, in 2016 the lowest life expectancy was in Yemen at almost 65 years.
+
+Note that missing values are always sorted at the bottom. So,
+neither `arrange(gap_asia, gdp)` nor `arrange(gap_asia, desc(gdp))`
+will show the missing values in the gdp column at the top.
+To view missing values, you need to do a (temporary) filter to select the missing values using `filter(is.na(column))` as explained above.
+
+### Exercise
+
+{{< include exercises/_ch03_ex_arrange.qmd >}}
+
 
 ## Changing or computing values
 

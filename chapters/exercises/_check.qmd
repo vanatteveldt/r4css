@@ -1,3 +1,8 @@
+if (grepl("\\.\\.\\.", .user_code)) {
+  gradethis::fail("It looks like you haven't filled in the blanks yet — replace the `...` with your code.")
+}
+
+
 .msg <- gradethis::code_feedback()
 if (is.null(.msg)) {
   # code matches the solution exactly

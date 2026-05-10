@@ -52,7 +52,7 @@ Concrete examples in chapter 2:
 
 **How to apply:**
 - Reach for **show-and-tell** when introducing a new command or piece of data — the cognitive load of "what is this?" is already enough.
-- Reach for an **exercise** when a single small modification cleanly tests whether the student understood the previous block. Keep the diff small (rename a column, change a filter value, swap an argument). Always include a hint and a solution.
+- Reach for an **exercise** when a single small modification cleanly tests whether the student understood the previous block. Keep the diff small (rename a column, change a filter value, swap an argument). Always include a hint and a solution. In the solution, explain the *why* as well as giving the right code. As the hint is no longer viewable after viewing the solution, you should often include the information in the hint also in the solution text.
 - Reach for a **challenge** when the right response is *thinking* (interpreting a graph, predicting a result, picking your own variable to plot). Do not write a checker for it.
 - The first time a chapter introduces each of the three, point at the format with a callout note (see [the info callout at line 91](chapters/02-funwithr.qmd#L91) for how chapter 2 explains the exercise format).
 
@@ -82,6 +82,8 @@ gradethis::grade_this({
 ```
 
 Note: Guard structural checks like the `"GDP" %in% names(.result)` with `if (is.data.frame(.result))` — when student code errors, .result is an error object, and unguarded checks fire misleading messages.
+
+
 
 ### 4. Permission to fumble
 

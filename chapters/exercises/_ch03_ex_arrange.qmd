@@ -1,0 +1,76 @@
+::: {.exercise}
+
+Let's combine what we have learned so far.
+From the `gap_asia` dataset, take the country, year, life_expectancy, population and gdp columns.
+Then, subset the data to take only the year 2010.
+Finally, arrange by gdp, starting from the richest country.
+Assign the final and all intermediate results to `gap_asia_subset`
+:::
+
+
+
+```{webr}
+#| exercise: ex_arrange
+gap_asia_subset <- select(gap_asia, ...)
+gap_asia_subset <- filter(gap_asia_subset, ...)
+gap_asia_subset <- arrange(gap_asia_subset, ...)
+head(gap_asia_subset)
+```
+
+::: { .hint exercise="ex_arrange"}
+::: { .callout-tip title="Hint:"}
+
+- For select, list the columns you want to select
+- For filter, see the table of operators in the previous section
+- For arrange, make sure to arrange in descending order
+:::
+:::
+
+::: {.solution exercise="ex_arrange"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- For select, list the columns you want to select
+- For filter, see the table of operators in the previous section
+- For arrange, make sure to arrange in descending order
+
+```{webr}
+#| exercise: ex_arrange
+#| solution: true
+
+gap_asia_subset <- select(gap_asia, country, year, life_expectancy, population, gdp)
+gap_asia_subset <- filter(gap_asia_subset, year == 2010)
+gap_asia_subset <- arrange(gap_asia_subset, desc(gdp))
+head(gap_asia_subset)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_arrange
+#| check: true
+
+gradethis::grade_this({
+  # Custom anticipated mistakes and hints
+
+if (is.data.frame(.result) && nrow(.result) >= 2 && !anyNA(.result$gdp)) {
+  gradethis::fail_if(.result$gdp[1] < .result$gdp[2],
+    "Your data is not sorted richest to poorest. Did you wrap gdp in `desc()`?")
+}
+if (is.data.frame(.result) && nrow(.result) > 0 && "year" %in% names(.result)) {
+  gradethis::fail_if(any(.result$year != 2010),
+    "Your result contains rows from years other than 2010. Did you filter on `year == 2010`?")
+}
+.expected <- c("country","year","life_expectancy","population","gdp")
+if (is.data.frame(.result)) {
+  .missing <- setdiff(.expected, names(.result))
+  gradethis::fail_if(length(.missing) > 0,
+    paste0("You're missing column(s): ", paste(.missing, collapse=", "), "."))
+}
+
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+
+})
+```

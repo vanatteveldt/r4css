@@ -28,6 +28,7 @@ Use the following pattern:
 ```r
 new_data <- select(old_data, new_column=old_column, ...)
 ```
+
 :::
 :::
 
