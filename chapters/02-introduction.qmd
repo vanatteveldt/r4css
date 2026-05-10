@@ -1,4 +1,0 @@
----
-title: "Introduction: Text as Data in Media Research"
----
-

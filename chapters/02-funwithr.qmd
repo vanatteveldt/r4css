@@ -86,7 +86,7 @@ the `↻ Start Over` button and the original code will run.
 example, the code below shows the results for a single municipality
 (Amsterdam), ordered by vote share.
 
-{{< include exercises/_ch03_ex_filter.qmd >}}
+{{< include exercises/_ch02_ex_filter.qmd >}}
 
 ::: {.callout-note title="Info"}
 The code box above is an exercise with a single correct solution. You
@@ -252,7 +252,7 @@ also have identical meaning and it's safe to join on them.
 Now that we have our combined data, we can make a scatter plot of support for the anti-immigrant PVV party
 and the percentage of Dutch people without immigration history - does living in a place with many migrants make one more likely to vote PVV?
 
-{{< include exercises/_ch03_ex_scatter.qmd >}}
+{{< include exercises/_ch02_ex_scatter.qmd >}}
 
 
 ::: {.challenge}

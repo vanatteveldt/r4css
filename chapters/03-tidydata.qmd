@@ -259,7 +259,7 @@ Finally, if you only want to inspect the data there is no need to assign it to a
 
 ### Exercise: selecting and renaming columns
 
-{{< include exercises/_ch04_ex_select.qmd >}}
+{{< include exercises/_ch03_ex_select.qmd >}}
 
 ## Subsetting (filtering) data
 
