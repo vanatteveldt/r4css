@@ -6,6 +6,14 @@ Filter the data to show rows where `gdp` is missing, and `infant_mortality` is n
 :::
 
 
+```{webr}
+#| setup: true
+#| exercise: ex_filter_na
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+```
 
 ```{webr}
 #| exercise: ex_filter_na

@@ -4,13 +4,46 @@ title: "Preface"
 
 # Welcome {.unnumbered}
 
-This book introduces computational text analysis...
+The goal of this book is to introduce data and text analysis for computational social scientists.
+It's intended to be useful for people who have no prior experience with R or any other programming language.
 
-## What You Will Learn
+This book is aimed at students who want to become (better) *computational social scientists*.
+This means that our exploration of technical issues (and R in general) is driven by substantive curiosity.
+We don't want to learn new commands (just) because we are curious about how R works,
+but primarily because we want to use them to understand human behaviour and perhaps even improve the world.
+For this reason, we aim to have data sets and examples relevant to the social sciences,
+and will try to embed all technical examples in substantive social science questions.
 
-By the end of this book you will be able to ...
+A driving principle of the book is that the question should come before the answer.
+So, we will often ask you to do something that you don't fully understand yet,
+and then provide the explanation later.
+The first real chapter of the book, *Fun with R*, takes this to its extreme:
+it's intended as a 'grand tour' of all the cool and useful things you can do with R,
+and the later chapters give the explanations for all the commands used in that chapter.
+So, be curious, ask questions, but never worry if something is not immediately clear.
 
-## How to Use This Book
+The book is very much not a programming manual.
+We will of course teach programming fundamentals such as operators or functions,
+but only where it is useful to know these concepts for a (computational) social scientist.
 
-Each chapter mixes explanation with **interactive code blocks** — you can run and modify R code directly in your browser without installing anything. Look for cells marked with the {{< fa play >}} button.
+::: {.callout-note title="Status of this book"}
+Note that this book is very much work in progress. The chapters that are published should be good, but it's obviously very incomplete. The intended scope is to include at least a thorough introduction to tidyverse, including visualization (`ggplot`) and functions/mapping (`purrr`); an overview of text analysis (`textr`, `tidytext`, and perhaps something like AmCAT and/or boolydict); and working with local and proprietary LLMS (probably with `tidyllm`). I'm not sure how much classical machine learning to include as R support is still not fantastic.
+:::
 
+<!-- missing: Why R; how to install R & Packages; relation between book and courses with instructors -->
+
+## How to Use This Book  {.unnumbered}
+
+Each chapter mixes explanations with **interactive code blocks** — you can run and modify R code directly in your browser without installing anything. Look for cells marked with the {{< fa play >}} button.
+
+We encourage every reader to run all the code blocks, and especially to play around. Do you understand what it does? What happens if you change something? How could the code be useful in a real world scenario?
+
+It's important to remember that you cannot break anything.
+Every time you call the code, it just starts from scratch.
+There is nothing bad that can happen, and you can always press `↻ Start Over` to reset the example.
+
+Most sections end with an exercise - look for blue frames marked `✏️ Exercise`. These have a pre-defined solution and generally also one or more hints. If you run the code, your attempt will be checked against our solution. We would encourage you to try to solve the exercise without looking at the solution first, but even if you do look at the solution try to understand *why* it works.
+
+There are also frames marked `🧩 Challenge`. These will challenge you to either think about the outcomes a bit more deeply, or make some additional changes to the code. Generally there will be no single 'right' solution. Don't feel stressed if you don't immediately see the solution, very often the tools you need will be introduced in later sections.
+
+Finally, there are frames marked with an `ⓘ`. These give more in-depth explanation about the code or concepts that were just introduced, and will explain many 'gotchas' that we've seen students struggle with before.

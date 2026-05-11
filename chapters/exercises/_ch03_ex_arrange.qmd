@@ -8,7 +8,14 @@ Assign the final and all intermediate results to `gap_asia_subset`
 :::
 
 
-
+```{webr}
+#| setup: true
+#| exercise: ex_arrange
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+```
 ```{webr}
 #| exercise: ex_arrange
 gap_asia_subset <- select(gap_asia, ...)

@@ -11,13 +11,13 @@ webr:
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
 ```{webr}
-#| autorun: true
-#| include: false
+#| setup: true
+#| exercise: ['demo_glimpse', 'demo_assign', 'demo_select', 'demo_illegal_names_show', 'demo_illegal_names_fix', 'demo_assign_new', 'demo_assign_overwrite', 'demo_assign_print', 'demo_filter_pop', 'demo_gap_asia', 'demo_filter_isna', 'demo_drop_na', 'demo_arrange_asc', 'demo_arrange_desc', 'demo_arrange_text', 'demo_arrange_multi', 'demo_mutate_round', 'demo_mutate_multi']
 library(tidyverse)
 library(dslabs)
 gap <- as_tibble(gapminder)
 gap_asia <- filter(gap, continent == "Asia")
-head(gap_asia)
+gap_dirty <- rename(gap, `Life Expectancy`=life_expectancy)
 ```
 
 
@@ -37,6 +37,16 @@ In this chapter, we’ll focus on working with data using the
 packages, which contains most of the tools we’re using below, but it
 also contains functions for reading, analysing and visualising data that
 will be explained later.
+
+::: {.callout-note title="Info"}
+Throughout this chapter (and other chapters) there are interactive code boxes
+and exercises marked with {{< fa play >}}.
+Note that you cannot break anything in these example code boxes! Every
+time you hit the ‘Run code’ button, it will start over from scratch, and you can always press
+the `↻ Start Over` button to reset the example.
+So, feel free to just play around and explore!
+:::
+
 
 ### The data challenge: Mind the gap!
 
@@ -91,23 +101,27 @@ install it with the *packages* pane in Rstudio or call `install.packages("tidyve
 What you do need to do every time is *activate* the package using
 the `library` function:
 
-```{r, eval=F}
+```r
 library(tidyverse)
 ```
 
 ::: {.callout-note title="Common errors"}
 The two most common mistakes in R are forgetting to install a package and forgetting to activate it. In both cases, you will get an *error message*: a text (often displayed in red) that explains what went wrong. Don't panic if you see an error: you will quickly learn to recognize the most common errors, and even if you don't, copy pasting the error into a search or chat engine (or an email to your instructor) often gives you a quick solution.
 
-As an example, try the following two calls:
+For example, importing a non-existing package will give an error:
 
-```{r, eval=F}
-library(nastyverse)
+```
+> library(nastyverse)
+Error in library(nastyverse) : there is no package called ‘nastyverse’
+```
+
+As you can see, this gives you an error message: `there is no package called 'nastyverse'` -- this means that either you made a typing error, or you forgot to install the package. If you think the name is correct, a quick `install.packages` generally fixes the problem.
+
+```{webr}
 format_log(100)
 ```
 
-Both will give you an error message! The first will tell you `there is no package called 'nastyverse'` -- this means that either you made a typing error, or you forgot to install the package. If you think the name is correct, a quick `install.packages` generally fixes the problem.
-
-The second will say `could not find function "format_log"`. Again, unless you made a typo, this generally means you forgot to activate a package, in this case the `scales` package, which you can fix with `library(scales)`. But the most important thing is to not panic, read the error message, and either fix it or search for a solution.
+As above, this gives you an error message, in this case `could not find function "format_log"`. Again, unless you made a typo, this generally means you forgot to activate a package, in this case the `scales` package, which you can fix with `library(scales)`. But the most important thing is to not panic, read the error message, and either fix it or search for a solution.
 
 **Asking for help:** Also, remember that error messages are actually meant to be helpful, even if they sound complicated and technical.
 The best thing to do is ask for help, including the command you tried and the full error message.
@@ -132,11 +146,12 @@ In fact, when you just run the name of a tibble, it also prints the top rows (an
 This is one of the advantages of tibbles over default ('vanilla') data frames:
 they detect the size of your screen and print in a way that fits the screen nicely.
 In general, we advise using `head(data)` rather than just `data`,
-because in a Quarto report it will otherwise print the enitre data set, which is normally not what you want.
+because in a Quarto report it will otherwise print the entire data set, which is normally not what you want.
 
 Another really useful function is `glimpse`, which gives an overview of all the columns in the data and a sample of values:
 
 ```{webr}
+#| exercise: demo_glimpse
 glimpse(gap)
 ```
 
@@ -157,8 +172,10 @@ Tidyverse functions almost always take the data frame as a first argument, and *
 copy of the data. To store this transformed copy, we generally *assign* it to a new or existing object,
 such as when we assigned the result of `as_tibble(gapminder)` to the new object `gap`:
 
-```{r, eval=F}
+```{webr}
+#| exercise: demo_assign
 gap <- as_tibble(gapminder)
+head(gap)
 ```
 
 In fact, most of our code looks like this: call a function on a data set, and assign it to a new or existing name.
@@ -181,6 +198,7 @@ For example, if we only want to select the country, year and gdp,
 we can select these columns as follows:
 
 ```{webr}
+#| exercise: demo_select
 d <- select(gap, country, year, gdp)
 head(d)
 ```
@@ -213,10 +231,17 @@ However, that gets old really fast, especially because the backtick is very ofte
 
 So, the general advice is to *rename* columns that are not a legal name, e.g. by replacing spaces by underscores (`_`) or by just using a different name. In the rename (or select) command, you can place either backticks or normal quotes (`"` or `'`) around the old name. Suppose that `gap_dirty` contains the column with a space, you can simply use quotes in `select` or `rename` to rename it:
 
-```{r, eval=F}
+```{webr}
+#| exercise: demo_illegal_names_show
+#| autorun: true
+head(gap_dirty)
+```
+```{webr}
+#| exercise: demo_illegal_names_fix
 gap_cleaned <- rename(gap_dirty, life_expectancy = "Life Expectancy")
 # or alternatively:
 gap_cleaned <- select(gap_dirty, year, country, life_expectancy = "Life Expectancy")
+head(gap_cleaned)
 ```
 
 :::
@@ -235,22 +260,27 @@ If you assign it to a new object, both data frames are kept and you can later
 work with either:
 
 
-```{r, eval=F}
+```{webr}
+#| exercise: demo_assign_new
 new_data <- select(gap, country, year, gdp)
+head(new_data)
 ```
 
 You can also re-assign it to the same object.
 This essentially replaces the object with the transformed version,
 meaning only the new version is now available:
 
-```{r, eval=F}
+```{webr}
+#| exercise: demo_assign_overwrite
 gap <- select(gap, country, year, gdp)
+head(gap)
 ```
 
 Finally, you can choose not to assign it to anything.
 This will cause the result to be printed on the screen, but not remembered:
 
-```{r, eval=F}
+```{webr}
+#| exercise: demo_assign_print
 select(gap, country, year, gdp)
 ```
 
@@ -324,6 +354,7 @@ So, for example you can select only data from countries with a population of at 
 
 
 ```{webr}
+#| exercise: demo_filter_pop
 filter(gap_asia, population >= 10000000)
 ```
 
@@ -351,7 +382,7 @@ to make clear what you mean:
 If you give multiple criteria as separate arguments (that is, separated with a comma `,`)
 they effectively function as *and* as well. So, `filter(year==2015, country=="Brunei")` is identical to `filter(year == 2015 & country == "Brunei")`, and will only keep the rows for that specific country in that specific year.
 
-Finally, you can also use `!` to negate a condition. For example, `!(continent %in% c("Asia", "Europe"))` keeps rows where the continent is not Asia or Europe. Together, `&`, `|`,  `!`, and `()` let you build up arbitrary combinations of conditions."
+Finally, you can also use `!` to negate a condition. For example, `!(continent %in% c("Asia", "Europe"))` keeps rows where the continent is not Asia or Europe. Together, `&`, `|`,  `!`, and `()` let you build up arbitrary combinations of conditions.
 
 
 ### Exercise: Filtering data
@@ -365,6 +396,7 @@ were not answered or other data that is missing or unknown.
 In the `gapminder` data, for example, the data for infant mortality, fertility, population and GDP is sometimes missing:
 
 ```{webr}
+#| exercise: demo_gap_asia
 #| autorun: true
 gap_asia
 ```
@@ -385,12 +417,14 @@ while `drop_na(data)` removes data with missing values.
 Going back to the example, to see which rows have missing gdp data we can use `filter(is.na(gdp))`:
 
 ```{webr}
+#| exercise: demo_filter_isna
 filter(gap_asia, is.na(gdp))
 ```
 
 To remove all rows where gdp is missing, you can use  `filter(!is.na(gdp))`, but you can also use the special purpose function `drop_na`:
 
 ```{webr}
+#| exercise: demo_drop_na
 drop_na(gap_asia, gdp)
 ```
 
@@ -408,6 +442,7 @@ The output in the examples above were all shown in the sort order the data origi
 This can be achieved with the `arrange` function:
 
 ```{webr}
+#| exercise: demo_arrange_asc
 arrange(gap_asia, life_expectancy)
 ```
 
@@ -417,6 +452,7 @@ By default, `arrange` sorts in ascending order (low to high or A-Z).
 To switch the sorting order, you can use the `desc(column)` function:
 
 ```{webr}
+#| exercise: demo_arrange_desc
 arrange(gap_asia, desc(life_expectancy))
 ```
 
@@ -425,6 +461,7 @@ This shows Hong Kong and Japan in the last decade of the data set to have the hi
 Sorting also works for text columns. So, to sort by country name starting from z, you could use:
 
 ```{webr}
+#| exercise: demo_arrange_text
 arrange(gap_asia, desc(country))
 ```
 
@@ -435,6 +472,7 @@ Finally, you can include multiple sort columns by just giving them as additional
 For example, suppose we want to list first by year (descending) and then (for rows within the same year) by life expectancy, we can use the following:
 
 ```{webr}
+#| exercise: demo_arrange_multi
 arrange(gap_asia, desc(year), life_expectancy)
 ```
 
@@ -450,59 +488,87 @@ To view missing values, you need to do a (temporary) filter to select the missin
 {{< include exercises/_ch03_ex_arrange.qmd >}}
 
 
-## Changing or computing values
+## Changing or computing values with `mutate`
 
-As a final part of this tutorial, let’s look at how you can change
-values using the `mutate` function:
+A final basic tool in the data cleaning toolbox is the `mutate` function.
+With mutate, you can create new columns or change the values in existing columns.
+For example, in order to understand the relation between GDP per capita and
+life expectancy, we would have to first calculate GDP per capita by dividing GDP by population.
 
 ### The `mutate()` function
 
 The mutate function makes it easy to create new variables or to modify
-existing ones. For those more familiar with SPSS, this is what you would
-do with `compute` and `recode`. As a simple example, let’s start again
-with the 538 gun polls data used above:
+existing ones.
 
-``` r
+For example, let's say we would want to make a new population column that is measured in millions of people:
+
+```{webr}
+library(dslabs)
 library(tidyverse)
-url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/poll-quiz-guns/guns-polls.csv"
-gunpolls <- read_csv(url)
-gunpolls <- select(gunpolls, Question, Support,
-                   rep=`Republican Support`, dem=`Democratic Support`)
-```
-
-For example, to transform the Support percentage (0-100) to a proportion
-(0-1), we can divide the column by 100 using `mutate`:
-
-``` r
-mutate(gunpolls, Support_Prop = Support / 100)
+gap <- as_tibble(gapminder)
+gap_recoded <- mutate(gap, pop_millions = population / 1000000)
+head(gap_recoded)
 ```
 
 The syntax of mutate is similar to that of `filter()` and `select()`:
 The first argument is the data frame to mutate, and then any number of
 additional arguments can be given to perform mutations. The mutations
-themselves are named arguments, in which you can provide any
-calculations using existing columns such as `Support`. The result of the
-calculatoin will then be stored in the name of the argument, in this
-case `Support_Prop`. You can also overwrite columns by storing the
-result with an existing column’s name.
+themselves are *named arguments* in the form `column_name = calculation`.
+The result of the calculation will then be stored in the named column,
+which can either be a new column or you can overwrite an existing column.
 
 For calculations, you can use mathematical symbols such as `+`, `/`
 (division), and `*` (multiplication). There are also many useful
 functions that you can use in calculations, such as `round()` to round
-values, `as.numeric()` to change a text column to a numberic column, or
-`abs()` to take the absolute (positive) value of numbers. Feel free to
-play around a bit in the code above.
+values, `floor()` to round values down to the nearest whole number,
+ or `abs()` to take the absolute (positive) value of numbers.
 
-### Exercise
+For example, we can `round` this value to a single decimal:
 
-Using the `gunpolls` data as defined above, can you create a new column
-`party_diff` that contains the absolute value of the difference between
-republican and democratic support? That is, if republican support is 61
-and democratic support is 86 (or the other way around), the difference
-should be 25. Overwrite the gunpolls object with the result (i.e. add
-the column to the existing data set).
-
-``` r
-gunpolls <- mutate(gunpolls, ____)
-gunpolls
+```{webr}
+#| exercise: demo_mutate_round
+gap_recoded <- mutate(gap, pop_millions = round(population / 1000000, 1))
+head(gap_recoded)
 ```
+
+Note that you can calculate multiple columns at the same time.
+For example, we could rescale both population and gdp:
+
+```{webr}
+#| exercise: demo_mutate_multi
+gap_recoded <- mutate(gap,
+  population = round(population / 1000000),
+  gdp = round(gdp / 1000000000)
+)
+head(gap_recoded)
+```
+
+Some things to note here: we now *overwrite* the original columns with new values,
+and by not providing an argument to round we will round to whole numbers.
+
+::: {.callout-note title="Closing brackets and R/RStudio prompts"}
+
+The example above included a multi-line mutate statement.
+More complex and longer statements will be quite common as your code becomes more sophisticated.
+One danger is that you may forget the closing parenthesis (`)`).
+
+In the online interactive prompts, this will lead to a somewhat understandable error message:
+ `unexpected end of input` -- the input ended, but R was still expecting a closing bracket.
+
+If you run an include chunk of code in Rstudio / R, however, it will not give an error message but instead you will see that the prompt changes from `>` to `+`:
+
+```
+> mutate(gap, pop_millions = round(population / 1000000, 1)
++
+```
+
+What the `+` means is that R is still waiting for you to close a parenthesis or a quoted text.
+You can give many extra commands after this, but it will patiently wait for you to close the parenthesis before actually running all of them.
+
+So, when R feels unresponsive, check that it actually gives a `>` prompt.
+If it shows an unexpected `+` prompt,  you can click to  activate the console window,
+press Escape to cancel the current command, and fix and restart the command that was causing trouble.
+:::
+
+{{< include exercises/_ch03_ex_mutate.qmd >}}
+

@@ -5,6 +5,7 @@ Type: project
 Imports:
     tidyverse,
     sf,
-    sjPlot
+    sjPlot,
+    dslabs
 Suggests:
     languageserver
