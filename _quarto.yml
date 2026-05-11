@@ -5,11 +5,11 @@ project:
     - data/
 
 book:
-  title: "Text Analysis in R for Media and Communication"
+  title: "R for Computational Social Science"
   author: "Your Name"
   date: today
   date-format: "YYYY"
-  repo-url: https://github.com/vanatteveldt/tarmac
+  repo-url: https://github.com/vanatteveldt/r4css
   repo-actions: [edit, issue]
   chapters:
     - index.qmd

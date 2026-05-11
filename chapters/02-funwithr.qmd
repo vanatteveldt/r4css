@@ -42,7 +42,7 @@ The code below downloads and reads a CSV file with Dutch election results per mu
 ```{webr}
 #| warning: false
 library(tidyverse)
-download.file("https://raw.githubusercontent.com/vanatteveldt/tarmac/refs/heads/main/data/dutch_elections_2023.csv", "dutch_elections_2023.csv")
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/dutch_elections_2023.csv", "dutch_elections_2023.csv")
 votes <- read_csv("dutch_elections_2023.csv")
 votes
 ```
@@ -184,7 +184,7 @@ For this, let's load a data set of municipality-level statistics provided by the
 
 ```{webr}
 #| warning: false
-download.file("https://raw.githubusercontent.com/vanatteveldt/tarmac/refs/heads/main/data/dutch_demographics.csv", "dutch_demographics.csv")
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/dutch_demographics.csv", "dutch_demographics.csv")
 demographics <- read_csv("dutch_demographics.csv")
 head(demographics)
 ```
