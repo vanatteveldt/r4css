@@ -1,4 +1,4 @@
-# Text Analysis in R for Media and Communication
+# R for Computational Social Science
 
 An interactive Quarto book covering computational text analysis for media and communication researchers. Interactive code examples run directly in the browser via [quarto-live](https://r-wasm.github.io/quarto-live/) (WebAssembly — no server required).
 
