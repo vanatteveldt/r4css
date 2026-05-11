@@ -1,0 +1,15 @@
+---
+title: "Transforming data (todo)"
+webr:
+  resources:
+    - ../data/dutch_demographics.csv
+    - ../data/dutch_elections_2023.csv
+    - ../data/shapes_nl.rds
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+## Recoding data
+
+## Grouping and summarizing data

@@ -1,0 +1,199 @@
+---
+title: Meet the Tidyverse
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+
+```{webr}
+#| autorun: true
+#| include: false
+library(tidyverse)
+```
+
+
+## Introduction to the Tidyverse
+
+The goal of this chapter is to get you acquainted with the
+[Tidyverse](https://www.tidyverse.org/). Tidyverse is a collection of
+packages that have been designed around a singular and clearly defined
+set of principles about what data should look like and how we should
+work with it. It comes with a nice introduction in the [R for Data
+Science](https://r4ds.hadley.nz/) book, for which the digital version is
+available for free. This chapter deals with most of the material in
+chapter 5 of that book.
+
+In this chapter, we’ll focus on working with data using the
+`tidyverse` package. This package includes the `dplyr` (data-pliers)
+packages, which contains most of the tools we’re using below, but it
+also contains functions for reading, analysing and visualising data that
+will be explained later.
+
+::: {.callout-note title="Info"}
+Throughout this chapter (and other chapters) there are interactive code boxes
+and exercises marked with {{< fa play >}}.
+Note that you cannot break anything in these example code boxes! Every
+time you hit the ‘Run code’ button, it will start over from scratch, and you can always press
+the `↻ Start Over` button to reset the example.
+So, feel free to just play around and explore!
+:::
+
+
+
+## The tidyverse package
+
+Tidyverse is a *package* (or actually a collection of packages).
+This means that it's not included in R, but you need to install it separately.  You've probably already done that, but if not,
+install it with the *packages* pane in Rstudio or call `install.packages("tidyverse")`. This is only needed once on your computer, so you don't need to include this code in your scripts.
+
+What you do need to do every time is *activate* the package using
+the `library` function:
+
+```r
+library(tidyverse)
+```
+
+::: {.callout-note title="Common errors"}
+The two most common mistakes in R are forgetting to install a package and forgetting to activate it. In both cases, you will get an *error message*: a text (often displayed in red) that explains what went wrong. Don't panic if you see an error: you will quickly learn to recognize the most common errors, and even if you don't, copy pasting the error into a search or chat engine (or an email to your instructor) often gives you a quick solution.
+
+For example, importing a non-existing package will give an error:
+
+```
+> library(nastyverse)
+Error in library(nastyverse) : there is no package called ‘nastyverse’
+```
+
+As you can see, this gives you an error message: `there is no package called 'nastyverse'` -- this means that either you made a typing error, or you forgot to install the package. If you think the name is correct, a quick `install.packages` generally fixes the problem.
+
+```{webr}
+format_log(100)
+```
+
+As above, this gives you an error message, in this case `could not find function "format_log"`. Again, unless you made a typo, this generally means you forgot to activate a package, in this case the `scales` package, which you can fix with `library(scales)`. But the most important thing is to not panic, read the error message, and either fix it or search for a solution.
+
+**Asking for help:** Also, remember that error messages are actually meant to be helpful, even if they sound complicated and technical.
+The best thing to do is ask for help, including the command you tried and the full error message.
+You can copy paste this into ChatGPT (or Gemini, Claude, etc) or just into google, and it will often tell you  what the problem is and how to fix it. If you have one, you can of course also ask your instructor.
+By including the command and full error message, they will be able to help you much better than if you
+only say that "it doesn't work".
+:::
+
+## Data Frames
+
+In R, most data is in what we call a `data frame`:
+a rectangular data set consisting of rows
+(often items or respondents) and columns (often measurements of or data
+about these items). In 'vanilla' R, these are called `data.frame`, but
+tidyverse has its own version of data frames called `tibble`, which will
+be the default type we use in this book.
+
+As an easy example, Tidyverse ships with a data frame called `gss_cat`, which contains data from the General Social Survey:
+
+```{webr}
+head(gss_cat)
+```
+
+This is a typical survey dataset. Each row corresponds to a respondent,
+and each column represents a question that the respondent answered.
+Substantively, it shows basic demographics such as age, race, and marital status;
+as well as information on income, party identification, religion, and number of hours spent watching TV.
+
+R and tidyverse have a number of ways to inspect the shape and contents of a data frame.
+We've already seen `head` used above, to print the first few rows of a data frame.
+In fact, when you just run the name of a tibble, it also prints the top rows (and first few columns).
+This is one of the advantages of tibbles over default ('vanilla') data frames:
+they detect the size of your screen and print in a way that fits the screen nicely.
+In general, we advise using `head(data)` rather than just `data`,
+because in a Quarto report it will otherwise print the entire data set, which is normally not what you want.
+
+Another really useful function is `glimpse`, which gives an overview of all the columns in the data and a sample of values:
+
+```{webr}
+glimpse(gss_cat)
+```
+
+As you can see when you run this, it displays the total number of rows and columns, and for each column shows the name, type, and a sample of some values.
+If you're working in RStudio, you can also use `View(data)`, which opens the data in a spreadsheet-like view.
+
+## Assigning the results of functions  {#sec-assigning}
+
+The main way to transform and analyse data is by calling *functions*.
+In fact, we've done this a number of times before, such as when we called
+`head(gss_cat)` or `glimpse(gss_cat)`.
+You can recognize a function by the parentheses: `head(gss_cat)` calls the function `head` on the data `gss_cat`,
+displaying the top rows (the 'head' of the data).
+
+Tidyverse offers a number of functions that allow you to manipulate data frames,
+many of which will be explained in the following chapters.
+In general, a function can be seen as a command or instruction to the computer to do something.
+Tidyverse functions almost always take the data frame as a first argument, and *return* a transformed
+copy of the data.
+
+In the examples using `head` and `glimpse` above, the result was
+printed on the screen, but not stored or remembered for later analysis.
+In many cases, you want to store the results of an analysis.
+For example, `filter` allows you to select specific rows from a dataset.
+The code below selects all Protestants from the `gss_cat` data, and
+stores it as a new object `gss_protestants`: (see @sec-filter for more details)
+
+```{webr}
+gss_protestants <- filter(gss_cat, relig == "Protestant")
+head(gss_protestants)
+```
+
+This showcases a common pattern across tidyverse functions:
+you call a function on a dataset (`gss_cat`) with some specific options (`relig == "Protestant"`) and assign (`<-`) the result to a new object (`gss_protestants`).
+The tidyverse function did not change the original data, but instead returned a *changed copy* of the data.
+
+You can also re-assign it to the same object.
+This essentially replaces the object with the transformed version,
+meaning only the new version is now available.
+For example, the code below narrows the `gss_protestants` data to only contain
+non-White respondents:
+
+```{webr}
+#| exercise: ex_filter_assign
+#| setup: true
+gss_protestants <- filter(gss_cat, relig == "Protestant")
+```
+
+```{webr}
+#| exercise: ex_filter_assign
+gss_protestants <- filter(gss_protestants, race != "White")
+head(gss_protestants)
+```
+
+Finally, you can choose not to assign it to anything.
+This will cause the result to be printed on the screen, but not remembered.
+For example, the code below checks whether the `gss_protestants` data
+(which now only contains the non-White respondents) still has other races represented than Black:
+
+```{webr}
+#| exercise: ex_filter_inspect
+#| setup: true
+gss_protestants <- filter(gss_cat, relig == "Protestant", race != "White")
+```
+```{webr}
+#| exercise: ex_filter_inspect
+filter(gss_protestants, race != "Black")
+```
+
+In general, if you only need the new version it's usually best to just replace
+the object, since otherwise you clutter your workspace with multiple versions of the same data.
+Assign to a new object if you need to do specific analyses on e.g. a subset of the data,
+but later want to return to the original for other analyses.
+Finally, if you only want to inspect the data there is no need to assign it to anything.
+
+### Looking ahead
+
+This chapter introduced the idea of the tidyverse and the *data frame* (or tibble) as its main data structure. It also introduced the idea of using *functions* to inspect or transform data.
+Over the next chapters, we'll dive into the toolkit of functions that tidyverse offers: cleaning data, transforming and summarizing it, visualizing it, and reshaping it for analysis.
+
+
+
+::: {.challenge}
+This chapter looked at the `gss_cat` data frame.
+Pick an interesting social science question that could be answered with this data.
+What data cleaning, analysis, and/or visualization would be needed to get to this answer?
+:::

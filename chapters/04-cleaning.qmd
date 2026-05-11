@@ -1,0 +1,409 @@
+---
+title: Data cleaning
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_select', 'demo_illegal_names_show', 'demo_illegal_names_fix', 'demo_filter_pop', 'demo_gap_asia', 'demo_filter_isna', 'demo_drop_na', 'demo_arrange_asc', 'demo_arrange_desc', 'demo_arrange_text', 'demo_arrange_multi', 'demo_mutate_round', 'demo_mutate_multi']
+library(tidyverse)
+library(dslabs)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+gap_dirty <- rename(gap, `Life Expectancy`=life_expectancy)
+```
+
+In this chapter we will start our real deep dive into tidyverse for data analysis.
+Most of the code here will be aimed at *data cleaning*:
+preparing the data for analysis by selecting the appropriate rows and columns, re-ordering the data, and calculating new columns.
+
+## The data challenge: Mind the gap!
+
+For this example, let's have a look at the `gapminder` dataset,
+which contains collection of worldwide, long-term statistics on social, economic, and environmental development.
+
+This dataset is available in R directly in the `dslabs` (data science labs) package. Note that if you run this on your own computer you may have to install the package first with `install.packages("dslabs")`.
+Let's convert the data to a tidyverse 'tibble' and look at the top rows:
+
+```{webr}
+#| warning: false
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+head(gap)
+```
+
+
+::: {.challenge}
+Suppose we would like to know the relation between GDP per capita and fertility in Asian countries.
+Can you think of the sequence of steps that we would need to get from this dataset
+to an answer to that question?
+
+Don't worry if you can't see the answer yet -- this chapter will take you through the steps
+to prepare the data and answer that question. Once you have all the tools in your belt,
+you will be able to answer questions like this.
+:::
+
+::: {.callout-note collapse="true" title="Columns in the gapminder data - click to expand"}
+
+| Variable         | Explanation                                          |
+|------------------|------------------------------------------------------|
+| country          | Name of the country                                  |
+| year             | Year of observation                                  |
+| infant_mortality | Infant deaths per 1,000 live births                  |
+| life_expectancy  | Life expectancy at birth, in years                   |
+| fertility        | Average number of children per woman                 |
+| population       | Total population                                     |
+| gdp              | Gross domestic product                               |
+| continent        | Continent the country belongs to                     |
+| region           | Geographic region within the continent               |
+
+:::
+
+
+## Managing columns with `select` and `rename`
+
+Many datasets contain many more columns than you need,
+and sometimes also have column names that are hard to understand (like `q12`)
+or hard to use in R code because they contain spaces or start with numbers.
+So, let's look at how to select and rename columns.
+
+### Selecting columns with `select`
+
+In data cleaning, a first step is often to *select* only the columns that you need,
+making it easier to see what's going on in the data.
+For example, if we only want to select the country, year and gdp,
+we can select these columns as follows:
+
+```{webr}
+#| exercise: demo_select
+d <- select(gap, country, year, gdp)
+head(d)
+```
+
+As we discussed in @sec-assigning, this uses the standard pattern here of `result <- verb(data, options)`:
+we *select* the specified columns from *gap*, and assign the result to *d*.
+Note that `d` is simply a name *you* assign to the result, so you can pick any name you want
+(and often, a more descriptive name is a good idea).
+
+`select` has a couple more tricks up its sleeve: you can select column ranges
+by using `first_column:last_column`. For example, `select(gap, country:fertility)` will select the first five columns from the original data. You can also drop one or more columns by using a minus sign:
+`select(gap, -region)` will keep all columns except for region.
+
+### Renaming columns with `rename`
+
+There are two ways to rename columns.
+First, the `rename` command does just that: `rename(data, new_name=old_name)` will rename the `old_name` column into `new_name`. For example, `rename(gap, GDP=gdp)` will capitalize the GDP column.
+
+The second method is very similar: in select, you can also use `new_name=old_name` to rename a column:
+`select(gap, country, year, GDP=gdp)` will select the columns country, year, and GDP (renamed from gdp).
+The difference is that select will drop all the other columns, while rename will only rename the mentioned columns but leave the rest as is.
+
+::: {.callout-note title="Illegal names"}
+
+Renaming is especially useful for column names that cannot be directly used in R.
+Suppose that the `life_expectancy` column would instead be called `Life Expectancy` (with a space).
+If you tried to call `select(gap, Life Expectancy)`, R would throw an error because it doesn't understand that `Life Expectancy` is supposed to be a single name.
+You can work around this by placing backticks (`` ` ``) around the column name: ``select(gap, `Life Expectancy`)``.
+However, that gets old really fast, especially because the backtick is very often hard to find on a keyboard.
+
+So, the general advice is to *rename* columns that are not a legal name, e.g. by replacing spaces by underscores (`_`) or by just using a different name. In the rename (or select) command, you can place either backticks or normal quotes (`"` or `'`) around the old name. Suppose that `gap_dirty` contains the column with a space, you can simply use quotes in `select` or `rename` to rename it:
+
+```{webr}
+#| exercise: demo_illegal_names_show
+#| autorun: true
+head(gap_dirty)
+```
+```{webr}
+#| exercise: demo_illegal_names_fix
+gap_cleaned <- rename(gap_dirty, life_expectancy = "Life Expectancy")
+# or alternatively:
+gap_cleaned <- select(gap_dirty, year, country, life_expectancy = "Life Expectancy")
+head(gap_cleaned)
+```
+
+:::
+
+### Exercise: selecting and renaming columns
+
+{{< include exercises/_ch04_ex_select.qmd >}}
+
+## Subsetting data with `filter` {#sec-filter}
+
+In the previous section we looked at selecting columns with the `select`
+function. Another common task is selecting *rows*, which can be done
+with the `filter` function.
+
+### The `filter` function
+
+Looking back at the original question, we would like to determine
+the relationship between GDP and fertility in Asian countries.
+A logical cleaning step would be to make a subset of the data
+that only contain rows where `continent` equals `"Asia"`.
+This can be achieved with the following code:
+
+
+```{webr}
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_asia <- filter(gap, continent == "Asia")
+head(gap_asia)
+```
+
+The line that does the filtering can be read as:
+"Filter the 'gap' dataset to keep only the rows where the `continent` column equals
+the text `"Asia"`, and assign the result to `gap_asia`".
+
+::: {.callout-note title="Why the double equal sign (==)?"}
+
+Note that we use a double equals sign (`==`): in R,
+when you ask a **question** ("are two things equal?") you always use `==`.
+
+The single equals sign (`=`) means **assignment** — giving something a name or value.
+You've already seen this with named arguments to functions:
+`rename(gap, GDP=gdp)` doesn't ask whether `gdp` equals `GDP`,
+it assigns the column `gdp` to the new name `GDP`.
+
+Note: You may also see `=` used to assign variables, e.g. `x = 5`. This works and is identical to `x <- 5`. However, `<-` is more idiomatic in R and will be used throughout this book.
+:::
+
+### Other Comparisons
+
+Besides checking for equality, we can also filter on a value being larger or smaller than
+(or just different from) another value. This is achieved using different *operators* to compare
+the values. The most common comparison operators in R are:
+
+| Operator | Meaning                  | Example                  | Reads as                                        |
+|----------|--------------------------|--------------------------|-------------------------------------------------|
+| `==`     | equal to                 | `continent == "Asia"`    | continent is exactly `"Asia"`                   |
+| `!=`     | not equal to             | `continent != "Asia"`    | continent is anything other than `"Asia"`       |
+| `<`      | less than                | `year < 1980`            | year is before 1980 (excluding 1980)            |
+| `>`      | greater than             | `gdp > 1000`             | gdp is above 1000 (excluding 1000)              |
+| `<=`     | less than or equal to    | `year <= 1980`           | year is 1980 or earlier                         |
+| `>=`     | greater than or equal to | `life_expectancy >= 70`  | life expectancy is 70 or higher                 |
+| `%in%`     | one of the values        | `continent %in% c("Asia", "Europe")` | Continent is one of the values `"Asia"` or `"Europe"` |
+
+So, for example you can select only data from countries with a population of at least 10 million using the `>=` operator:
+
+
+```{webr}
+#| exercise: demo_filter_pop
+filter(gap_asia, population >= 10000000)
+```
+
+Note: In the code above the result of `filter` is not assigned to an object. This means that the result is shown on the screen, but not stored anywhere. This can be very useful to quickly inspect something, but remember that you need to store the result if you want to use it later. See @sec-assigning for more detail.
+
+::: {.callout-note title="To quote or not to quote"}
+In the code above, we 'quoted' the term `Asia` by surrounding it with quotation marks (`"`).
+At the same time, we didn't quote numbers like `10000000` or `gap` or `continent`. This may seem confusing, but there is method to this madness:
+
+- You need to use quotes for *literal text*, such as the word `"Asia"`
+- You do not use quotes for *numbers*, such as `10000000`
+- You do not use quotes for *names* of data frames or columns, such as `gap` or `continent`
+
+There is one exception to the last rule: if the column is not a legal value for a name, e.g. because it contains a space or starts with a number, you need to quote it using backticks (`` ` ``). However, like we explained above, in the select and rename commands you can also use normal quotes to refer to a column containing spaces.
+:::
+
+### Combining criteria
+
+Finally, you can combine multiple criteria in a single filter call.
+This can be achieved using `&` meaning *and*, and `|` meaning *or*.
+If you combine both `&` and `|` in a single call, you should use parentheses
+to make clear what you mean:
+`(year == 2015 | year == 2016) & region == "Southern Asia"` will select all entries from Southern Asia where the year is either 2015 or 2016. If you place the parentheses differently, the meaning shifts: `year == 2015 | (year == 2016 & region == "Southern Asia")` means selecting all data from the year 2015, and data from 2016 only where the region is Southern Asia.
+
+If you give multiple criteria as separate arguments (that is, separated with a comma `,`)
+they effectively function as *and* as well. So, `filter(year==2015, country=="Brunei")` is identical to `filter(year == 2015 & country == "Brunei")`, and will only keep the rows for that specific country in that specific year.
+
+Finally, you can also use `!` to negate a condition. For example, `!(continent %in% c("Asia", "Europe"))` keeps rows where the continent is not Asia or Europe. Together, `&`, `|`,  `!`, and `()` let you build up arbitrary combinations of conditions.
+
+
+### Exercise: Filtering data
+
+{{< include exercises/_ch04_ex_filter.qmd >}}
+
+### Removing missing values
+
+Often, data contains *missing values*, for example survey questions that
+were not answered or other data that is missing or unknown.
+In the `gapminder` data, for example, the data for infant mortality, fertility, population and GDP is sometimes missing:
+
+```{webr}
+#| exercise: demo_gap_asia
+#| autorun: true
+gap_asia
+```
+
+In R, such
+values are called `NA` (Not Available).
+Many operations in R, such as calculating descriptive statistics or running models, can give unexpected results if the data contain missing values.
+For this reason, you often have to deal with missing values explicitly, often by removing the rows that are missing crucial data.
+
+A complication here is that comparisons with
+missing values are automatically missing as well:
+if `gdp` is missing, `gdp > 100` will also be `NA`.
+This may seem strange, but the reason for this is that we don't know whether GDP is larger or smaller than 100, as we are missing that measurement. Even `gdp == NA` does not work: if gdp is missing, we don't know whether it's equal to some other value that's also missing, so the comparison will always result in `NA`.
+
+For this reason, you need to use special functions to deal with missing values: `is.na(column)` tests which values in a specific column are missing,
+while `drop_na(data)` removes data with missing values.
+
+Going back to the example, to see which rows have missing gdp data we can use `filter(is.na(gdp))`:
+
+```{webr}
+#| exercise: demo_filter_isna
+filter(gap_asia, is.na(gdp))
+```
+
+To remove all rows where gdp is missing, you can use  `filter(!is.na(gdp))`, but you can also use the special purpose function `drop_na`:
+
+```{webr}
+#| exercise: demo_drop_na
+drop_na(gap_asia, gdp)
+```
+
+Note that if you provide multiple columns to `drop_na` it drops rows where any of the columns is missing. If you don't give any columns it will drop all rows with missing values (the equivalent to the base-R `na.omit` function).
+
+
+{{< include exercises/_ch04_ex_filter_na.qmd >}}
+
+## Sorting data with `arrange`
+
+The output in the examples above were all shown in the sort order the data originally had, which turns out to be by year (starting with 1960) and then by country. In many cases, you want to sort by value so you can immediately see e.g. which countries have the highest life expectancy.
+
+### The arrange function
+
+This can be achieved with the `arrange` function:
+
+```{webr}
+#| exercise: demo_arrange_asc
+arrange(gap_asia, life_expectancy)
+```
+
+So, it turns out that Cambodia had extremely low life expectancy during the Khmer Rouge regime in the late 1970's (and if you look at the population column you can see total population actually dropped from over 7.5 million in 1975 to under 7 million from 1978!)
+
+By default, `arrange` sorts in ascending order (low to high or A-Z).
+To switch the sorting order, you can use the `desc(column)` function:
+
+```{webr}
+#| exercise: demo_arrange_desc
+arrange(gap_asia, desc(life_expectancy))
+```
+
+This shows Hong Kong and Japan in the last decade of the data set to have the highest life expectancy of 83 years.
+
+Sorting also works for text columns. So, to sort by country name starting from z, you could use:
+
+```{webr}
+#| exercise: demo_arrange_text
+arrange(gap_asia, desc(country))
+```
+
+
+### Multiple sort columns
+
+Finally, you can include multiple sort columns by just giving them as additional arguments.
+For example, suppose we want to list first by year (descending) and then (for rows within the same year) by life expectancy, we can use the following:
+
+```{webr}
+#| exercise: demo_arrange_multi
+arrange(gap_asia, desc(year), life_expectancy)
+```
+
+So, in 2016 the lowest life expectancy was in Yemen at almost 65 years.
+
+Note that missing values are always sorted at the bottom. So,
+neither `arrange(gap_asia, gdp)` nor `arrange(gap_asia, desc(gdp))`
+will show the missing values in the gdp column at the top.
+To view missing values, you need to do a (temporary) filter to select the missing values using `filter(is.na(column))` as explained above.
+
+### Exercise
+
+{{< include exercises/_ch04_ex_arrange.qmd >}}
+
+
+## Changing or computing values with `mutate`
+
+A final basic tool in the data cleaning toolbox is the `mutate` function.
+With mutate, you can create new columns or change the values in existing columns.
+For example, in order to understand the relation between GDP per capita and
+life expectancy, we would have to first calculate GDP per capita by dividing GDP by population.
+
+### The `mutate()` function
+
+The mutate function makes it easy to create new variables or to modify
+existing ones.
+
+For example, let's say we would want to make a new population column that is measured in millions of people:
+
+```{webr}
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_recoded <- mutate(gap, pop_millions = population / 1000000)
+head(gap_recoded)
+```
+
+The syntax of mutate is similar to that of `filter()` and `select()`:
+The first argument is the data frame to mutate, and then any number of
+additional arguments can be given to perform mutations. The mutations
+themselves are *named arguments* in the form `column_name = calculation`.
+The result of the calculation will then be stored in the named column,
+which can either be a new column or you can overwrite an existing column.
+
+For calculations, you can use mathematical symbols such as `+`, `/`
+(division), and `*` (multiplication). There are also many useful
+functions that you can use in calculations, such as `round()` to round
+values, `floor()` to round values down to the nearest whole number,
+ or `abs()` to take the absolute (positive) value of numbers.
+
+For example, we can `round` this value to a single decimal:
+
+```{webr}
+#| exercise: demo_mutate_round
+gap_recoded <- mutate(gap, pop_millions = round(population / 1000000, 1))
+head(gap_recoded)
+```
+
+Note that you can calculate multiple columns at the same time.
+For example, we could rescale both population and gdp:
+
+```{webr}
+#| exercise: demo_mutate_multi
+gap_recoded <- mutate(gap,
+  population = round(population / 1000000),
+  gdp = round(gdp / 1000000000)
+)
+head(gap_recoded)
+```
+
+Some things to note here: we now *overwrite* the original columns with new values,
+and by not providing an argument to round we will round to whole numbers.
+
+::: {.callout-note title="Closing brackets and R/RStudio prompts"}
+
+The example above included a multi-line mutate statement.
+More complex and longer statements will be quite common as your code becomes more sophisticated.
+One danger is that you may forget the closing parenthesis (`)`).
+
+In the online interactive prompts, this will lead to a somewhat understandable error message:
+ `unexpected end of input` -- the input ended, but R was still expecting a closing bracket.
+
+If you run an include chunk of code in Rstudio / R, however, it will not give an error message but instead you will see that the prompt changes from `>` to `+`:
+
+```
+> mutate(gap, pop_millions = round(population / 1000000, 1)
++
+```
+
+What the `+` means is that R is still waiting for you to close a parenthesis or a quoted text.
+You can give many extra commands after this, but it will patiently wait for you to close the parenthesis before actually running all of them.
+
+So, when R feels unresponsive, check that it actually gives a `>` prompt.
+If it shows an unexpected `+` prompt,  you can click to  activate the console window,
+press Escape to cancel the current command, and fix and restart the command that was causing trouble.
+:::
+
+{{< include exercises/_ch04_ex_mutate.qmd >}}
