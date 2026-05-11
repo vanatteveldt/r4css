@@ -13,10 +13,14 @@ book:
   repo-actions: [edit, issue]
   chapters:
     - index.qmd
-    - part: "Foundations"
+    - part: "Data Analysis with Tidyverse"
       chapters:
         - chapters/02-funwithr.qmd
-        - chapters/03-tidydata.qmd
+        - chapters/03-tidyverse.qmd
+        - chapters/04-cleaning.qmd
+        - chapters/05-transforming.qmd
+        - chapters/06-visualizing.qmd
+        - chapters/07-reshaping.qmd
     - chapters/references.qmd
 
 bibliography: references.bib
