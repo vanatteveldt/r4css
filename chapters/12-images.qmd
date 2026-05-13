@@ -1,0 +1,12 @@
+---
+title: "Dealing with Images (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Working with image data end-to-end: loading, preprocessing (resizing, normalizing, metadata extraction), and analysis via vision LLMs or other APIs. Whether to also include embeddings and clustering here or move them entirely to Part III (chapter 14) is still to be decided — depends on how much the preprocessing section grows.
+
+(could also be a nice teaser to whet the appetite for the perhaps harder topics in part III?)
+:::

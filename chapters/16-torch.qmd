@@ -1,0 +1,10 @@
+---
+title: "Neural Networks, Deep Learning, and Transformers: torch (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Using pre-trained neural networks and transformer models via `torch`. Emphasis on *using* models rather than building them from scratch — fine-tuning a pre-trained model for a classification task is the target level of ambition. Provides the conceptual grounding for what `tidyllm` (chapter 11) was doing under the hood and a better understanding of modern AI
+:::

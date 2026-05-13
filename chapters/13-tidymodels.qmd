@@ -1,0 +1,10 @@
+---
+title: "Basics of Machine Learning: tidymodels (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Core supervised ML workflow with `tidymodels`: train/test splits, cross-validation, model fitting, and evaluation. Given the limited number of compelling non-text SML use cases in social science, examples may lean toward text or image data — or this chapter introduces the framework with a simple tabular case before later chapters apply it to text. Link with statistics and difference between prediction and understanding is explicated.
+:::

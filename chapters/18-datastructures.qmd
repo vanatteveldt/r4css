@@ -1,0 +1,10 @@
+---
+title: "Data Structures: Lists, JSON, Matrix (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Reference chapter on R data structures beyond the data frame. Covers lists (including nested/hierarchical data), JSON parsing, and matrices. Practically motivated: API responses (chapters 11–12) return nested lists/JSON; matrices underlie the linear algebra in Part III. Positioned as reference — readers can return here when they encounter these structures.
+:::

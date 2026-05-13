@@ -1,0 +1,10 @@
+---
+title: "Using LLMs: tidyllm (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Practical LLM use via API with `tidyllm`. Covers sending prompts and handling responses, using both proprietary APIs and local models via Ollama. Deliberately treats the LLM as a black box — what's actually happening under the hood (embeddings, transformers) is covered in Part III.
+:::

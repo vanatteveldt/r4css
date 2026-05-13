@@ -1,0 +1,10 @@
+---
+title: "Dealing with Text: stringr (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** String manipulation with `stringr` as the foundation for working with text data. Covers pattern matching (regex), string detection, extraction, replacement, and splitting. Focuses on cleaning and preparing raw text before analysis rather than analysis itself.
+:::

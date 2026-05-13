@@ -1,0 +1,10 @@
+---
+title: "Text as Data: tidytext (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Rule- and dictionary-based text analysis with `tidytext`. Covers tokenization, word frequencies, TF-IDF, and sentiment analysis. Deliberately stays at the interpretable/rule-based level — embeddings and statistical/ML approaches are in Part III.
+:::

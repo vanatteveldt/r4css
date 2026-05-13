@@ -1,0 +1,10 @@
+---
+title: "From Script to Software (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Practical software engineering for researchers: writing R packages, code style and organisation, version control with git, and distribution via containers (Docker). Aimed at researchers who want to share reproducible workflows or move beyond one-off scripts.
+:::

@@ -1,0 +1,10 @@
+---
+title: "Flow Control: if/else, while, for (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Reference chapter on explicit flow control in R. Covers conditionals (`if`/`else`, `ifelse`, `case_when`) and loops (`for`, `while`). Positioned as reference material — the tidyverse/purrr workflow means readers rarely need explicit loops in practice, but understanding them is useful for reading others' code and for edge cases.
+:::

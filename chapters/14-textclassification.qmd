@@ -1,0 +1,12 @@
+---
+title: "Supervised Text Classification: textrecipes (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Applying the `tidymodels` framework to text using `textrecipes` for feature engineering. Covers bag-of-words, TF-IDF features, and embedding-based features as inputs to classifiers. Builds directly on chapters 13 (ML workflow) and provides a concrete social-science use case for supervised ML.
+
+Perhaps discuss topic models also as a teaser for ch 15, but perhaps not as who uses lda these days?
+:::

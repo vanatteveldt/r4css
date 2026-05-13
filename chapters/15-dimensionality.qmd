@@ -1,0 +1,10 @@
+---
+title: "Dimensionality Reduction: Clustering and Embeddings (todo)"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** Unsupervised approaches to making sense of high-dimensional data. Covers clustering (k-means, hierarchical) and dimensionality reduction (PCA, UMAP), with embeddings as a key use case — both word/document embeddings from text and image embeddings from vision models. This is where the conceptual payoff for the "black box" LLM chapter lands.
+:::
