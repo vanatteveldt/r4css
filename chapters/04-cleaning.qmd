@@ -37,7 +37,8 @@ head(gap)
 
 
 ::: {.challenge}
-Suppose we would like to know the relation between GDP per capita and fertility in Asian countries.
+Suppose we would like to know the relation between GDP per capita and life expectancy in Asian countries: Do people in richer countries live longer lives?
+
 Can you think of the sequence of steps that we would need to get from this dataset
 to an answer to that question?
 
@@ -139,7 +140,7 @@ with the `filter` function.
 ### The `filter` function
 
 Looking back at the original question, we would like to determine
-the relationship between GDP and fertility in Asian countries.
+the relationship between GDP and life expectancy in Asian countries.
 A logical cleaning step would be to make a subset of the data
 that only contain rows where `continent` equals `"Asia"`.
 This can be achieved with the following code:
@@ -323,87 +324,47 @@ To view missing values, you need to do a (temporary) filter to select the missin
 
 {{< include exercises/_ch04_ex_arrange.qmd >}}
 
+## GDP and life expectancy
 
-## Changing or computing values with `mutate`
+In the exercise above, you prepared the dataset for determining the relation between GDP and life expectancy.
 
-A final basic tool in the data cleaning toolbox is the `mutate` function.
-With mutate, you can create new columns or change the values in existing columns.
-For example, in order to understand the relation between GDP per capita and
-life expectancy, we would have to first calculate GDP per capita by dividing GDP by population.
-
-### The `mutate()` function
-
-The mutate function makes it easy to create new variables or to modify
-existing ones.
-
-For example, let's say we would want to make a new population column that is measured in millions of people:
+The code below finalizes this exercise by
+using `mutate` to compute the GDP per capita,
+and using `ggplot` to show the relation.
+These functions are the topic of the next two chapters,
+so stay tuned to get a more in-depth explanation
 
 ```{webr}
+#| setup: true
+#| exercise: ex_mutate_demo
 library(dslabs)
 library(tidyverse)
-gap <- as_tibble(gapminder)
-gap_recoded <- mutate(gap, pop_millions = population / 1000000)
-head(gap_recoded)
+gap_asia_subset <- as_tibble(gapminder) |>
+  filter(year == 2010, !is.na(gdp), continent == "Asia") |>
+  arrange(desc(gdp))
 ```
-
-The syntax of mutate is similar to that of `filter()` and `select()`:
-The first argument is the data frame to mutate, and then any number of
-additional arguments can be given to perform mutations. The mutations
-themselves are *named arguments* in the form `column_name = calculation`.
-The result of the calculation will then be stored in the named column,
-which can either be a new column or you can overwrite an existing column.
-
-For calculations, you can use mathematical symbols such as `+`, `/`
-(division), and `*` (multiplication). There are also many useful
-functions that you can use in calculations, such as `round()` to round
-values, `floor()` to round values down to the nearest whole number,
- or `abs()` to take the absolute (positive) value of numbers.
-
-For example, we can `round` this value to a single decimal:
 
 ```{webr}
-#| exercise: demo_mutate_round
-gap_recoded <- mutate(gap, pop_millions = round(population / 1000000, 1))
-head(gap_recoded)
+#| exercise: ex_mutate_demo
+gap_subset_capita <- mutate(gap_asia_subset, gdp_per_capita=gdp / population)
+ggplot(gap_subset_capita, aes(x=gdp_per_capita, y=life_expectancy)) +
+  geom_point() +
+  theme_classic() +
+  labs(title="Relation between GDP and life expectancy in Asia in 2010",
+       caption="Source: Gapminder", x="GDP per Capita", y="Life expectancy")
 ```
 
-Note that you can calculate multiple columns at the same time.
-For example, we could rescale both population and gdp:
+::: {.challenge}
+What is your substantive conclusion about GDP per capita and life expectancy
+based on the plot above?
 
-```{webr}
-#| exercise: demo_mutate_multi
-gap_recoded <- mutate(gap,
-  population = round(population / 1000000),
-  gdp = round(gdp / 1000000000)
-)
-head(gap_recoded)
-```
+What happens when you replace `life_expectancy` with `fertility`?
+How do you interpret the new graph?
 
-Some things to note here: we now *overwrite* the original columns with new values,
-and by not providing an argument to round we will round to whole numbers.
+More technically, although you're not expected to fully understand the `ggplot` code yet,
+that's no reason to not play around with it:
 
-::: {.callout-note title="Closing brackets and R/RStudio prompts"}
-
-The example above included a multi-line mutate statement.
-More complex and longer statements will be quite common as your code becomes more sophisticated.
-One danger is that you may forget the closing parenthesis (`)`).
-
-In the online interactive prompts, this will lead to a somewhat understandable error message:
- `unexpected end of input` -- the input ended, but R was still expecting a closing bracket.
-
-If you run an include chunk of code in Rstudio / R, however, it will not give an error message but instead you will see that the prompt changes from `>` to `+`:
-
-```
-> mutate(gap, pop_millions = round(population / 1000000, 1)
-+
-```
-
-What the `+` means is that R is still waiting for you to close a parenthesis or a quoted text.
-You can give many extra commands after this, but it will patiently wait for you to close the parenthesis before actually running all of them.
-
-So, when R feels unresponsive, check that it actually gives a `>` prompt.
-If it shows an unexpected `+` prompt,  you can click to  activate the console window,
-press Escape to cancel the current command, and fix and restart the command that was causing trouble.
+- Try changing the theme, e.g. to `theme_linedraw` or `theme_void`
+- Try adding `color=region` or `size=population` to the `aes` function
+- What happens to the plot when you replace `gdp_per_capita` by `log10(gdp_per_capita)`? Does it change the substantive interpretation? Why would you do this?
 :::
-
-{{< include exercises/_ch04_ex_mutate.qmd >}}
