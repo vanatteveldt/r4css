@@ -30,7 +30,7 @@ packages, which contains most of the tools we’re using below, but it
 also contains functions for reading, analysing and visualising data that
 will be explained later.
 
-::: {.callout-note title="Info"}
+::: {.callout-tip title="Info"}
 Throughout this chapter (and other chapters) there are interactive code boxes
 and exercises marked with {{< fa play >}}.
 Note that you cannot break anything in these example code boxes! Every
@@ -54,7 +54,7 @@ the `library` function:
 library(tidyverse)
 ```
 
-::: {.callout-note title="Common errors"}
+::: {.callout-tip title="Common errors"}
 The two most common mistakes in R are forgetting to install a package and forgetting to activate it. In both cases, you will get an *error message*: a text (often displayed in red) that explains what went wrong. Don't panic if you see an error: you will quickly learn to recognize the most common errors, and even if you don't, copy pasting the error into a search or chat engine (or an email to your instructor) often gives you a quick solution.
 
 For example, importing a non-existing package will give an error:

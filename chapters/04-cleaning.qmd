@@ -102,7 +102,7 @@ The second method is very similar: in select, you can also use `new_name=old_nam
 `select(gap, country, year, GDP=gdp)` will select the columns country, year, and GDP (renamed from gdp).
 The difference is that select will drop all the other columns, while rename will only rename the mentioned columns but leave the rest as is.
 
-::: {.callout-note title="Illegal names"}
+::: {.callout-tip title="Illegal names"}
 
 Renaming is especially useful for column names that cannot be directly used in R.
 Suppose that the `life_expectancy` column would instead be called `Life Expectancy` (with a space).
@@ -158,7 +158,7 @@ The line that does the filtering can be read as:
 "Filter the 'gap' dataset to keep only the rows where the `continent` column equals
 the text `"Asia"`, and assign the result to `gap_asia`".
 
-::: {.callout-note title="Why the double equal sign (==)?"}
+::: {.callout-tip title="Why the double equal sign (==)?"}
 
 Note that we use a double equals sign (`==`): in R,
 when you ask a **question** ("are two things equal?") you always use `==`.
@@ -197,7 +197,7 @@ filter(gap_asia, population >= 10000000)
 
 Note: In the code above the result of `filter` is not assigned to an object. This means that the result is shown on the screen, but not stored anywhere. This can be very useful to quickly inspect something, but remember that you need to store the result if you want to use it later. See @sec-assigning for more detail.
 
-::: {.callout-note title="To quote or not to quote"}
+::: {.callout-tip title="To quote or not to quote"}
 In the code above, we 'quoted' the term `Asia` by surrounding it with quotation marks (`"`).
 At the same time, we didn't quote numbers like `10000000` or `gap` or `continent`. This may seem confusing, but there is method to this madness:
 

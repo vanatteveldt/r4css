@@ -46,4 +46,4 @@ Most sections end with an exercise - look for blue frames marked `✏️ Exercis
 
 There are also frames marked `🧩 Challenge`. These will challenge you to either think about the outcomes a bit more deeply, or make some additional changes to the code. Generally there will be no single 'right' solution. Don't feel stressed if you don't immediately see the solution, very often the tools you need will be introduced in later sections.
 
-Finally, there are frames marked with an `ⓘ`. These give more in-depth explanation about the code or concepts that were just introduced, and will explain many 'gotchas' that we've seen students struggle with before.
+Finally, there are frames marked with an `💡`. These give more in-depth explanation about the code or concepts that were just introduced, and will explain many 'gotchas' that we've seen students struggle with before.

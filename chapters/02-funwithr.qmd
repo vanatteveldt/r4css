@@ -60,7 +60,7 @@ Can you guess what the columns mean?
 Each column lists a column type (`<chr>`, `<dbl>`) as well, what do they stand for?
 :::
 
-::: {.callout-note title="Info"}
+::: {.callout-tip title="Info"}
 Note that you cannot break anything in these example code boxes! Every
 time you hit the ‘Run code’ button, it will start over from scratch.
 Moreover, if you feel that you have messed up the code, you can press
@@ -88,7 +88,7 @@ example, the code below shows the results for a single municipality
 
 {{< include exercises/_ch02_ex_filter.qmd >}}
 
-::: {.callout-note title="Info"}
+::: {.callout-tip title="Info"}
 The code box above is an exercise with a single correct solution. You
 need to change some code and click the `► Run Code` button to
 submit your answer. Don’t worry about making mistakes, you can try as
@@ -124,7 +124,7 @@ votes |>
   ggplot() + geom_col(aes(y=party, x=votes))
 ```
 
-::: {.callout-note title="Tidyverse pipelines: |>"}
+::: {.callout-tip title="Tidyverse pipelines: |>"}
 In tidyverse, we often apply multiple operations to a data set.
 In this case, we filter it, slice the top 10 parties, and then plot it.
 A powerful way to do this in R and especially tidyverse is by using the
@@ -164,7 +164,7 @@ Can you run this graph for Groningen? Why are two parties displayed in grey?
 Can you give them nice colors?
 :::
 
-::: {.callout-note title="Info"}
+::: {.callout-tip title="Info"}
 Don't worry about completely understanding the ggplot syntax --
 we will explain it in much more detail later and in any case it can take a while to grow on you.
 But as a very short primer: the idea behing ggplot is that you
@@ -240,7 +240,7 @@ This might seem awkward, but since e.g. population doesn't vary per party it's t
 with the voting results that are there for each municipality and party.
 It will also turn out that this is actually a fairly useful representation when we start analysing and visualising it.
 
-::: {.callout-note title="Joining on different columns"}
+::: {.callout-tip title="Joining on different columns"}
 You can see that it actually joined on two columns, `gm` and `municipality` -- the default behavior is to join on all columns with identical names.
 In this case, this is perfectly fine as the municipality column is also identical between the two data sets.
 If needed, you can specify which columns to join on using `by=`, but I would generally just rename or delete columns so columns with identical names
@@ -401,7 +401,7 @@ ggplot(data = shapes) +
   geom_sf(aes(geometry = geom, fill = province))
 ```
 
-::: {.callout-note title="Shape files"}
+::: {.callout-tip title="Shape files"}
 We provided a custom shape file for Dutch municipalities as the Netherlands is not included in a standard R package, but the shapes were kindly provided by the statistics bureau. You can generally find shape files for other countries online, some built into R packages, some that still need to be converted. For more information and many US-centric examples, check out [Data Visualization Chapter 7: Draw Maps](https://socviz.co/07-maps.html)
 
 :::

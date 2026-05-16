@@ -151,7 +151,7 @@ Lastly, note also that the second line computes `gross`, and the third line than
 modifies this newly computed value.
 In general, you can use the result of previous calculations directly within the same mutate function.
 
-::: {.callout-note title="Closing brackets and R/RStudio prompts"}
+::: {.callout-tip title="Common error: Closing brackets and R/RStudio prompts"}
 
 The example above included a multi-line mutate statement.
 More complex and longer statements will be quite common as your code becomes more sophisticated.
@@ -189,7 +189,7 @@ The `if_else` function checks a condition for each row, and chooses one value if
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_ifelse', 'demo_recode', 'demo_recode2', 'demo_casewhen']
+#| exercise: ['demo_ifelse', 'demo_recode', 'demo_recode2', 'demo_casewhen', 'demo_casewhen2']
 library(tidyverse)
 bechdel <- read_csv("data/bechdel.csv") |>
   mutate(gross = domgross + intgross)
@@ -280,7 +280,7 @@ unless an optional argument `default="Some value"` is given, in
 which case that value is used instead.
 
 
-::: {.callout-note title="Package versions and updating packages"}
+::: {.callout-tip title="Package versions and updating packages"}
 In this section we used the `recode_values` function.
 This function was introduced in `dplyr` version 1.2, released in April 2026.
 
@@ -323,7 +323,88 @@ and/or `pak` for more sophisticated dependency management.
 
 ### Arbitrary recoding with `case_when`
 
-The final recoding function in this section is `case_when`.
+`recode_values` allowed us to create recode rules by specifying `old ⤳ new` pairs.
+Sometimes, however, there is no clear 1:1 mapping between old and new,
+especially when dealing with continuous ranges or comparisons involving multiple columns.
 
+For a simple example let's start with the task of recoding the year into periods:
+
+```{webr}
+#| exercise: demo_casewhen
+bechdel <- mutate(bechdel, decade = case_when(
+  year < 1980 ~ 1970,
+  year < 1990 ~ 1980,
+  year < 2000 ~ 1990,
+  year < 2010 ~ 2000,
+  .default = 2010
+))
+head(bechdel)
+```
+
+Again, take a minute to look at the syntax of `case_when`,
+as it is similar to, but also slightly different from `recode_values`:
+
+1. First, `case_when` has no separate input column argument, jumping directly to the recode rules which include the column name(s) in their conditions.
+2. Second, the recode rules take arbitrary conditions, such as the
+   `year < 1980` condition, rather than specifying only the input value.
+   This makes the conditions a bit more verbose as you repeat the column name,
+   but do offer the flexibility of using more powerful expressions,
+   such as the comparisons used above.
+3. Third, `case_when` will evaluate the rules in the order given. So, if `year < 1980`
+   it will return 1970, even if the next condition (`year < 1990`) also matches.
+4. Finally, like `recode_values` it accepts a `.default=` argument which is used
+   if none of the rules match, but confusingly it's called `.default=` here,
+   and `default=` for `recode_values`
+
+Note that the example above shows only a relatively simple application of `case_when`
+(and frankly one that could be replaced easily by a `recode_values`).
+The real power of `case_when` lies in its ability to use multiple columns and
+conditions that cannot be simply expressed as discrete values.
+
+For a more complicated example, let's classify movies into `big-budget success`,
+`big-budget flop`, `indie success`, and `indie flop`:
+
+```{webr}
+#| exercise: demo_casewhen2
+bechdel <- mutate(bechdel,
+  gross = domgross + intgross,
+  roi = gross / budget,
+  category = case_when(
+    budget > 50000000 & roi > 1 ~ "big-budget success",
+    budget > 50000000 ~ "big-budget flop",
+    roi > 1  ~ "indie success",
+    .default = "indie flop"
+    ))
+head(select(bechdel, year, title, budget, gross, roi, category))
+```
+
+Again, have a careful look at the code above.
+It features three new columns that all build on each other (`gross`, `roi`, and `category`).
+In the `case_when` rules, it combines comparisons of the budget and the roi:
+
+1. First, a high budget and `roi > 1` is coded as a 'big-budget success'.
+2. The next rule codes any other film with a high budget as a 'big-budget flop': a check for `roi <= 1` is not needed as these would have been matched by the first rule.
+3. Then, it codes every remaining profit-making film as an 'indie success', as all high budget films are already coded by the first two rules.
+4. Finally, all remaining films must be 'indie flops', as all other categories are already coded.
+
+::: {.callout-tip title="When to use which recode function?"}
+
+This section introduced three different recode functions, each with their own use case.
+Like a carpenter with different tools in their box, you should choose the most appropriate tool
+for a specific use case. To help, the table below summarizes the three functions:
+
+| Function | Description | Use case |
+|----------|-------------|----------|
+| `if_else(cond, yes, no)` | Returns `yes` where `cond` is `TRUE`, `no` otherwise | Binary outcomes (pass/fail, profit/loss) |
+| `recode_values(x, old ~ new, ...)` | Replaces specific input values with specific output values | One-to-one or many-to-one value substitution for categorical data |
+| `case_when(cond ~ result, ..., .default = ...)` | Evaluates rules top-to-bottom, returns the result of the first matching condition | Multi-way recoding based on conditions — ranges, thresholds, multi-column logic |
+
+R being R, there are of course many more functions for recoding.
+However, we suggest using the newer `recode_values` instead of `recode` or `case_match` (unless you're stuck on an old R version), as the newer function is a clear improvement over the older functions. Similarly, avoid the built-in `ifelse` function in favor of tidyverse's `if_else` (with the underscore `_`) function: the functions are generally the same, but `if_else` avoids some serious (but rare) problems with data types, for example when dealing with date/time values.
+:::
+
+
+
+### Exercise
 
 ## Grouping and summarizing data
