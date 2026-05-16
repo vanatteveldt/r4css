@@ -6,6 +6,7 @@ Imports:
     tidyverse,
     sf,
     sjPlot,
-    dslabs
+    dslabs,
+    here
 Suggests:
     languageserver

@@ -1,0 +1,76 @@
+::: {.exercise}
+Starting from the original `bechdel` data set,
+modify the code below to compute two new columns:
+
+ - `gross`: The total gross income of a movie (international plus domestic)
+ - `roi` The Return on Investment of each movie (gross income divided by budget)
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_mutate
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+```
+```{webr}
+#| exercise: ex_mutate
+bechdel <- mutate(...)
+head(bechdel)
+```
+
+::: { .hint exercise="ex_mutate"}
+::: { .callout-tip title="Hint:"}
+- You should compute two columns with two separate arguments to mutate
+- Use the pattern `mutate(data, new_column = calculation)`
+- Remember that you don't need to quote column names, and that you can use the column created in the first calculation in the second
+:::
+:::
+
+::: {.solution exercise="ex_mutate"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+- You should compute two columns with two separate arguments to mutate: `mutate(bechdel, gross = ____, roi = ____)`
+- Use the pattern `mutate(data, new_column = calculation, second_column = calculation)`
+- Remember that you don't need to quote column names, and that you can use the `gross` column created in the first calculation in the second
+
+```{webr}
+#| exercise: ex_mutate
+#| solution: true
+bechdel <- mutate(bechdel,
+  gross = intgross + domgross,
+  roi = gross / budget
+)
+head(bechdel)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_mutate
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(
+      !"gross" %in% names(.result),
+      "Did you create a `gross` column?"
+    )
+    gradethis::fail_if(
+      !"roi" %in% names(.result),
+      "Did you create an `roi` column?"
+    )
+    # Inverted ROI (the mistake we explicitly anticipated)
+    if ("roi" %in% names(.result) &&
+        "gross" %in% names(.result) &&
+        isTRUE(all.equal(.result$roi, .result$budget / .result$gross))) {
+      gradethis::fail(
+        "It looks like you divided budget by gross. ROI is conventionally the other way around: gross / budget — how much you got back per dollar invested."
+      )
+    }
+  }
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+})
+```

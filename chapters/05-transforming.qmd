@@ -1,15 +1,329 @@
 ---
-title: "Transforming data (todo)"
+title: "Transforming data"
 webr:
   resources:
-    - ../data/dutch_demographics.csv
-    - ../data/dutch_elections_2023.csv
-    - ../data/shapes_nl.rds
+    - ../data/bechdel.csv
 ---
+
+<!-- TODO(2026-09): Verify webR has dplyr ≥1.2 before teaching.
+     If still 1.1.4, swap `recode_values` for `case_match` (same syntax, just rename). -->
+That guarantees the future-you opening the file in September sees the note in context, not buried in a separate task list.
+
+
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-## Recoding data
+
+Where the previous chapter dealt with selecting columns, filtering rows,
+and rearranging the resulting data set,
+this chapter will look into transforming data by calculating new values
+and summarizing groups of rows.
+
+As a running example through this chapter, let's have a look at the `bechdel` data,
+which contains information on the famous *Bechdel test* for female representation in films:
+does the film contain any scene where two women talk about something other than a man?
+This might seem a very low bar, but that will turn out to be a fairly naive assumption.
+
+Note that this dataset is a simplified version of the data published by the [538 data-driven politics blog](https://github.com/fivethirtyeight/data), now sadly discontinued.
+Although ABC (the new owner of 538) removed the earlier articles
+(literally the day that we wrote the first version of this chapter!),
+you can still read the original article using the archive.ph link:
+[The Dollar-And-Cents Case Against Hollywood’s Exclusion of Women](https://archive.ph/e7xDQ).
+
+To download and read the data, we use the built-in `download.file` function and the tidyverse `read_csv` function:
+
+```{webr}
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/bechdel.csv", "bechdel.csv")
+bechdel <- read_csv("bechdel.csv")
+head(bechdel)
+```
+
+::: {.challenge}
+Looking at the column names and types, can you take a guess at what each column means?
+
+Suppose we want to know whether movies with better female representation give a better return on investment. What steps would we need to take to find this answer? And what if we want to know whether female representation is improving?
+
+Thinking ahead for the next chapter on visualization:
+- what kind of plots did they use in the linked 538 article?
+- What data steps would be needed to produce the numbers for these figures?
+- Can you think of other useful visualizations for this data?
+:::
+
+::: {.callout-note collapse="true"}
+## Columns in the bechdel data - click to expand
+
+| Variable | Type          | Explanation                                                                              |
+|----------|---------------|------------------------------------------------------------------------------------------|
+| imdb     | character     | IMDb identifier for the film                                                             |
+| year     | numeric (dbl) | Year of release                                                                          |
+| title    | character     | Title of the film                                                                        |
+| test     | character     | Detailed Bechdel-test outcome: one of `ok`, `dubious`, `men`, `notalk`, `nowomen`, sometimes with a `-disagree` suffix when the rating was contested |
+| budget   | numeric (dbl) | Production budget in US dollars (inflation-adjusted)                        |
+| domgross | numeric (dbl) | Domestic (US) box-office gross in US dollars                                             |
+| intgross | numeric (dbl) | International box-office gross in US dollars                                             |
+:::
+
+
+## Changing or computing values with `mutate`
+
+The essential tool in the data transformation toolbox is the `mutate` function.
+With mutate, you can create new columns or change the values in existing columns.
+
+For example, if we want to know whether films that pass the test have a better return on investment,
+we need to compute the return on investment (dividing earnings by budget) and recode the 10 different values for `test` into a single yes or no (dummy / boolean) column.
+
+### The `mutate()` function
+
+The mutate function makes it easy to create new variables or to modify
+existing ones.
+
+For example, this computes the total gross earnings (international plus domestic) for each movie:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_mutate', 'demo_mutate_round', 'demo_mutate_multi']
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+```
+
+```{webr}
+#| exercise: demo_mutate
+bechdel <- mutate(bechdel, gross = domgross + intgross)
+head(bechdel)
+```
+
+(You'll notice R can display large numbers in *scientific notation*,
+i.e. using `1.3e7` to mean $1.3 \times 10^7$, or 13 million.
+)
+
+The syntax of mutate is similar to that of the `filter()` and `select()`
+functions introduced in the previous chapter:
+The first argument is the data frame to mutate, and then any number of
+additional arguments can be given to perform mutations. The mutations
+themselves are *named arguments* in the form `column_name = calculation`.
+The result of the calculation will then be stored in the named column,
+which can either be a new column or you can overwrite an existing column.
+
+
+
+For calculations, you can use mathematical symbols such as `+`, `/`
+(division), and `*` (multiplication). There are also many useful
+functions that you can use in calculations, such as `round()` to round
+values, `floor()` to round values down to the nearest whole number,
+ or `abs()` to take the absolute (positive) value of numbers.
+
+For example, we could round the budget to millions of dollars:
+
+```{webr}
+#| exercise: demo_mutate_round
+bechdel <- mutate(bechdel, budget = round(budget / 1000000, 1))
+head(bechdel)
+```
+
+Note that where the previous example created a *new* column by assigning
+to a column name that was not yet in the data,
+this directly *modifies* the existing budget column by re-assigning it to an existing name.
+
+
+### Chaining calculations and calculating multiple values
+
+Note that you can calculate multiple columns at the same time.
+For example, you can compute the total gross
+and round both gross income and budget to millions of dollars:
+
+```{webr}
+#| exercise: demo_mutate_multi
+bechdel_recoded <- mutate(bechdel,
+    gross = domgross + intgross,
+    gross = round(gross / 1000000, digits=1),
+    budget = round(budget / 1000000, digits=1)
+)
+head(bechdel_recoded)
+```
+
+Three things to note here. First, we assign the result of the mutate to a new object, `bechdel_recoded`,
+which means that this is a new copy of the data and the original `bechdel` will also still be available.
+Second, we added an extra `digits=1` option to the round function.
+Lastly, note also that the second line computes `gross`, and the third line than
+modifies this newly computed value.
+In general, you can use the result of previous calculations directly within the same mutate function.
+
+::: {.callout-note title="Closing brackets and R/RStudio prompts"}
+
+The example above included a multi-line mutate statement.
+More complex and longer statements will be quite common as your code becomes more sophisticated.
+One danger is that you may forget the closing parenthesis (`)`).
+
+In the online interactive prompts, this will lead to a somewhat understandable error message:
+ `unexpected end of input` -- the input ended, but R was still expecting a closing bracket.
+
+If you run an include chunk of code in Rstudio / R, however, it will not give an error message but instead you will see that the prompt changes from `>` to `+`:
+
+```
+> mutate(bechdel, budget = round(budget / 1000000, 1)
++
+```
+
+What the `+` means is that R is still waiting for you to close a parenthesis or a quoted text.
+You can give many extra commands after this, but it will patiently wait for you to close the parenthesis before actually running all of them.
+
+So, when R feels unresponsive, check that it actually gives a `>` prompt.
+If it shows an unexpected `+` prompt,  you can click to  activate the console window,
+press Escape to cancel the current command, and fix and restart the command that was causing trouble.
+:::
+
+### Exercise
+
+{{< include exercises/_ch05_ex_mutate.qmd >}}
+
+## Recoding values
+
+So far we've used mutate to calculate new values from old ones. Its other major job is recoding — turning the values in a column into different values. Recoding shows up constantly: collapsing many categories into a few, binning a continuous variable into ranges, or flipping cryptic codes into readable labels. R offers a few different functions for this, depending on what shape the recoding takes.
+
+### Recoding into two options with `if_else`
+
+The `if_else` function checks a condition for each row, and chooses one value if it's true, or an alternative value if it's false. For example, we can check whether the gross income of a film was higher than it's budget, and designate that it made a *profit* if so, and a *loss* otherwise:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_ifelse', 'demo_recode', 'demo_recode2', 'demo_casewhen']
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv") |>
+  mutate(gross = domgross + intgross)
+```
+
+```{webr}
+#| exercise: demo_ifelse
+bechdel <- mutate(bechdel, result=if_else(gross > budget, "profit", "loss"))
+head(bechdel)
+```
+
+
+Second, the syntax of `if_else` is `if_else(condition, value_if_true, value_if_false)`.
+So, the first argument (`gross > budget`) tells R to check for each row whether the `gross` column is larger than `budget`. Then, if it is true the second argument will be chosen (`profit`),
+while for rows where it is false the third argument is chosen (`loss`)
+
+An important things to note here is that the `if_else` function is used **within mutate**.
+This is generally true for the functions in this chapter: `if_else` computes a value,
+and `mutate` places that value in the data frame.
+
+### Recoding multiple values with `recode_values` and `replace_values`
+
+Next, let's consider the use case of recoding multiple values.
+For example, the `bechdel` data set contains a `test` column, with 10 different values:
+5 possible test outcomes (`nowomen`, `notalk`, `men`, `dubious`, and `ok`),
+where each outcome can have `-disagree` appended to show that there was substantial disagreement
+among the (crowd) coders this column was based on.
+
+We can use the `recode_values` function to recode each `test` value into a new value with a more descriptive name:
+
+```{webr}
+#| exercise: demo_recode
+
+# TODO: This does *NOT* work in webr (as of May 16) as dplyr is not updated yet
+# Revisit before using it for teaching, and replace with `case_match` if needed
+
+bechdel <- mutate(bechdel, outcome = recode_values(test,
+  "nowomen" ~ "Fewer than two named women in the film",
+  "nowomen-disagree" ~ "Fewer than two named women in the film (disputed)",
+  "notalk" ~ "No women talking to each other",
+  "notalk-disagree" ~ "No women talking to each other (disputed)",
+  "men" ~ "Women only talk to each other about men",
+  "men-disagree" ~ "Women only talk to each other about men (disputed)",
+  "dubious" ~ "Unclear whether the film passes the test",
+  "dubious-disagree" ~ "Unclear whether the film passes the test (disputed)",
+  "ok" ~ "The film passes the Bechdel test",
+  "ok-disagree" ~ "The film passes the Bechdel test (disputed)"
+))
+
+# (Note: Using `select` to show only the relevant columns)
+head(select(bechdel, title, test, outcome))
+```
+
+Please take a second to look at the slightly odd syntax of `recode_values`.
+Its first argument is the input column (`test`).
+This is followed by a series of arguments of the form `old_value ~ new_value`,
+where you can read the tilde (`~`) as a kind of arrow: `old ⤳ new`.
+So, you can specify as many recode rules as you need.
+
+
+If multiple recode rules have the same target value,
+you don't need to make a separate rule for each input.
+You can also specify more than one input value to replace
+by using the `c()` function to *combine* multiple values.
+For example, if we wish to drop the distinction between disputed and undisputed codings, we could do:
+
+```{webr}
+#| exercise: demo_recode2
+
+# TODO: This does *NOT* work in webr (as of May 16) as dplyr is not updated yet
+# Revisit before using it for teaching, and replace with `case_match` if needed
+
+bechdel <- mutate(bechdel, outcome2 = recode_values(test,
+  c("nowomen", "nowomen-disagree") ~ "Fewer than two named women in the film",
+  c("notalk", "notalk-disagree") ~ "No women talking to each other",
+  c("men", "men-disagree") ~ "Women only talk to each other about men",
+  c("dubious", "dubious-disagree") ~ "Unclear whether the film passes the test",
+  c("ok", "ok-disagree") ~ "The film passes the Bechdel test"
+))
+head(select(bechdel, title, test, outcome2))
+```
+
+As briefly mentioned above, `recode_values` has a sister function `replace_values`.
+The difference between the two is what happens if you don't specify all possible input values.
+In the case of `replace_values`, unnamed values are left unchanged.
+In contrast, `recode_values` will turn them into missing values (`NA`),
+unless an optional argument `default="Some value"` is given, in
+which case that value is used instead.
+
+
+::: {.callout-note title="Package versions and updating packages"}
+In this section we used the `recode_values` function.
+This function was introduced in `dplyr` version 1.2, released in April 2026.
+
+If you run this on your own computer (e.g. in RStudio) and get an error `could not find function "recode_values"`, it's possible that you have an older version of dplyr.
+
+In general, to check what version of a package you have installed you can use:
+
+```r
+> packageVersion("dplyr")
+[1] ‘1.2.1’
+```
+
+If you have a version below 1.2, you should either upgrade it or use the older function `case_match` (which is very similar to `recode_values`).
+To upgrade a specific package, you can use the `install.packages` code that you probably
+already used to install tidyverse initially.
+You can also use `update.packages(ask=FALSE)` to update *all* packages that have an available update.
+However, it is a good idea to restart R before upgrading packages,
+as (especially on Windows) it can be problematic to upgrade a package that is already loaded.
+So, the procedure is:
+
+1. Save your current script(s)
+2. Restart the R session (Session → Restart R)
+3. Update some or all packages: `install.packages("dplyr", dependencies=TRUE)` or `update.packages(ask=FALSE)`
+
+After this, you can run `packageVersion("dplyr")` again to see whether the new version is installed.
+
+Note that on restarting R, by default R will save and load your 'environment',
+that is the data you have currently loaded in memory.
+This feels convenient, but we **strongly advise you to disable saving the environment**.
+Go into Tools → Global Options, uncheck `Restore .RData into workspace at startup` and set `Save workspace to .RData on exit` to Never.
+
+This can prevent problems with automatically re-loading packages on restarting R,
+but more importantly it is better 'code hygiene': you want the results of your script
+to only reflect the actual commands in the script, and not be dependent on data you have loaded in your environment.
+
+Note that for more serious package management,
+advanced users might want to look at `renv` for per-project package management,
+and/or `pak` for more sophisticated dependency management.
+:::
+
+### Arbitrary recoding with `case_when`
+
+The final recoding function in this section is `case_when`.
+
 
 ## Grouping and summarizing data
