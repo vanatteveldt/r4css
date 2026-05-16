@@ -407,4 +407,7 @@ However, we suggest using the newer `recode_values` instead of `recode` or `case
 
 ### Exercise
 
+{{< include exercises/_ch05_ex_recode.qmd >}}
+
+
 ## Grouping and summarizing data

@@ -1,0 +1,81 @@
+::: {.exercise}
+To see whether films that pass the Bechdel test do better or worse financially, we need to compute a single column that determines whether it passed the test or not.
+
+In the code below, starting from the original `bechdel` dataset, compute two columns:
+- `roi`: the total gross income divided by the budget
+- `passed`: Use `if_else` to determine whether a film passed the test or not. Treat both `ok` and `ok-disagree` as passing.
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_recode
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+```
+```{webr}
+#| exercise: ex_recode
+bechdel <- mutate(bechdel,
+  roi = ...,
+  passed = if_else(...)
+)
+head(select(bechdel, year, title, roi, passed))
+```
+
+::: { .hint exercise="ex_recode"}
+::: { .callout-tip title="Hint:"}
+- For the `roi`, see the previous exercise. Can you combine it into a single computation?
+- For if_else, use the pattern `if_else(condition, "passed", "not passed")`
+- For the condition, you can use `value %in% c(option1, option2)`
+:::
+:::
+
+::: {.solution exercise="ex_recode"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+- For the `roi`, you can do `roi = (domgross + intgross) / budget` in a single line
+- For if_else, use the condition `test %in% c("ok", "ok-disagree")`
+
+```{webr}
+#| exercise: ex_recode
+#| solution: true
+bechdel <- mutate(bechdel,
+  roi = (domgross + intgross) / budget,
+  passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed")
+)
+head(select(bechdel, year, title, roi, passed))
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_recode
+#| check: true
+gradethis::grade_this({
+  student_bechdel <- .envir_result$bechdel
+  if (is.data.frame(student_bechdel) && "passed" %in% names(student_bechdel)) {
+    n_passed <- sum(student_bechdel$passed == "passed", na.rm = TRUE)
+    n_ok     <- sum(student_bechdel$test    == "ok",     na.rm = TRUE)
+    if (n_passed > 0 && n_passed == n_ok) {
+      gradethis::fail(
+        "It looks like you only counted `\"ok\"` as passing. Don't forget that `\"ok-disagree\"` also represents a film that passes the test."
+      )
+    }
+  }
+  {{< include exercises/_check.qmd >}}
+})
+
+```
+
+::: {.challenge}
+The code above computed the needed columns (`roi` and `passed`) -- what would the next step be for answering the question whether there is a relation between the two? What data steps would you need to get to that answer?
+
+More technically, our proposed solution for the question above was using `if_else`,
+but you could also use either `recode_values` or `case_when` to achieve the same result.
+
+- Can you modify the code to use either function?
+- Why do you think we used `if_else` here?
+- Would you have done the same?
+
+Finally, @sec-stringr will talk about dealing with text in more detail, but as a sneak preview the function `str_remove(column, text_to_remove)` will remove the specified text from the column. Can you use this to remove the `-disagree` label in the test column, and simplify the `if_else` function?
+:::
