@@ -12,7 +12,7 @@ We ship a number of data files in cases where data was not avaiable in a standar
 Code:
 ```{r}
 bechdel <- as_tibble(fivethirtyeight::bechdel) |>
-  dplyr::select(imdb, year, title, test, budget, domgross, intgross) |>
+  dplyr::select(imdb, year, title, test, budget=budget_2013, domgross=domgross_2013, intgross=intgross_2013) |>
   readr::write_csv(here::here("data/bechdel.csv"))
 ```
 
