@@ -1,0 +1,85 @@
+::: {.exercise}
+The first figure in the [538 article](https://archive.ph/e7xDQ) shows a bar chart per (half) decade  of the proportion of films passing the bechdel test. This exercise builds on the summary made in the previous exercise,
+turning the absolute counts per decade into proportions.
+
+Concretely, starting from the `bechdel_over_time` data, compute two new columns:
+- `total_n`: The total number of films in each decade
+- `proportion`: The percentage of films per category within each decade
+
+The `ggplot` code to produce the stacked bar chart is given, but don't worry if it doesn't make sense yet - it will be explained in detail in the next chapter.
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_groupby_mutate
+library(tidyverse)
+bechdel_over_time <- read_csv("data/bechdel.csv") |>
+  mutate(decade = floor(year / 10) * 10) |>
+  # remove the `-disagree` suffix
+  mutate(test = str_remove(test, '-disagree')) |>
+  # summarize total amount of films per decade for each `test` category
+  group_by(decade, test) |>
+  summarize(n_films=n())
+```
+```{webr}
+#| exercise: ex_groupby_mutate
+bechdel_over_time_rel <- bechdel_over_time |>
+  group_by(...) |>
+  mutate(total_n = ...,
+         proportion = ...)
+ggplot(bechdel_over_time_rel, aes(x=decade, y=proportion, fill=test)) +
+  geom_col(position="stack") +
+  theme_classic() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="The Bechdel Test Over Time",
+      x = "Decade", y="", caption="Source: github.com/fivethirtyeight/data")
+```
+
+::: { .hint exercise="ex_groupby_mutate"}
+::: { .callout-tip title="Hint:"}
+- Group by decade only, since you want to compute the total number of films per decade
+- Use `sum(n_films)` to calculate the total number of films
+- You can re-use the calculated `total_n` in the calculation of proportion
+
+:::
+:::
+
+::: {.solution exercise="ex_groupby_mutate"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use group_by(decade), since you want to compute the total number of films per decade
+- Use `total_n = sum(n_films)` to calculate the total number of films
+- Re-use the calculated `total_n` in the calculation of proportion
+
+```{webr}
+#| exercise: ex_groupby_mutate
+#| solution: true
+bechdel_over_time_rel <- bechdel_over_time |>
+  group_by(decade) |>
+  mutate(total_n = sum(n_films),
+         proportion = n_films / total_n)
+
+ggplot(bechdel_over_time_rel, aes(x=decade, y=proportion, fill=test)) +
+  geom_col(position="stack") +
+  theme_classic() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="The Bechdel Test Over Time",
+      x = "Decade", y="", caption="Source: github.com/fivethirtyeight/data")
+
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_groupby_mutate
+#| check: true
+
+gradethis::grade_this({
+
+
+  {{< include exercises/_check.qmd >}}
+
+})
+```

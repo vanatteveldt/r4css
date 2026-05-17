@@ -32,14 +32,14 @@ head(select(bechdel, year, title, roi, passed))
 
 ::: {.solution exercise="ex_recode"}
 ::: { .callout-important icon=false title="🎓 Solution:"}
-- For the `roi`, you can do `roi = (domgross + intgross) / budget` in a single line
+- For the `roi`, you can do `roi = (domestic_gross + foreign_gross) / budget` in a single line
 - For if_else, use the condition `test %in% c("ok", "ok-disagree")`
 
 ```{webr}
 #| exercise: ex_recode
 #| solution: true
 bechdel <- mutate(bechdel,
-  roi = (domgross + intgross) / budget,
+  roi = (domestic_gross + foreign_gross) / budget,
   passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed")
 )
 head(select(bechdel, year, title, roi, passed))

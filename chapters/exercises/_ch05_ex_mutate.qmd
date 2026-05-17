@@ -37,7 +37,7 @@ head(bechdel)
 #| exercise: ex_mutate
 #| solution: true
 bechdel <- mutate(bechdel,
-  gross = intgross + domgross,
+  gross = foreign_gross + domestic_gross,
   roi = gross / budget
 )
 head(bechdel)

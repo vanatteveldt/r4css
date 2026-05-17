@@ -1,0 +1,79 @@
+::: {.exercise}
+The first figure in the [538 article](https://archive.ph/e7xDQ) shows a bar chart per (half) decade  of the proportion of films passing the bechdel test. This exercise builds towards reproducing this chart by computing the total number of films per decade per bechdel outcome.
+
+Concretely, starting from the `bechdel_decade` data:
+
+- Use `str_remove` to remove the `-disagree` suffix
+- Summarize the data to get the total amount of films per decade for each `test` category
+:::
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_summarize
+library(tidyverse)
+bechdel_decade <- read_csv("data/bechdel.csv") |>
+  mutate(decade = floor(year / 10) * 10)
+```
+```{webr}
+#| exercise: ex_summarize
+bechdel_over_time <- bechdel_decade |>
+  # remove the `-disagree` suffix
+  mutate(test = ...) |>
+  # summarize total amount of films per decade for each `test` category
+  group_by(...) |>
+  summarize(n_films=...)
+head(bechdel_over_time)
+```
+
+::: { .hint exercise="ex_summarize"}
+::: { .callout-tip title="Hint:"}
+- Use test = str_remove(test, '-disagree') to remove the suffix  (overwriting the column)
+- Group by decade and test
+- Use the `n()` function to count the number of films
+
+:::
+:::
+
+::: {.solution exercise="ex_summarize"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use test = str_remove(test, '-disagree') to remove the suffix
+- Group by decade and test
+- Use the `n()` function to count the number of films
+
+
+```{webr}
+#| exercise: ex_summarize
+#| solution: true
+bechdel_over_time <- bechdel_decade |>
+  # remove the `-disagree` suffix
+  mutate(test = str_remove(test, '-disagree')) |>
+  # summarize total amount of films per decade for each `test` category
+  group_by(decade, test) |>
+  summarize(n_films=n())
+head(bechdel_over_time)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_summarize
+#| check: true
+
+gradethis::grade_this({
+  result <- .envir_result$bechdel_over_time
+  if (is.data.frame(result) && "test" %in% names(result)) {
+    if (any(grepl("-disagree", result$test))) {
+      gradethis::fail(
+        "Some of your test values still have the `-disagree` suffix. Use `str_remove(test, '-disagree')` to clean the column before grouping."
+      )
+    }
+  }
+
+  # Fall back to default checking
+  {{< include exercises/_check.qmd >}}
+
+})
+```

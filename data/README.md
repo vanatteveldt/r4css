@@ -11,8 +11,9 @@ We ship a number of data files in cases where data was not avaiable in a standar
 
 Code:
 ```{r}
-bechdel <- as_tibble(fivethirtyeight::bechdel) |>
-  dplyr::select(imdb, year, title, test, budget=budget_2013, domgross=domgross_2013, intgross=intgross_2013) |>
+as_tibble(fivethirtyeight::bechdel) |>
+  dplyr::mutate(foreign_gross=intgross_2013 - domgross_2013) |>
+  dplyr::select(imdb, year, title, test, budget=budget_2013, domestic_gross=domgross_2013, foreign_gross) |>
   readr::write_csv(here::here("data/bechdel.csv"))
 ```
 
