@@ -182,7 +182,7 @@ press Escape to cancel the current command, and fix and restart the command that
 
 {{< include exercises/_ch05_ex_mutate.qmd >}}
 
-## Recoding values
+## Recoding values {#sec-recoding}
 
 So far we've used mutate to calculate new values from old ones. Its other major job is recoding — turning the values in a column into different values. Recoding shows up constantly: collapsing many categories into a few, binning a continuous variable into ranges, or flipping cryptic codes into readable labels. R offers a few different functions for this, depending on what shape the recoding takes.
 
@@ -413,7 +413,7 @@ However, we suggest using the newer `recode_values` instead of `recode` or `case
 {{< include exercises/_ch05_ex_recode.qmd >}}
 
 
-## Grouping and summarizing data
+## Grouping and summarizing data {#sec-summarize}
 
 So far, all transformations have worked on individual rows.
 For many questions, however, we want to compute values for **groups of rows**.

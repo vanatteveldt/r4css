@@ -10,6 +10,6 @@ webr:
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-## Pivotting data: wide vs long
+## Pivotting data: wide vs long {#sec-pivot}
 
 ## Joining multiple data sets

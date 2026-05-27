@@ -59,10 +59,118 @@ Learn more         Callout: Healy socviz.co for practical guidance and inspirati
 
 ## Why visualize? {#sec-vis-why}
 
-<!-- Anscombe's Quartet show-and-tell: load the anscombe dataset (built into R),
-     plot all four panels. No ggplot explanation yet — just the punchline that
-     identical summary stats can hide completely different patterns.
-     One paragraph of prose framing the chapter. -->
+In social sciences, we are often interested in exploring or testing a relation between two variables:
+Does poverty lead to lower health or life expectancy?
+Does social media use influence mental health?
+Do populist politicians use more polarizing speech?
+Very often, the focus for answering such questions is a statistical measure or test such as correlation, t-test, or regression.
+Such a test would tell us whether there is a (linear) relationship between the two variables.
+
+In 1973, Francis Anscombe published a paper called **Graphs in Statistical Analysis**
+in which he famously shows why very often this statistical test doesn't show the whole story.
+
+::: {.challenge title="What does a strong correlation mean?"}
+Suppose you have two variables (e.g. poverty and life expectancy), and you find a
+very strong and highly significant correlation ($r=0.82, p<.01$). What would you conclude about the relationship
+between those variables?
+
+Now, run the code below and think about your conclusion.
+How do graphs and correlation contribute to the understanding of the relation?
+
+(Don't worry about the specific code in the example - the `ggplot` code will be explained in detail in this chapter. And if you're brave, feel free to peek into the data preparation box!)
+:::
+
+:::: {.callout-note collapse="true" title="Data preparation"}
+
+Don't worry about the data preparation below -- but if you're curious, the `recode_values` was explained in @sec-recoding, `group_by |> summarize` was explained in @sec-summarize, and the `pivot_longer` code will be explained in @sec-pivot)
+```{webr}
+# NOTE: DOES NOT WORK IN CURRENT WEBR VERSION (recode_values is dplyr 1.2). CHECK BEFORE USING!
+library(tidyverse)
+example_data <- anscombe |>
+    # See chapter 'Reshaping data' for the pivot function
+    pivot_longer(
+        cols = everything(),
+        names_to = c(".value", "set"),
+        names_pattern = "(.)(.)"
+    ) |>
+    # See the section 'Recoding values' in the previous chapter
+    mutate(facet = recode_values(
+        set,
+        "1" ~ "(a)",
+        "2" ~ "(b)",
+        "3" ~ "(c)",
+        "4" ~ "(d)"
+    ))
+
+correlations <- example_data |>
+    # See the section 'Summarizing values' in the previous chapter
+    group_by(set) |>
+    summarize(
+        r = cor.test(x, y)$estimate,
+        p = cor.test(x, y)$p.value,
+        label = str_glue("r={round(r,2)}, p={round(p,3)}")
+    )
+```
+:::
+
+
+
+```{webr}
+#| exercise: anscombe
+#| setup: true
+
+
+library(tidyverse)
+example_data <- anscombe |>
+    pivot_longer(
+        cols = everything(),
+        names_to = c(".value", "set"),
+        names_pattern = "(.)(.)"
+    ) |>
+    # TODO Until recode_values works, we juse use case match
+    mutate(facet = case_match(
+        set,
+        "1" ~ "(a)",
+        "2" ~ "(b)",
+        "3" ~ "(c)",
+        "4" ~ "(d)"
+    ))
+
+correlations <- example_data |>
+    group_by(set) |>
+    summarize(
+        r = cor.test(x, y)$estimate,
+        p = cor.test(x, y)$p.value,
+        label = str_glue("r={round(r,2)}, p={round(p,3)}")
+    )
+```
+
+```{webr}
+#| exercise: anscombe
+#| warning: false
+
+ggplot(example_data, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_text(data = correlations, aes(x = 5, y = 12, label = label), hjust=0) +
+  facet_wrap(~facet) +
+  theme_minimal() +
+  labs(title = "Anscombe's Quartet",
+       subtitle = "All four subsets share identical statistical properties despite vastly different shapes.")
+
+```
+
+These graphs raise a number of intriguing questions. How do you interpret the relation between the variables as expressed in the graphs? All datasets have the same correlation strength and significance, why do they have such different shapes? What does that say about the difference between graphs and statistical tests of relationships?
+
+This example powerfully showcases the need to *explore* data as well as computing statistical values,
+and this is in fact one of the two big use cases of data visualization (the other being *telling the story* of your analysis to readers).
+
+In this case, (a) is probably what you expected the data to look like: a cloud of points dispersed randomly around the blue trendline; (b) shows a clearly non-linear relationship: as `x` increases, `y` first goes up, but then goes down towards the end; (c) shows how a single outlier can affect an otherwise very regular linear pattern; and (d) shows how a single outlier can create a (spurious) relationship that is not present in the other points at all.
+Crucially, the data behind *all four plots* showed the same underlying linear relationship,
+but the plots clearly show a completely different story in all four cases,
+and point at a modelling issue in all cases except the first.
+
+Now that you are convinced of the need to visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
 
 ## Your first ggplot {#sec-vis-first}
 
