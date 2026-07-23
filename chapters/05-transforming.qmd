@@ -5,8 +5,6 @@ webr:
     - ../data/bechdel.csv
 ---
 
-<!-- TODO: Verify webR has dplyr ≥1.2 before teaching.
-     If still 1.1.4, swap `recode_values` for `case_match` (same syntax, just rename). -->
 <!-- TODO: dplyr now allows summarize(..., .by=c(columns)).
      Should we teach that instead of group_by |> summarize?
      It feels cleaner, especially given the silly residual groups
@@ -226,9 +224,6 @@ We can use the `recode_values` function to recode each `test` value into a new v
 ```{webr}
 #| exercise: demo_recode
 
-# TODO: This does *NOT* work in webr (as of May 16) as dplyr is not updated yet
-# Revisit before using it for teaching, and replace with `case_match` if needed
-
 bechdel <- mutate(bechdel, outcome = recode_values(test,
   "nowomen" ~ "Fewer than two named women in the film",
   "nowomen-disagree" ~ "Fewer than two named women in the film (disputed)",
@@ -261,9 +256,6 @@ For example, if we wish to drop the distinction between disputed and undisputed 
 
 ```{webr}
 #| exercise: demo_recode2
-
-# TODO: This does *NOT* work in webr (as of May 16) as dplyr is not updated yet
-# Revisit before using it for teaching, and replace with `case_match` if needed
 
 bechdel <- mutate(bechdel, outcome2 = recode_values(test,
   c("nowomen", "nowomen-disagree") ~ "Fewer than two named women in the film",
