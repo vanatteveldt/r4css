@@ -46,8 +46,13 @@ bibliography: references.bib
 format:
   live-html:
     theme:
-      - flatly
-      - style.scss
+      light:
+        - flatly
+        - style.scss
+      dark:
+        - darkly
+        - style.scss
+        - style-dark.scss
     fontsize: 0.9em
     toc: true
     number-sections: true

@@ -1,6 +1,6 @@
 ---
 title: "Visualizing data"
-# TODO: add gapminder CSV to data/ (export from dslabs::gapminder) and list here
+# TODO: (but why?) add gapminder CSV to data/ (export from dslabs::gapminder) and list here
 # gss_cat is available from the forcats package — no CSV needed
 webr:
   resources:
@@ -174,14 +174,151 @@ Now that you are convinced of the need to visualization to explore your data (an
 
 ## Your first ggplot {#sec-vis-first}
 
-<!-- Introduce Gapminder dataset (download.file + read_csv pattern).
-     Build scatter of GDP per capita vs life expectancy step by step:
-     empty ggplot() call → add aes() → add geom_point().
-     Callout: the data → aes() → geom mapping (GOG core).
-     Callout: the + syntax and what it means.
-     Then: add + theme_minimal() as an immediate payoff — easy, visible, fun. -->
+Let's take a step back and work towards understanding `ggplot` syntax better.
+This can be a bit of a learning curve, as ggplot uses a *layer-based* syntax that's a bit different 
+from the data cleaning functions you've seen so far. 
+However, it is extremely well designed and you will find that the better you understand this design,
+the easier it becomes to read and write your own visualization code. 
 
-## Mapping more variables {#sec-vis-aes}
+Let's get started with a minimal graph based on the `gapminder` dataset used earlier. 
+
+```{webr}
+#| warning: false
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+gap_2010 <- filter(gap, year == 2010)
+head(gap_2010)
+
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility)) + 
+  geom_point() 
+```
+
+As you can see, this creates a **scatter plot** with fertility on the vertical (y) axis, 
+and infant mortality on the horizontal axis. 
+
+::: {.callout-tip title="GGplot Syntax"}
+Let's take a closer look at the ggplot syntax. 
+It consists of the three components which you will see in every ggplot call:
+
+- `ggplot(data=gap_2010)` starts a new plot defining the `gap_2010` data frame as its **data source**
+- `mapping=aes(x=infant_mortality, y=fertility)` creates an **aesthetic mapping**, 
+   which links 'aesthetic' elements of the plot (i.e., how things appear) with columns in the data. 
+   In this case, the `infant_mortality` column is mapped to the *x aesthetic*, 
+   and the `fertility` column is mapped to the *y aesthetic*. 
+- Finally, `geom_point()` defines a **geometric layer** to be added to the plot, 
+  which creates the actual visual representation of data rows, in this case as points. 
+
+These three elements form the core of any ggplot visualization:
+a data set, which is represented by a geometric layer, and a ('aesthetic') mapping between elements of the data source and elements of the geometry. 
+:::
+
+As you can see, the geometric layer is **added** to the plot using the plus (`+`) operator.  
+In fact, this is the general pattern of ggplots: a single `ggplot()` function
+which creates the empty canvas, to which any number of elements are added.
+
+
+<!-- TODO: Consider using geom_smooth rather than theme, 
+           or perhaps drop this example altogether -->
+As a simple example, the code below adds a `theme` to the graph:
+
+```{webr}
+#| exercise: ['ggplot_theme', 'ggplot_aes']
+#| setup: true
+library(dslabs)
+library(tidyverse)
+library(ggthemes)
+gap <- as_tibble(gapminder)
+gap_2010 <- filter(gap, year == 2010)
+```
+```{webr}
+#| exercise: ggplot_theme
+#| warning: false
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility)) + 
+  geom_point() +
+  theme_classic()
+```
+
+Can you see the difference with the previous plot? 
+What happens if you replace `theme_classic()` with `theme_void()`, `theme_minimal()`, or even `theme_economist()`?
+
+(Note: you may need to install the `ggthemes` packages and call `library(ggthemes)` for the last example if you're running this on your own computer)
+
+The code above is a simple application of *theming*, which is used by ggplot
+to control the appearance of everything except for the data points plotted:
+colors, fonts, grid and axis appearance, etc.
+
+In the remainder of this chapter, we will be exploring other things that can be added to graphs,
+such as more geoms with different aesthetics, scales, labels and facets. 
+At the end of the chapter, you can go back to the example at the top of this chapter
+(or to ggplot examples in earlier chapters), and hopefully they will look a lot more familiar. 
+
+
+### More aesthetics {#sec-vis-aes}
+
+The section above introduced the basics of `ggplot`:
+a **data source**, a **geometric layer**, and a **aesthetic mapping**
+between columns in the data and visual elements of the geometric layer.
+
+Before we introduce different geoms or other elements that can be added to a plot,
+let's have a look at some other aesthetic elements that can be used:
+
+```{webr}
+#| exercise: ggplot_aes
+#| warning: false
+ggplot(data=gap_2010, 
+       mapping=aes(x=infant_mortality, y=fertility, color=continent)) + 
+  geom_point()
+```
+
+::: {.challenge title="Aesthetics"}
+What exactly does adding the `color` aesthetic do?
+What happens when you replace it by `color=life_expectancy`?
+How do the scale and legend change, and why?
+
+As an added challenge, try adding `size=population` or `size=gdp`. 
+Does the result make sense to you?
+Does it improve the story, or mostly clutter the results?
+:::
+
+The code above shows two very important considerations. 
+Technically, you can see that ggplot inspects your data,
+and gives a sensible default given the column type and values range.
+For `color=continent`, it sees that it is a nominal variable and creates a specific color for each value.
+With `color=life_expectancy`, it sees that it is a numeric variable and creates a scale running from the lowest to the highest value.
+Similarly, it maps the `size` such that the smallest point is still visible, and the largest point is not too large.
+GGplot generally creates a **sensible default scale** based on your data, but as we will see below you can customize this as much as you want. 
+
+Substantively, choosing the geom and aesthetics is the most important part of good data visualization. 
+What columns of your data are important, and how can you represent these in an informative (and hopefully pretty) way?
+After adding the `size` mapping, we used four different variables for x, y, color and size. 
+We could add more mappings (such as shape or alpha), but you will often find that adding more mappings also makes graphs harder to read. 
+Visualization is often the art of choosing between showing as much of your data as needed,
+while keeping the figure easy to interpret. 
+Finding the balance between these takes practice, and also very much depends on the goal and audience of your visualization:
+for data exploration for yourself or colleagues familiar with the data you can choose a more complex visualization
+than for a graph aimed at telling a story to a broader audience. 
+
+<!-- TODO - should this come at the end of the chapter instead? -->
+
+::: {.callout-tip title="Learning more"}
+This chapter will introduce most of the technical details of ggplot needed to make visualizations,
+but does not go as deeply into some aspects of visualization as you might want. 
+To learn more, check these fantastic and freely available sources:
+
+- [Data Visualization](https://socviz.co) by Kieran Healy. This is a freely available book which goes much more deeply into the *why* of visualizations.
+  What is a good visualizations? What works and what doesn't? 
+  What makes this such a fantastic resource is that it gives many social scientific examples and provides the full ggplot code for all examples.
+- [From data to viz](https://www.data-to-viz.com/) is a website that is a great overview of the different types  
+  of visualization, with a nice guide on when to use which chart type and what the strengths and possible drawbacks of each are,
+  with links to examples with R code provided
+- [The R Graph Gallery](https://r-graph-gallery.com/) is a fantastic collection of hundreds of graphs, from simple bar charts to maps, flow charts and dendrograms.
+  Each chart has the full ggplot code available, so it's a great source of inspiration as well as example code. 
+- [The ggplot2 book](https://ggplot2-book.org/) by tidyverse creator Hadley Wickham has a great explanation of how to use ggplot,
+  but is especially useful as a resource for understanding the design and inner workings of ggplot better.  
+:::
+
+### Setting constants
 
 <!-- Extend the scatter: map continent to color, population to size.
      Show fixed value (color = "steelblue" outside aes()) vs mapped (color = continent inside).
@@ -189,6 +326,8 @@ Now that you are convinced of the need to visualization to explore your data (an
      Add geom_smooth() for trend line with confidence interval.
      Callout: geom_smooth is doing a stat transformation — first hint that geoms can summarise.
      Challenge: try geom_jitter() to handle overplotting; try geom_label() to identify countries. -->
+
+
 
 ## How do they compare? Bar charts {#sec-vis-bar}
 

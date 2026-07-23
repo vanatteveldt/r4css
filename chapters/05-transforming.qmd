@@ -53,9 +53,9 @@ Thinking ahead for the next chapter on visualization:
 - what kind of plots did they use in the linked 538 article?
 - What data steps would be needed to produce the numbers for these figures?
 - Can you think of other useful visualizations for this data?
-:::
+:::::: {.callout-note collapse="true"}
 
-::: {.callout-note collapse="true"}
+
 ## Columns in the bechdel data - click to expand
 
 | Variable | Type          | Explanation                                                                              |
