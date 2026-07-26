@@ -84,7 +84,6 @@ How do graphs and correlation contribute to the understanding of the relation?
 
 Don't worry about the data preparation below -- but if you're curious, the `recode_values` was explained in @sec-recoding, `group_by |> summarize` was explained in @sec-summarize, and the `pivot_longer` code will be explained in @sec-pivot)
 ```{webr}
-# NOTE: DOES NOT WORK IN CURRENT WEBR VERSION (recode_values is dplyr 1.2). CHECK BEFORE USING!
 library(tidyverse)
 example_data <- anscombe |>
     # See chapter 'Reshaping data' for the pivot function
@@ -127,8 +126,7 @@ example_data <- anscombe |>
         names_to = c(".value", "set"),
         names_pattern = "(.)(.)"
     ) |>
-    # TODO Until recode_values works, we juse use case match
-    mutate(facet = case_match(
+    mutate(facet = recode_values(
         set,
         "1" ~ "(a)",
         "2" ~ "(b)",
@@ -148,7 +146,6 @@ correlations <- example_data |>
 ```{webr}
 #| exercise: anscombe
 #| warning: false
-
 ggplot(example_data, aes(x = x, y = y)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
@@ -172,7 +169,25 @@ and point at a modelling issue in all cases except the first.
 
 Now that you are convinced of the need to visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
 
-## Your first ggplot {#sec-vis-first}
+
+::: {.callout-tip title="Learning more"}
+This chapter will introduce most of the technical details of ggplot needed to make visualizations,
+but does not go as deeply into some aspects of visualization as you might want. 
+To learn more, check these fantastic and freely available sources:
+
+- [Data Visualization](https://socviz.co) by Kieran Healy. This is a freely available book which goes much more deeply into the *why* of visualizations.
+  What is a good visualizations? What works and what doesn't? 
+  What makes this such a fantastic resource is that it gives many social scientific examples and provides the full ggplot code for all examples.
+- [From data to viz](https://www.data-to-viz.com/) is a website that is a great overview of the different types  
+  of visualization, with a nice guide on when to use which chart type and what the strengths and possible drawbacks of each are,
+  with links to examples with R code provided
+- [The R Graph Gallery](https://r-graph-gallery.com/) is a fantastic collection of hundreds of graphs, from simple bar charts to maps, flow charts and dendrograms.
+  Each chart has the full ggplot code available, so it's a great source of inspiration as well as example code. 
+- [The ggplot2 book](https://ggplot2-book.org/) by tidyverse creator Hadley Wickham has a great explanation of how to use ggplot,
+  but is especially useful as a resource for understanding the design and inner workings of ggplot better.  
+:::
+
+## Scatter plots with `geom_point`  {#sec-vis-point}
 
 Let's take a step back and work towards understanding `ggplot` syntax better.
 This can be a bit of a learning curve, as ggplot uses a *layer-based* syntax that's a bit different 
@@ -218,12 +233,14 @@ In fact, this is the general pattern of ggplots: a single `ggplot()` function
 which creates the empty canvas, to which any number of elements are added.
 
 
-<!-- TODO: Consider using geom_smooth rather than theme, 
-           or perhaps drop this example altogether -->
-As a simple example, the code below adds a `theme` to the graph:
+### Adding more layers: `geom_smooth`
+
+As an  example of building a plot by adding layers, 
+the code below adds a linear regression line to the graph
+by adding `geom_smooth` to the existing plot:
 
 ```{webr}
-#| exercise: ['ggplot_theme', 'ggplot_aes']
+#| exercise: ['ggplot_smooth', 'ggplot_aes', 'ggplot_smoothcolor', 'ggplot_smoothcolor2', 'ggplot_blues']
 #| setup: true
 library(dslabs)
 library(tidyverse)
@@ -232,13 +249,24 @@ gap <- as_tibble(gapminder)
 gap_2010 <- filter(gap, year == 2010)
 ```
 ```{webr}
-#| exercise: ggplot_theme
+#| exercise: ggplot_smooth
 #| warning: false
 ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility)) + 
   geom_point() +
-  theme_classic()
+  geom_smooth(method="lm")
 ```
 
+::: {.challenge title="Smoothing options"}
+How do you interpret the blue line and grey shaded areas that were added to the plot?
+
+What do you think `lm` stands for? What happens if you remove it or replace it with `loess`?
+For which cases would either smoothing method be more appropriate?
+
+Finally, What happens if you use `geom_smooth(method="lm", formula=y ~ poly(x,2))`?
+:::
+
+<!--
+Note: Old text when I added a theme, might be reusable 
 Can you see the difference with the previous plot? 
 What happens if you replace `theme_classic()` with `theme_void()`, `theme_minimal()`, or even `theme_economist()`?
 
@@ -249,12 +277,16 @@ to control the appearance of everything except for the data points plotted:
 colors, fonts, grid and axis appearance, etc.
 
 In the remainder of this chapter, we will be exploring other things that can be added to graphs,
-such as more geoms with different aesthetics, scales, labels and facets. 
+such as more geoms with different aesthetics, scales, labels and facets.
 At the end of the chapter, you can go back to the example at the top of this chapter
-(or to ggplot examples in earlier chapters), and hopefully they will look a lot more familiar. 
+(or to ggplot examples in earlier chapters), and hopefully they will look a lot more familiar.
+-->
 
+### Exercise: Effect of GDP on Life Expectancy
 
-### More aesthetics {#sec-vis-aes}
+{{< include exercises/_ch06_ex_gdp_life.qmd >}}
+
+## Aesthetics mappings {#sec-vis-aes}
 
 The section above introduced the basics of `ggplot`:
 a **data source**, a **geometric layer**, and a **aesthetic mapping**
@@ -297,28 +329,110 @@ Visualization is often the art of choosing between showing as much of your data 
 while keeping the figure easy to interpret. 
 Finding the balance between these takes practice, and also very much depends on the goal and audience of your visualization:
 for data exploration for yourself or colleagues familiar with the data you can choose a more complex visualization
-than for a graph aimed at telling a story to a broader audience. 
+than for a graph aimed at telling a story to a broader audience.
 
-<!-- TODO - should this come at the end of the chapter instead? -->
+::: {.callout-note title="Common aesthetics"}
+You've now seen `x`, `y`, `color`, and `size`. These are the aesthetics you'll reach for most often:
 
-::: {.callout-tip title="Learning more"}
-This chapter will introduce most of the technical details of ggplot needed to make visualizations,
-but does not go as deeply into some aspects of visualization as you might want. 
-To learn more, check these fantastic and freely available sources:
+| Aesthetic | Used for |
+|---|---|
+| `x`, `y` | position on the axes |
+| `color` | outline/point/line color, mapped to a variable |
+| `fill` | interior color of an area, mapped to a variable |
+| `size` | point size or line width |
+| `shape` | point symbol (circle, triangle, ...) |
+| `alpha` | transparency, useful for overlapping points |
+| `linetype` | solid, dashed, dotted, ... |
+| `label` | text drawn at a position |
+| `group` | which rows belong to the same line/shape |
 
-- [Data Visualization](https://socviz.co) by Kieran Healy. This is a freely available book which goes much more deeply into the *why* of visualizations.
-  What is a good visualizations? What works and what doesn't? 
-  What makes this such a fantastic resource is that it gives many social scientific examples and provides the full ggplot code for all examples.
-- [From data to viz](https://www.data-to-viz.com/) is a website that is a great overview of the different types  
-  of visualization, with a nice guide on when to use which chart type and what the strengths and possible drawbacks of each are,
-  with links to examples with R code provided
-- [The R Graph Gallery](https://r-graph-gallery.com/) is a fantastic collection of hundreds of graphs, from simple bar charts to maps, flow charts and dendrograms.
-  Each chart has the full ggplot code available, so it's a great source of inspiration as well as example code. 
-- [The ggplot2 book](https://ggplot2-book.org/) by tidyverse creator Hadley Wickham has a great explanation of how to use ggplot,
-  but is especially useful as a resource for understanding the design and inner workings of ggplot better.  
+Most of these aesthetics can be used in almost any plot type. 
+`linetype` is the clearest exception: it only does something when a plot actually draws lines.
+Not every geom uses every aesthetic, and some aesthetics are required rather than optional 
+(e.g. `geom_point` needs `x` and `y`, but `color` is optional).
+Each geom's help page (e.g. `?geom_point`) lists exactly which aesthetics it understands and which ones are required.
+
+Also note the distinction between `color` (an outline or line) and `fill` (an interior): 
+for default scatter plots, only `color` normally matters, 
+while for e.g. bar plots you can change both the outline and the fill color of the bars .
 :::
 
-### Setting constants
+### Geom-specific mappings 
+
+Up till now, we've set the aesthetic mapping in the `ggplot()` function. 
+You can also set mappings in the `geom` function; 
+the following three blocks of code produce the exact same plot:
+
+```{r eval=F}
+# Mapping in ggplot:
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility, color=continent)) + 
+  geom_point()
+
+# Mapping in geom:
+ggplot(data=gap_2010) + 
+  geom_point(mapping=aes(x=infant_mortality, y=fertility, color=continent))
+
+# Mappings in both plot and geom:
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility)) + 
+  geom_point(mapping=aes(color=continent))
+```
+
+The distinction is that mappings defined in `ggplot` apply to the whole plot,
+while mappings defined in a `geom` only apply to that geom. 
+
+Of course, this only becomes relevant when we have more than one `geom`.
+In the example below, we add a trendline again using `geom_smooth`,
+but set `color` aesthetic only on the geom_point
+
+```{webr}
+#| exercise: ggplot_smoothcolor
+#| warning: false
+
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility)) + 
+  geom_point(mapping=aes(color=continent)) + 
+  geom_smooth(method="lm")
+```
+
+As you can see, the points are colored by continent, but the trendline is still blue. 
+
+Let's see how this changes when we move the color mapping back to the `ggplot`:
+
+```{webr}
+#| exercise: ggplot_smoothcolor2
+#| warning: false
+
+ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility, color=continent)) + 
+  geom_point() + 
+  geom_smooth(method="lm")
+```
+
+Now the trend line is also colored by continent. 
+In fact, this creates a separate trend line per continent.
+
+::: {.callout-note title="Aesthetic constants"}
+
+
+In all the examples above, we created mappings between data columns and aesthetic elements of the plot. 
+For example, `geom_point(aes(color=continent))` created a mapping between the color and the `continent` column. 
+
+In addition to mappings, you can also set an aesthetic to a constant:
+geom_point(color="blue") will color all points blue. 
+
+If you are not careful, this can lead to unexpected results. 
+What do you think the code below will produce?
+
+```{webr}
+#| exercise: ggplot_blues
+#| warning: false
+ggplot(data=gap_2010, 
+       mapping=aes(x=infant_mortality, y=fertility)) + 
+  geom_point(aes(color="blue"))
+```
+
+The reason for that is that this unexpected behaviour is that ggplot treats "blue" not as a literal constant for the color,
+but as a nominal value to be used in a mapping -- and just as with the continent colors above, 
+red is the first color in the default palette for plotting nominal values. 
+:::
 
 <!-- Extend the scatter: map continent to color, population to size.
      Show fixed value (color = "steelblue" outside aes()) vs mapped (color = continent inside).
