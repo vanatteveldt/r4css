@@ -32,9 +32,6 @@ Intro       Why visualize? Anscombe's Quartet: four datasets, identical statisti
                    Note: "calculate before you graph" — dplyr summary first, then geom_col,
                          is clearer than letting geom_bar count internally
 
-6.4  Stacked bars  geom_col(position="fill") | Bechdel: recreate FiveThirtyEight Figure 1
-     + scales      GOG: position adjustments; scale_fill_manual() with original red/blue palette
-                   Note: colorblind-safe palette alternatives (scale_fill_brewer / ggthemes)
 
 6.5  Distributions geom_histogram, geom_density, geom_boxplot / geom_violin
                    | Gapminder: distribution of life expectancy across countries
@@ -46,10 +43,6 @@ Intro       Why visualize? Anscombe's Quartet: four datasets, identical statisti
                    GOG: the group aesthetic; continuous x axis; time series patterns
                    Callout: forgetting group= with geom_line produces spaghetti — show the error
 
-6.7  Facets        facet_wrap() | Gapminder: same line graph split by continent
-                   GOG: "the same plot, applied to each subset"; facet_wrap vs facet_grid
-
-6.8  Saving        ggsave() — short practical callout; file formats, size/dpi
 
 Learn more         Callout: Healy socviz.co for practical guidance and inspiration;
                    Wickham ggplot2 book (freely online) for grammar of graphics theory
@@ -451,14 +444,6 @@ red is the first color in the default palette for plotting nominal values.
      Cover: factors for ordering bars; informative axis labels with labs(); coord_flip() if needed.
      Exercise: change which variable is on x, or reorder bars by count. -->
 
-## Recreating a published figure {#sec-vis-stacked}
-
-<!-- Goal: reproduce FiveThirtyEight Figure 1 from the Bechdel article.
-     Stacked proportional bar: geom_col(position = "fill").
-     Callout: position adjustments (stack / fill / dodge).
-     scale_fill_manual() to match the original red/blue palette.
-     Note: colorblind-safe alternatives — scale_fill_brewer() or ggthemes::scale_fill_colorblind().
-     Challenge: can you get the axis labels and title to match the original? -->
 
 ## How is it distributed? {#sec-vis-dist}
 
@@ -478,22 +463,3 @@ red is the first color in the default palette for plotting nominal values.
      (decision deferred; use Gapminder for now, note the swap in a TODO).
      Cover: colour by continent, readable legend. -->
 
-## Comparing groups side by side: facets {#sec-vis-facets}
-
-<!-- Continue from line graph: facet_wrap(~ continent) to split by continent.
-     Callout: facet_wrap vs facet_grid; scales = "free" option.
-     GOG point: facets are just "the same plot, applied to each subset" — the grammar scales. -->
-
-## Saving your plot {#sec-vis-save}
-
-<!-- Short practical section: ggsave("filename.png", plot, width, height, dpi).
-     Note common formats (PNG for screen, PDF/SVG for publication).
-     One show-and-tell chunk, no exercise needed. -->
-
-## Learn more {#sec-vis-learnmore}
-
-<!-- Callout pointing to:
-     - Healy, Data Visualization: A Practical Introduction (socviz.co) — practical guidance,
-       social science examples, best-practice discussion
-     - Wickham, ggplot2: Elegant Graphics for Data Analysis (ggplot2-book.org) — GOG theory
-       for students who want to understand the grammar fully -->

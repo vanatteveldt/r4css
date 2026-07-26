@@ -1,0 +1,53 @@
+---
+title: "Advanced ggplot usage"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+::: {.callout-note}
+**Proposed chapter scope:** 
+The second half of the ggplot material split off from the visualizing chapter: 
+facets, scales, and guides (legends/axes), plus more advanced theming. 
+
+Placed after the reshaping chapter (@sec-pivot) rather than immediately after visualizing, 
+since faceting and multi-series plots often need data pivoted long first 
+(map a series name to `color`, facet by it).
+:::
+
+<!-- 
+
+From chapter 6:
+
+6.4  Stacked bars  geom_col(position="fill") | Bechdel: recreate FiveThirtyEight Figure 1
+     + scales      GOG: position adjustments; scale_fill_manual() with original red/blue palette
+                   Note: colorblind-safe palette alternatives (scale_fill_brewer / ggthemes)
+
+
+6.7  Facets        facet_wrap() | Gapminder: same line graph split by continent
+                   GOG: "the same plot, applied to each subset"; facet_wrap vs facet_grid
+
+6.8  Saving        ggsave() — short practical callout; file formats, size/dpi
+-->
+
+
+## Comparing groups side by side: facets {#sec-vis-facets}
+
+<!-- Continue from line graph: facet_wrap(~ continent) to split by continent.
+     Callout: facet_wrap vs facet_grid; scales = "free" option.
+     GOG point: facets are just "the same plot, applied to each subset" — the grammar scales. -->
+
+## Saving your plot {#sec-vis-save}
+
+<!-- Short practical section: ggsave("filename.png", plot, width, height, dpi).
+     Note common formats (PNG for screen, PDF/SVG for publication).
+     One show-and-tell chunk, no exercise needed. -->
+
+## Recreating a published figure {#sec-vis-stacked}
+
+<!-- Goal: reproduce FiveThirtyEight Figure 1 from the Bechdel article.
+     Stacked proportional bar: geom_col(position = "fill").
+     Callout: position adjustments (stack / fill / dodge).
+     scale_fill_manual() to match the original red/blue palette.
+     Note: colorblind-safe alternatives — scale_fill_brewer() or ggthemes::scale_fill_colorblind().
+     Challenge: can you get the axis labels and title to match the original? -->

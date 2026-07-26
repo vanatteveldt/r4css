@@ -21,24 +21,25 @@ book:
         - chapters/05-transforming.qmd
         - chapters/06-visualizing.qmd
         - chapters/07-reshaping.qmd
+        - chapters/08-customizing.qmd
     - part: "Text and Image Analysis"
       chapters:
-        - chapters/08-stringr.qmd
-        - chapters/09-scraping.qmd
-        - chapters/10-tidytext.qmd
-        - chapters/11-llms.qmd
-        - chapters/12-images.qmd
+        - chapters/09-stringr.qmd
+        - chapters/10-scraping.qmd
+        - chapters/11-tidytext.qmd
+        - chapters/12-llms.qmd
+        - chapters/13-images.qmd
     - part: "Machine Learning"
       chapters:
-        - chapters/13-tidymodels.qmd
-        - chapters/14-textclassification.qmd
-        - chapters/15-dimensionality.qmd
-        - chapters/16-torch.qmd
+        - chapters/14-tidymodels.qmd
+        - chapters/15-textclassification.qmd
+        - chapters/16-dimensionality.qmd
+        - chapters/17-torch.qmd
     - part: "Programming Concepts"
       chapters:
-        - chapters/17-flowcontrol.qmd
-        - chapters/18-datastructures.qmd
-        - chapters/19-software.qmd
+        - chapters/18-flowcontrol.qmd
+        - chapters/19-datastructures.qmd
+        - chapters/20-software.qmd
     - chapters/references.qmd
 
 bibliography: references.bib
