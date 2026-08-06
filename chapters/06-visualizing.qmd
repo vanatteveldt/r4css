@@ -1,10 +1,5 @@
 ---
 title: "Visualizing data"
-# TODO: (but why?) add gapminder CSV to data/ (export from dslabs::gapminder) and list here
-# gss_cat is available from the forcats package — no CSV needed
-webr:
-  resources:
-    - ../data/bechdel.csv
 ---
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
@@ -233,7 +228,7 @@ the code below adds a linear regression line to the graph
 by adding `geom_smooth` to the existing plot:
 
 ```{webr}
-#| exercise: ['ggplot_smooth', 'ggplot_aes', 'ggplot_smoothcolor', 'ggplot_smoothcolor2', 'ggplot_blues']
+#| exercise: ['ggplot_smooth', 'ggplot_aes', 'ggplot_smoothcolor', 'ggplot_smoothcolor2', 'ggplot_blues', 'ggplot_bar', 'ggplot_beaut']
 #| setup: true
 library(dslabs)
 library(tidyverse)
@@ -427,22 +422,100 @@ but as a nominal value to be used in a mapping -- and just as with the continent
 red is the first color in the default palette for plotting nominal values. 
 :::
 
-<!-- Extend the scatter: map continent to color, population to size.
-     Show fixed value (color = "steelblue" outside aes()) vs mapped (color = continent inside).
-     Callout: global aes() in ggplot() vs local aes() in geom_*() — inheritance and override.
-     Add geom_smooth() for trend line with confidence interval.
-     Callout: geom_smooth is doing a stat transformation — first hint that geoms can summarise.
-     Challenge: try geom_jitter() to handle overplotting; try geom_label() to identify countries. -->
+<!-- TODO: fun exercise with changing some colors / point types / ...?  -->
+
+## Bar charts with `geom_col` {#sec-vis-bar}
+
+A second common chart type is the bar chart. 
+Where scatter plots (`geom_point`) are used for exploring individual data points,
+bar charts are generally used for comparing values for different cases or categories.
+
+For example, we could create a bar chart comparing life expectancy for South-East Asian countries
+using `geom_col`: 
+
+```{webr}
+#| exercise: ggplot_bar
+gap_2010 |>
+  filter(region == "South-Eastern Asia") |>
+   ggplot(mapping=aes(x=country, y=life_expectancy)) + 
+  geom_col()
+```
+
+### Making it beautiful
+
+The graph above works, but it's not the most beautiful. 
+Let's make a nicer version:
+
+```{webr}
+#| exercise: ggplot_beaut
+gap_2010 |>
+  filter(region == "South-Eastern Asia") |>
+  ggplot(mapping=aes(y=fct_reorder(country, life_expectancy), 
+                     x=life_expectancy)) + 
+  geom_col() +
+  labs(title="Life expectancy in South-East Asia (2010 data)",
+       caption="Source: World Bank", 
+       y="", 
+       x="Life Expectancy (years)") + 
+  theme_classic()
+```
+
+Looking at the code above, three things were changed apart from adding a theme:
+
+1. Using `labs`, labels were set for the main title and the axes. The y axis label was set to `""`, 
+   removing the (redundant) label. Good labels are one of the most important things in data visualization:
+   a reader should be able to instantly understand the visualization, making it essential to label
+   the variables, values, source, and anything else.
+2. The `x` and `y` axes where flipped, changing it into a horizontal bar chart. 
+   This is often a good solution to make a bar chart more readable, especially if category labels are long.
+3. `fct_reorder` was used to reorder the countries by life expectancy. By default, R orders alphabetically,
+   which very often is not the most logical ordering to tell a story. 
 
 
+:::: {.callout-note collapse="true" title="GGplot and factors (and cats!)"}
+You may have wondered why the `fct_reorder` function started with `fct`. 
+The reason for this is somewhat technical, but it will help you understand
+why ggplot does what it does (but feel free to skip this block for now!)
 
-## How do they compare? Bar charts {#sec-vis-bar}
+For ggplot, text columns are treated as nominal variables, i.e. groups.
+Such groups are best represented by `factor` columns,
+which have a fixed set of possible values called the factor `levels`. 
+Factor levels have an ordering, and ggplot uses that internal ordering for plotting. 
 
-<!-- Introduce Bechdel dataset (download.file + read_csv).
-     Summarise with dplyr first (films per decade, pass/fail), then geom_col().
-     Note: "calculate before you graph" — explicit dplyr pipeline is clearer than geom_bar() counting.
-     Cover: factors for ordering bars; informative axis labels with labs(); coord_flip() if needed.
-     Exercise: change which variable is on x, or reorder bars by count. -->
+When you use a normal text column in ggplot, it silently converts it into a factor,
+and the default ordering of factor levels is alphabetically. 
+So, ggplot orders groups by their alphabetical ordering by default. 
+
+To change this, you can use functions like `fct_reorder` either in the data preparation step,
+or directly in the `aes` function.
+Some other useful functions are `fct_infreq` to use the frequency of cases;
+`fct_relevel` to manually specify the ordering;
+`fct_rev` to reverse and ordering; and `fct_lump` to turn the least frequent categories into 'other' 
+These functions all come from the `forcats` package,     
+which is of course purely an anagram of factors.
+::::
+
+### Grouped bar charts
+
+<!--
+average per decade stacked or grouped per continent
+Claude: Confirmed the GDP idea works technically: gdp in dslabs::gapminder is total 
+(not per capita — values like 1.38e10 for a single country), 
+and the panel spans 1960–2016, 
+so mutate(decade = floor(year/10)*10) |> group_by(decade, continent) |> summarize(total_gdp = sum(gdp, na.rm=TRUE)) 
+gives a genuine aggregation (unlike the single-year case earlier, 
+this one actually sums across multiple countries and years). 
+It also tells a real story — the shifting share of global GDP across continents — 
+which fits the "substantive question" principle well, 
+and sets up a nice later contrast with geom_line in the "over time" section (composition vs. trend).
+nice segway to callout about pre-aggregate vs geom_bar
+-->
+
+It's also possible to group bars within a category. 
+For example, we could take the total GDP per continent per decade.
+To calculate this plot, we first calculate 
+
+
 
 
 ## How is it distributed? {#sec-vis-dist}
