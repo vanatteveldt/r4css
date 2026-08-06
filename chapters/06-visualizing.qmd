@@ -228,7 +228,7 @@ the code below adds a linear regression line to the graph
 by adding `geom_smooth` to the existing plot:
 
 ```{webr}
-#| exercise: ['ggplot_smooth', 'ggplot_aes', 'ggplot_smoothcolor', 'ggplot_smoothcolor2', 'ggplot_blues', 'ggplot_bar', 'ggplot_beaut']
+#| exercise: ['ggplot_smooth', 'ggplot_aes', 'ggplot_smoothcolor', 'ggplot_smoothcolor2', 'ggplot_col','ggplot_blues', 'ggplot_bar', 'ggplot_beaut']
 #| setup: true
 library(dslabs)
 library(tidyverse)
@@ -434,12 +434,41 @@ For example, we could create a bar chart comparing life expectancy for South-Eas
 using `geom_col`: 
 
 ```{webr}
-#| exercise: ggplot_bar
+#| exercise: ggplot_col
 gap_2010 |>
   filter(region == "South-Eastern Asia") |>
    ggplot(mapping=aes(x=country, y=life_expectancy)) + 
   geom_col()
 ```
+
+::: {.callout-tip title="`geom_col` vs. `geom_bar`"}
+
+The code above uses `geom_col`, but there is also a geom called `geom_bar`. 
+The difference is that by default geom_bar does not use the `y` aesthetic, but instead
+plots the number of rows in each bar. So, the following code will produce the same plot twice:
+
+```{webr}
+#| exercise: ggplot_bar
+countries_per_continent <- gap_2010 |>
+  group_by(continent) |>
+  summarize(count=n())
+ggplot(countries_per_continent, aes(x=continent, y=count)) + 
+  geom_col() + 
+  labs(title="Pre-calculated plot with geom_col")
+
+ggplot(gap_2010, aes(x=continent)) +
+  geom_bar() + 
+  labs(title="Implicit counting with geom_bar")
+```
+
+Although it would seem that the second example is the simpler one,
+I normally prefer the first option (*calculate before you plot*) for two reasons. 
+First, it makes it more explicit what is happening, and allows you to 
+inspect the calculated `countries_per_continent` values more easily.
+Second, it is much more flexible, as the calculation can contain any of the data
+transformation operations explained in the previous chapter,
+as will be showcased by the grouped and stacked examples below. 
+:::
 
 ### Making it beautiful
 
@@ -454,7 +483,7 @@ gap_2010 |>
                      x=life_expectancy)) + 
   geom_col() +
   labs(title="Life expectancy in South-East Asia (2010 data)",
-       caption="Source: World Bank", 
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)", 
        y="", 
        x="Life Expectancy (years)") + 
   theme_classic()
@@ -511,22 +540,127 @@ and sets up a nice later contrast with geom_line in the "over time" section (com
 nice segway to callout about pre-aggregate vs geom_bar
 -->
 
+
+```{webr}
+#| exercise: ['ggplot_dodge', 'ggplot_stack']
+#| setup: true
+library(dslabs)
+library(tidyverse)
+library(ggthemes)
+gap <- as_tibble(gapminder)
+gdp_per_decade <- gap |>
+  mutate(decade=floor(year / 10) * 10) |>
+  group_by(continent, decade) |>
+  summarize(gdp=sum(gdp, na.rm=TRUE))
+```
+
 It's also possible to group bars within a category. 
-For example, we could take the total GDP per continent per decade.
-To calculate this plot, we first calculate 
+For example, we could take the total GDP per continent per decade:
+
+```{webr}
+#| exercise: ggplot_dodge
+#| warning: false
+gdp_per_decade <- gap |>
+  mutate(decade=floor(year / 10) * 10) |>
+  group_by(continent, decade) |>
+  summarize(gdp=sum(gdp, na.rm=TRUE))
+
+ggplot(gdp_per_decade, 
+       aes(x=continent, y=gdp / 1e12, fill=as.factor(decade))) +
+  geom_col(position="dodge") + 
+  labs(title="Total GDP per continent per decade",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)", 
+       y="GDP in trillions of dollars", 
+       x="",
+       fill=NULL) + 
+  theme_classic()
+```
+
+Some important things to note in the code above:
+
+- Before the actual `ggplot` call, we first calculate the gdp per decade using
+  `mutate` (see @sec-mutate) and `group_by |> summarize` (see @sec-summarize).
+- To calculate the decade, we divide year by 10 (so 1976 becomes 197.6), then 
+  round down using `floor` (so it becomes 197) and then multiply by 10 to add the zero back.
+- GDP has missing values (especially at the start of the series, and especially for countries from the global South).
+  We ignore this by adding `na.rm=TRUE` (**r**e**m**ove NAs), but of course this could skew the figure as it essentially assumes the GDP for these data points is zero.
+  Try removing the `na.rm=TRUE` (or setting it to `FALSE`) and see what happens!
+- In the aesthetic mapping (`aes`), we perform two light calculations: 
+  (1) gdp is divided by `1e12` (1 with 12 zeroes) to render gdp in trillions; and
+  (2) decade is converted to a factor. This latter operation matters because ggplot
+      treats columns based on their type: if decade is a number, it would apply a gradient fill 
+      rather than a separate bar for each decade. Try removing the `as.factor` and see what happens!  
+  (note that we do these calculations in the plot since they don't really calculate values, but mostly affect their appearance)
+- We use `position="dodge"` to tell ggplot to put the bars next to each other
+  (they 'dodge' each other) rather than stacking them. 
+- We use `fill=NULL` within the `labs` call to set the label for the fill legend - in this case to remove it. 
 
 
+::: {.challenge title="Did the world get poorer in the 2010s?"}
+
+You might also have noticed that the 2010's total is actually lower than the 2000s. 
+Of course, the world didn't suddenly get much poorer. 
+
+- What do you think causes the 2010's values to be lower than the 2000s? 
+- How can you confirm that this is the case?
+- What are good ways to fix this? 
+
+Finally, can you think of a better way to deal with the imbalanced NAs that we noted above?
+
+These questions showcases an important skill in data analysis:
+noticing that something is odd, investigating why this is the case, 
+and then dealing with it. 
+
+:::
+
+### Stacked bar charts
+
+As a final example, let's see how the share of GDP per continent changed over time
+by using a stacked bar chart:
+
+```{webr}
+#| exercise: ggplot_stack
+#| warning: false
+ggplot(gdp_per_decade, 
+       aes(x=as.factor(decade), y=gdp / 1e12, fill=fct_reorder(continent, gdp))) +
+  geom_col() + 
+  labs(title="Distribution of GDP over continents per decade",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)", 
+       y="GDP in trillions of dollars", 
+       x="",
+       fill=NULL) + 
+  theme_classic()
+```
+
+As you can see, this code is mostly the same as the plot above -- 
+is swapped the `x` and `fill` aesthetics and removed the `position` argument.
+By default,  ggplot will stack bars if no position is given. 
+
+<!-- Removed to avoid spoiling the exercise
+A third option would be using `position="fill"` - how does that change the graph?
+-->
+
+### Exercise: The share of GDP per continent
+
+{{< include exercises/_ch06_ex_gdp_share.qmd >}}
 
 
+<!-- 
 ## How is it distributed? {#sec-vis-dist}
 
-<!-- Back to Gapminder: distribution of life expectancy across countries.
-     geom_histogram() — bins, binwidth argument.
-     geom_density() — smooth alternative.
-     Callout: stat transformations — ggplot is summarising data before drawing.
-     geom_boxplot() / geom_violin() as complement: same question, shows median/IQR/outliers.
-     Contrast: histogram = full shape; box plot = summary — when to use which.
-     Challenge: reproduce with gss_cat (forcats package) — TV hours by political affiliation. -->
+Back to Gapminder: distribution of life expectancy across countries.
+geom_histogram() — bins, binwidth argument.
+geom_density() — smooth alternative.
+Callout: stat transformations — ggplot is summarising data before drawing.
+geom_boxplot() / geom_violin() as complement: same question, shows median/IQR/outliers.
+Contrast: histogram = full shape; box plot = summary — when to use which.
+Challenge: reproduce with gss_cat (forcats package) — TV hours by political affiliation. 
+
+Note: section dropped in favour of a callout to the graph gallery. 
+
+Reason: The chapter was getting too long, readers can already
+make histograms manually, and the other plots are somewhat advanced.
+-->
 
 ## How does it change over time? {#sec-vis-line}
 

@@ -68,7 +68,7 @@ Thinking ahead for the next chapter on visualization:
 :::
 
 
-## Changing or computing values with `mutate`
+## Changing or computing values with `mutate` {#sec-mutate}
 
 The essential tool in the data transformation toolbox is the `mutate` function.
 With mutate, you can create new columns or change the values in existing columns.
@@ -504,10 +504,6 @@ Using the pipeline syntax introduced above, we can make a single analysis pipeli
 ```{webr}
 #| exercise: demo_pipeline
 
-# TODO: This does *NOT* work in webr (as of May 16) as dplyr is not updated yet
-# Revisit before using it for teaching, and replace with `case_match` if needed
-
-
 bechdel |>
   filter(year >= 1990, year <= 2013) |>
   mutate(roi_domestic = domestic_gross / budget,
@@ -543,7 +539,7 @@ Some things to note about this code:
 
 {{< include exercises/_ch05_ex_summarize.qmd >}}
 
-### Adding group statistics with `group_by |> mutate`
+### Adding group statistics with `group_by |> mutate` {#sec-groupbymutate}
 
 Above we used `group_by |> summarize`, which replaced the current
 data set by a summary frame containing only one row per group
