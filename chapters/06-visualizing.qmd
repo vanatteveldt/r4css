@@ -622,7 +622,7 @@ Reason: The chapter was getting too long, readers can already
 make histograms manually, and the other plots are somewhat advanced.
 -->
 
-## How does it change over time? {#sec-vis-line}
+## Line charts with `geom_line` {#sec-vis-line}
 
 <!-- geom_line() with Gapminder: life expectancy over time per country.
      Callout: the group aesthetic — without it, ggplot connects all points (show the error).
@@ -630,9 +630,178 @@ make histograms manually, and the other plots are somewhat advanced.
      (decision deferred; use Gapminder for now, note the swap in a TODO).
      Cover: colour by continent, readable legend. -->
 
+The chart above used bar charts to show change over time. 
+In most cases, however, line charts are better suited to visualize temporal data. 
+
+The plot below shows fertility per continent over time:
 
 
-::: {.callout-tip title="Other chart types"}
+```{webr}
+#| exercise: ['ggplot_line', 'ggplot_group', 'ggplot_group2']
+#| setup: true
+gap <- as_tibble(gapminder)
+fertility_per_year <- gap |>
+  group_by(continent, year) |>
+  summarize(mean_fertility=mean(fertility, na.rm=TRUE))
+```
+```{webr}
+#| exercise: ggplot_line
+#| warning: false
+fertility_per_year <- gap |>
+  group_by(continent, year) |>
+  summarize(mean_fertility=mean(fertility, na.rm=TRUE))
+
+ggplot(fertility_per_year, 
+       aes(x=year, y=mean_fertility, color=continent)) +
+  geom_line() 
+```
+
+As before, we first calculate the values to plot by grouping by continent and year 
+and computing the mean fertility, ignoring missing values. 
+Then, we use a ggplot as usual, with a `geom_line` and year and mean fertility on the x and y axes. 
+Note that we use color for the continents rather than fill, since it's a line rather than a bar or area. 
+
+### How are data points grouped into lines?
+
+The code above worked directly because there was only one data point per year and continent.
+But what if we did not aggregate before drawing the plot?
+
+```{webr}
+#| exercise: ggplot_group
+#| warning: false
+ggplot(gap, 
+       aes(x=year, y=fertility, color=continent)) +
+  geom_line() 
+```
+
+::: {.challenge title="What is going on here?"}
+The plot above is certainly artistic, but not exactly informative.
+
+- Looking at the graph, what do you think is happening? What do the lines represent? 
+  Why are there vertical lines for each year?
+- What happens if you add `group=country` to the `aes` function above? Why?
+::: 
+
+As you have noticed, there is a vertical line for each year and continent.
+This is a common gotcha with line graphs, caused by how ggplot groups points into lines.
+The way it works is that by default it creates a group for each combination of 
+aesthetics that are mapped to a categorical variable.
+So, it creates a group for each color, or each combination of color and line type,
+assuming they are all categorical variables (factors).
+Then, for each group it orders the points by x value, and draws a line connecting these points.
+
+In the graph above, there are many points for each year on each continent,
+so it draws a vertical line connecting all these points, and then a diagonal line from the last country in one year
+to the first country in the next year.
+
+The important lesson here is that if you see a line chart with these telltale vertical lines,
+you can immediately conclude that there is a problem with the groups not uniquely identifying the lines.
+
+In most cases, the solution is to make sure that the data is grouped by x value and color,
+and also to make sure color is a factor and not a number (as it only creates groups for categorical variables).
+
+However, as indicated in the challenge block above, 
+you can also manually specify the grouping variable.
+When you added it to the plot, it created a correct line plot,
+but it was mostly an uninformative spaghetti rather than an informative chart.
+
+The next example shows that we can use this to create an informative plot showing both
+the average value per continent and the trajectories of the individual countries:
+
+```{webr}
+#| exercise: ggplot_group2
+#| warning: false
+ggplot(gap, aes(x=year, color=continent)) +
+  geom_line(aes(y=fertility, group=country), alpha=.1) +
+  geom_line(data=fertility_per_year, aes(y=mean_fertility), linewidth=.75) +
+  labs(title="Fertility over time",
+       subtitle="Solid line is mean per continent, thin lines are individual countries",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)",
+       y="Fertility (children per woman)",
+       x="",
+       color=NULL) +
+  theme_classic()
+```
+
+This actually creates a graph that is quite rich in detail, but still quite readable
+and shows both the spread of individual countries within a continent.
+For example, you can see that most European countries started low and declined 
+at about the same pace,
+and that African countries are a fairly wide band rising until the mid 1970s and 
+then slowly declining.
+It also shows countries going against the overall trend, such as the two Asian countries where
+fertility was still increasing until the 1980s.
+These details give a rich impression of both trendline and individual trajectories,
+and can show places where it might be worth a closer look at individual countries 
+rather than just looking at the group mean. 
+
+Looking at the code, note especially the use of **two** `geom_line`s:
+first plotting the individual country lines with `y=fertility` and `group=country`.
+This explicitly creates a group per country, drawing 185 individual lines. 
+Next, we plot the overall solid line using `data=fertility_per_year` (calculated earlier) 
+and `y=mean_fertility`.
+Since we don't add an explicit grouping here, ggplot (this time correctly) creates 5 groups 
+from the color aesthetic.  
+
+Some things to note:
+
+- We plot the individual country lines first, and then the continent means:
+  ggplot draws the lines in order, and we want the continent means to be drawn over the country lines.  
+- The `gap` data is specified in the ggplot call, and is used by default in the first geom.
+  However, it is overridden with the explicit `data=fertility_per_year` in the second geom. 
+- Similarly, the `x` and `color` aesthetics are given in the ggplot function, 
+  so they are shared by both line geoms,
+  while `y` and `group` are specified per geom.
+- `alpha=.1` and `linewidth=.75` are placed as constants outside the `aes` function, 
+  to set the transparency and line width for all lines in these respective geoms. 
+- Aesthetics are evaluated based on the data for the specified layer. 
+  So, `color=continent` refers to the continent column of the `gap` data for the first geom,
+  and to the column with the same name in the `fertility_per_year` data frame in the second geom. 
+
+### Missing values or zeroes?
+
+<!-- 
+
+ show problem with zeroes in counts
+
+
+
+ declines <- gap |>
+filter(continent == "Europe") |>
+  arrange(country, year) |>
+  group_by(country) |>
+  mutate(change = life_expectancy - lag(life_expectancy)) |>
+  filter(change < 0) |>
+  group_by(year) |>
+  summarize(n = n())
+
+ggplot(declines) + 
+  geom_line(aes(x=year, y=n))
+
+declines |>
+  ungroup() |>
+  complete(year, fill=list(n=0)) |>
+  ggplot() + 
+  geom_line(aes(x=year, y=n))
+
+  or much simpler but less dramatic
+
+  below_replacement <- gap |>
+  filter(fertility < 2.1) |>
+  group_by(year, continent) |>
+  summarize(n = n()) 
+
+ggplot(below_replacement) + 
+  geom_line(aes(x=year, y=n, color=continent))
+
+below_replacement |>
+  complete(year, continent, fill=list(n=0)) |>
+  ggplot() + 
+  geom_line(aes(x=year, y=n, color=continent))
+
+  -->
+
+## Other chart types
 
 This chapter introduced the main chart types for data visualization:
 the scatter plot, bar plot, and line graph. 
@@ -652,4 +821,3 @@ Note that this chapter explicitly does not teach pie charts.
 Pie charts make it very hard to compare groups and in almost all cases a bar chart is
 the better choice. However, if you must make a pie chart [you certainly can](https://r-graph-gallery.com/piechart-ggplot2.html): 
 in fact, it's just a bar chart with `coord_polar()` added to create a circular plot. 
-:::
