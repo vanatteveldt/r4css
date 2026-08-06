@@ -5,46 +5,6 @@ title: "Visualizing data"
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-<!-- CHAPTER PLAN (remove before publication)
-
-Section sequence and teaching goals:
-
-Intro       Why visualize? Anscombe's Quartet: four datasets, identical statistics, completely
-            different pictures. One show-and-tell chunk, no ggplot yet.
-
-6.1  Scatter       geom_point | Gapminder: GDP per capita vs life expectancy
-                   GOG: the core data → aes() → geom mapping; the additive + syntax
-                   After first plot: themes as a quick payoff (theme_minimal etc.)
-
-6.2  More aes      geom_point (extended), geom_smooth | Gapminder: does continent explain the pattern?
-                   GOG: mapping extra vars to color/size/shape; fixed values vs mapped aes();
-                        global (ggplot) vs local (geom) aes() inheritance;
-                        geom_smooth for trends (stat transformation, gentle intro)
-                   Challenge: geom_jitter for overplotting; geom_label for country labels
-
-6.3  Bar charts    geom_col / geom_bar | Bechdel: films per decade that pass the test
-                   GOG: factors and ordering; informative axis labels and titles
-                   Note: "calculate before you graph" — dplyr summary first, then geom_col,
-                         is clearer than letting geom_bar count internally
-
-
-6.5  Distributions geom_histogram, geom_density, geom_boxplot / geom_violin
-                   | Gapminder: distribution of life expectancy across countries
-                   GOG: stat transformations (binning/density); one variable is enough;
-                        histogram shows full shape, box plot summarises (median/IQR/outliers)
-                   Challenge: same plots with GSS (gss_cat) — TV hours by political affiliation
-
-6.6  Over time     geom_line | Gapminder (life expectancy); Piketty or polling data as alternative
-                   GOG: the group aesthetic; continuous x axis; time series patterns
-                   Callout: forgetting group= with geom_line produces spaghetti — show the error
-
-
-Learn more         Callout: Healy socviz.co for practical guidance and inspiration;
-                   Wickham ggplot2 book (freely online) for grammar of graphics theory
--->
-
-<!-- ======================================================== -->
-
 ## Why visualize? {#sec-vis-why}
 
 In social sciences, we are often interested in exploring or testing a relation between two variables:
@@ -670,3 +630,26 @@ make histograms manually, and the other plots are somewhat advanced.
      (decision deferred; use Gapminder for now, note the swap in a TODO).
      Cover: colour by continent, readable legend. -->
 
+
+
+::: {.callout-tip title="Other chart types"}
+
+This chapter introduced the main chart types for data visualization:
+the scatter plot, bar plot, and line graph. 
+
+There are many more exciting ways to visualize data,
+including charts focused on the distribution of data such as [box plots](https://r-graph-gallery.com/boxplot.html), 
+[histograms](https://r-graph-gallery.com/histogram.html), [violin plots](https://r-graph-gallery.com/violin.html) and 
+[ridgeline graphs](https://r-graph-gallery.com/ridgeline-plot.html);
+[heat maps](https://r-graph-gallery.com/heatmap.html) as a way to visually represent cross-tabulations;
+[choropleth maps](https://r-graph-gallery.com/choropleth-map.html) based on geographical data; 
+or [Cleveland plots](https://r-graph-gallery.com/303-lollipop-plot-with-2-values.html) showing differences between two groups of rows.
+
+As pointed out at the top of the chapter, two wonderful resources for learning more about these are 
+the [R Graph Gallery](https://r-graph-gallery.com) and [Data-to-Viz](https://www.data-to-viz.com/). 
+
+Note that this chapter explicitly does not teach pie charts.
+Pie charts make it very hard to compare groups and in almost all cases a bar chart is
+the better choice. However, if you must make a pie chart [you certainly can](https://r-graph-gallery.com/piechart-ggplot2.html): 
+in fact, it's just a bar chart with `coord_polar()` added to create a circular plot. 
+:::
