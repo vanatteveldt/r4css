@@ -599,6 +599,10 @@ Interestingly, this top-6 of (relatively) exceptionally expensive movies is a de
 
 Note that the list of relatively expensive movies is not saved as an object here -- it is piped to `head()`, printing the top 6 rows on the screen for inspection without saving it.
 
+### Selecting items with `slice_*`   {#sec-groupbyslice}
+
+<!-- TODO: Add explanation and demo for group_by |> slice_max etc. -->
+
 ### Exercise: Bechdel test over time (part 2)
 
 {{< include exercises/_ch05_ex_groupby_mutate.qmd >}}

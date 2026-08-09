@@ -25,12 +25,18 @@ between those variables?
 Now, run the code below and think about your conclusion.
 How do graphs and correlation contribute to the understanding of the relation?
 
-(Don't worry about the specific code in the example - the `ggplot` code will be explained in detail in this chapter. And if you're brave, feel free to peek into the data preparation box!)
+(Don't worry about the specific code in the example - the `ggplot` code will be explained in detail in this chapter
+and in @sec-advancedggplot. 
+And if you're brave, feel free to peek into the data preparation box!)
 :::
 
 :::: {.callout-note collapse="true" title="Data preparation"}
 
-Don't worry about the data preparation below -- but if you're curious, the `recode_values` was explained in @sec-recoding, `group_by |> summarize` was explained in @sec-summarize, and the `pivot_longer` code will be explained in @sec-pivot)
+Don't worry about the data preparation below -- 
+but if you're curious, the `recode_values` was explained in @sec-recoding,
+ `group_by |> summarize` was explained in @sec-summarize, 
+ and the `pivot_longer` code will be explained in @sec-pivot
+
 ```{webr}
 library(tidyverse)
 example_data <- anscombe |>
@@ -58,7 +64,7 @@ correlations <- example_data |>
         label = str_glue("r={round(r,2)}, p={round(p,3)}")
     )
 ```
-:::
+::::
 
 
 
@@ -83,7 +89,7 @@ example_data <- anscombe |>
     ))
 
 correlations <- example_data |>
-    group_by(set) |>
+    group_by(set, facet) |>
     summarize(
         r = cor.test(x, y)$estimate,
         p = cor.test(x, y)$p.value,
@@ -115,7 +121,7 @@ Crucially, the data behind *all four plots* showed the same underlying linear re
 but the plots clearly show a completely different story in all four cases,
 and point at a modelling issue in all cases except the first.
 
-Now that you are convinced of the need to visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
+Now that you are convinced of the need for visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
 
 
 ::: {.callout-tip title="Learning more"}
@@ -192,7 +198,6 @@ by adding `geom_smooth` to the existing plot:
 #| setup: true
 library(dslabs)
 library(tidyverse)
-library(ggthemes)
 gap <- as_tibble(gapminder)
 gap_2010 <- filter(gap, year == 2010)
 ```
@@ -213,28 +218,12 @@ For which cases would either smoothing method be more appropriate?
 Finally, What happens if you use `geom_smooth(method="lm", formula=y ~ poly(x,2))`?
 :::
 
-<!--
-Note: Old text when I added a theme, might be reusable 
-Can you see the difference with the previous plot? 
-What happens if you replace `theme_classic()` with `theme_void()`, `theme_minimal()`, or even `theme_economist()`?
-
-(Note: you may need to install the `ggthemes` packages and call `library(ggthemes)` for the last example if you're running this on your own computer)
-
-The code above is a simple application of *theming*, which is used by ggplot
-to control the appearance of everything except for the data points plotted:
-colors, fonts, grid and axis appearance, etc.
-
-In the remainder of this chapter, we will be exploring other things that can be added to graphs,
-such as more geoms with different aesthetics, scales, labels and facets.
-At the end of the chapter, you can go back to the example at the top of this chapter
-(or to ggplot examples in earlier chapters), and hopefully they will look a lot more familiar.
--->
 
 ### Exercise: Effect of GDP on Life Expectancy
 
 {{< include exercises/_ch06_ex_gdp_life.qmd >}}
 
-## Aesthetics mappings {#sec-vis-aes}
+## Aesthetic mappings {#sec-vis-aes}
 
 The section above introduced the basics of `ggplot`:
 a **data source**, a **geometric layer**, and a **aesthetic mapping**
@@ -302,7 +291,7 @@ Each geom's help page (e.g. `?geom_point`) lists exactly which aesthetics it und
 
 Also note the distinction between `color` (an outline or line) and `fill` (an interior): 
 for default scatter plots, only `color` normally matters, 
-while for e.g. bar plots you can change both the outline and the fill color of the bars .
+while for e.g. bar plots you can change both the outline and the fill color of the bars.
 :::
 
 ### Geom-specific mappings 
@@ -364,7 +353,7 @@ In all the examples above, we created mappings between data columns and aestheti
 For example, `geom_point(aes(color=continent))` created a mapping between the color and the `continent` column. 
 
 In addition to mappings, you can also set an aesthetic to a constant:
-geom_point(color="blue") will color all points blue. 
+`geom_point(color="blue")` will color all points blue. 
 
 If you are not careful, this can lead to unexpected results. 
 What do you think the code below will produce?
@@ -377,7 +366,7 @@ ggplot(data=gap_2010,
   geom_point(aes(color="blue"))
 ```
 
-The reason for that is that this unexpected behaviour is that ggplot treats "blue" not as a literal constant for the color,
+The reason for this unexpected behaviour is that ggplot treats "blue" not as a literal constant for the color,
 but as a nominal value to be used in a mapping -- and just as with the continent colors above, 
 red is the first color in the default palette for plotting nominal values. 
 :::
@@ -397,7 +386,7 @@ using `geom_col`:
 #| exercise: ggplot_col
 gap_2010 |>
   filter(region == "South-Eastern Asia") |>
-   ggplot(mapping=aes(x=country, y=life_expectancy)) + 
+  ggplot(mapping=aes(x=country, y=life_expectancy)) + 
   geom_col()
 ```
 
@@ -506,7 +495,6 @@ nice segway to callout about pre-aggregate vs geom_bar
 #| setup: true
 library(dslabs)
 library(tidyverse)
-library(ggthemes)
 gap <- as_tibble(gapminder)
 gdp_per_decade <- gap |>
   mutate(decade=floor(year / 10) * 10) |>
@@ -542,7 +530,7 @@ Some important things to note in the code above:
   `mutate` (see @sec-mutate) and `group_by |> summarize` (see @sec-summarize).
 - To calculate the decade, we divide year by 10 (so 1976 becomes 197.6), then 
   round down using `floor` (so it becomes 197) and then multiply by 10 to add the zero back.
-- GDP has missing values (especially at the start of the series, and especially for countries from the global South).
+- GDP has missing values (especially at the start of the series).
   We ignore this by adding `na.rm=TRUE` (**r**e**m**ove NAs), but of course this could skew the figure as it essentially assumes the GDP for these data points is zero.
   Try removing the `na.rm=TRUE` (or setting it to `FALSE`) and see what happens!
 - In the aesthetic mapping (`aes`), we perform two light calculations: 
@@ -593,7 +581,7 @@ ggplot(gdp_per_decade,
 ```
 
 As you can see, this code is mostly the same as the plot above -- 
-is swapped the `x` and `fill` aesthetics and removed the `position` argument.
+we swapped the `x` and `fill` aesthetics and removed the `position` argument.
 By default,  ggplot will stack bars if no position is given. 
 
 <!-- Removed to avoid spoiling the exercise
@@ -637,7 +625,7 @@ The plot below shows fertility per continent over time:
 
 
 ```{webr}
-#| exercise: ['ggplot_line', 'ggplot_group', 'ggplot_group2']
+#| exercise: ['ggplot_line', 'ggplot_group', 'ggplot_group2', 'ggplot_complete']
 #| setup: true
 gap <- as_tibble(gapminder)
 fertility_per_year <- gap |>
@@ -727,7 +715,7 @@ This actually creates a graph that is quite rich in detail, but still quite read
 and shows both the spread of individual countries within a continent.
 For example, you can see that most European countries started low and declined 
 at about the same pace,
-and that African countries are a fairly wide band rising until the mid 1970s and 
+and that African countries are a fairly wide band rising until the early 1970s and 
 then slowly declining.
 It also shows countries going against the overall trend, such as the two Asian countries where
 fertility was still increasing until the 1980s.
@@ -758,48 +746,89 @@ Some things to note:
   So, `color=continent` refers to the continent column of the `gap` data for the first geom,
   and to the column with the same name in the `fertility_per_year` data frame in the second geom. 
 
-### Missing values or zeroes?
+### Dealing with missing rows using `complete`
 
-<!-- 
+A final gotcha for line graphs is how ggplot deals with missing rows. 
+This is especially important for count data, where a lack of data often implies zero,
+rather than actual missing data. 
 
- show problem with zeroes in counts
+Let's make a graph of how many countries have a fertility below the replacement level of 2.1 
+children per woman:
 
-
-
- declines <- gap |>
-filter(continent == "Europe") |>
-  arrange(country, year) |>
-  group_by(country) |>
-  mutate(change = life_expectancy - lag(life_expectancy)) |>
-  filter(change < 0) |>
-  group_by(year) |>
-  summarize(n = n())
-
-ggplot(declines) + 
-  geom_line(aes(x=year, y=n))
-
-declines |>
-  ungroup() |>
-  complete(year, fill=list(n=0)) |>
-  ggplot() + 
-  geom_line(aes(x=year, y=n))
-
-  or much simpler but less dramatic
-
-  below_replacement <- gap |>
+```{webr}
+#| exercise: ggplot_complete
+#| warning: false
+below_replacement <- gap |>
   filter(fertility < 2.1) |>
   group_by(year, continent) |>
   summarize(n = n()) 
-
 ggplot(below_replacement) + 
   geom_line(aes(x=year, y=n, color=continent))
+```
 
+At first sight, this graph looks correct and understandable:
+over time, more and more countries' fertility drops below replacement,
+with European countries doing so from the start of the dataset,
+while countries in Africa and Oceania stay mostly above replacement.
+
+What is strange, however, is that Africa does not seem to have any data
+before 1997.
+Looking at the `below_replacement` data set created above, 
+can you see what the problem is?
+
+Looking at the `filter` command, 
+it keeps only rows with fertility below 2.1,
+so if a continent has zero countries that match that condition,
+no rows are left to summarize, leading to a missing data point that should have been a zero.
+
+The easiest way to remedy this is to use the `complete` function,
+which makes sure every combination of the mentioned variables exist:
+
+```{webr}
+#| exercise: ggplot_complete2
+#| setup: true
+gap <- as_tibble(gapminder)
+below_replacement <- gap |>
+  filter(fertility < 2.1) |>
+  group_by(year, continent) |>
+  summarize(n = n()) 
+```
+```{webr}
+#| exercise: ggplot_complete2
 below_replacement |>
+  ungroup() |>
   complete(year, continent, fill=list(n=0)) |>
   ggplot() + 
   geom_line(aes(x=year, y=n, color=continent))
+```
 
-  -->
+Can you spot the differences between the two graphs?
+
+If you look closely, you can see the second graph correctly starts at zero for 
+all continents except Europe and Asia; and you can also see that Asia in fact 
+dropped to zero countries below replacement in 1970 as fertility in Japan briefly passed 2.1.
+So, the first graph (with the missing rows) wasn't just incomplete, it was actually **incorrect**
+for Asia in 1970. 
+
+The reason for this is that if a row is missing, ggplot simply plots to the next point, 
+drawing a straight line between the known points. This is often incorrect as it seemingly implies
+a data point where none exists. 
+Note that if the row would exist but with an explicit `NA`, it would interrupt the line at that point,
+which would be correct if the value for that year is actually unknown. 
+
+Looking at the code, there are some things to note.
+First, in `complete` we first provide the `year` and `continent` columns for which to complete the rows,
+and then use the `list(n=0)` to indicate which value columns should be added. 
+Second, since the `below_replacement` data was still grouped by year,
+we need to ungroup before completing.
+Finally, `complete` in this form only completes years (and continents) that are actually in the data set. 
+If there are years that are left out for all continents, you can fix this by using
+`complete(year=full_seq(year, 1), continent)` instead, which creates the full sequence for the year variable between the observed extremes.
+
+
+### Exercise: Which countries go against the trend?
+
+{{< include exercises/_ch06_ex_asia_outliers.qmd >}}
 
 ## Other chart types
 

@@ -1,6 +1,7 @@
 ::: {.exercise}
 The code below shows the relation between infant mortality and fertility in 2010.
-Change it to show the relation between GDP per capita (`gdp_percap`) and life expectancy (`life_expectancy`) instead, keeping the trend line.
+Change it to show the relation between GDP per capita (`gdp_percap`) on the x axis 
+and life expectancy (`life_expectancy`) on the y axis instead, keeping the trend line.
 :::
 
 ```{webr}
@@ -48,7 +49,23 @@ gap_2010 |>
 ```{webr}
 #| exercise: ex_gdp_life
 #| check: true
-gradethis::grade_this_code()
+
+gradethis::grade_this({
+  if (inherits(.result, "ggplot")) {
+    gradethis::fail_if(
+      rlang::as_label(.result$mapping$x) == "gdp",
+      "The `gdp` column is the *total* GDP of a country, so big countries would dominate. Which column does the `mutate` create?")
+    gradethis::fail_if(
+      rlang::as_label(.result$mapping$y) == "fertility",
+      "The x axis is right, but the y axis still shows fertility. Which column holds life expectancy?")
+    gradethis::fail_if(
+      rlang::as_label(.result$mapping$x) == "infant_mortality",
+      "The y axis is right, but the x axis still shows infant mortality. Which column does the `mutate` create?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+
+})
 ```
 
 ::: {.challenge title="Interpreting the effect of GDP"}
