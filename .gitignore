@@ -12,3 +12,4 @@ models/
 
 **/*.quarto_ipynb
 /.RData
+Rplots.pdf

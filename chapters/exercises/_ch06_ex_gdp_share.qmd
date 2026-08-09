@@ -1,0 +1,117 @@
+::: {.exercise}
+The stacked chart above makes it easy to see the world total per decade,
+but it's hard to tell whether Asia's *share* of world GDP actually grew:
+every bar has a different height, so the segments aren't comparable.
+
+Fill in the blanks below to compute a `share` column,
+containing each continent's share of the total GDP in that decade,
+and plot that instead of the raw GDP.
+
+To do this, use the `group_by |> mutate` pattern explained in @sec-groupbymutate to compare a continent's GDP
+to the total GDP in that decade.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_gdp_share
+library(dslabs)
+library(tidyverse)
+library(ggthemes)
+gdp_per_decade <- as_tibble(gapminder) |>
+  mutate(decade=floor(year / 10) * 10) |>
+  group_by(continent, decade) |>
+  summarize(gdp=sum(gdp, na.rm=TRUE))
+```
+
+```{webr}
+#| exercise: ex_gdp_share
+#| warning: false
+# Fill in the blanks below:
+gdp_share_per_decade <- gdp_per_decade |>
+  group_by(...) |>
+  mutate(share = ...)
+
+ggplot(gdp_share_per_decade,
+       aes(x=as.factor(decade), y=..., fill=fct_reorder(continent, gdp))) +
+  geom_col() +
+  labs(title="Distribution of GDP over continents per decade",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)",
+       y="Share of total GDP",
+       x="",
+       fill=NULL) +
+  theme_classic()
+```
+
+::: { .hint exercise="ex_gdp_share"}
+::: { .callout-tip title="Hint:"}
+- Group by `decade` only: you want each continent's share *within* a decade,
+  so the total you divide by should be the total of that decade.
+- Inside a grouped `mutate`, `sum(gdp)` gives the total GDP of the group rather than of the whole data set.
+- Don't forget to also map `y` to your new column.
+:::
+:::
+
+::: {.solution exercise="ex_gdp_share"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+Group by `decade` only: you want each continent's share *within* a decade,
+so the total you divide by should be the total of that decade.
+Inside a grouped `mutate`, `sum(gdp)` gives the total GDP of that decade rather than of the whole data set,
+so `gdp / sum(gdp)` is the share of that continent in that decade.
+Finally, `y` needs to be mapped to the new `share` column.
+
+```{webr}
+#| exercise: ex_gdp_share
+#| solution: true
+# Solution with blanks filled in:
+gdp_share_per_decade <- gdp_per_decade |>
+  group_by(decade) |>
+  mutate(share = gdp / sum(gdp))
+
+ggplot(gdp_share_per_decade,
+       aes(x=as.factor(decade), y=share, fill=fct_reorder(continent, gdp))) +
+  geom_col() +
+  labs(title="Distribution of GDP over continents per decade",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)",
+       y="Share of total GDP",
+       x="",
+       fill=NULL) +
+  theme_classic()
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_gdp_share
+#| check: true
+
+gradethis::grade_this({
+  if (inherits(.result, "ggplot") && is.data.frame(.result$data)) {
+    gradethis::fail_if(
+      !"share" %in% names(.result$data),
+      "Did you add a column called `share` to the data?")
+    gradethis::fail_if(
+      !isTRUE(all.equal(sum(.result$data$share),
+                        length(unique(.result$data$decade)))),
+      "Your shares don't add up to 100% within each decade. Which variable are you grouping by?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+
+})
+```
+
+::: {.challenge title="Reading the shares"}
+Which continent's share grew the most over these decades? Which shrank?
+
+Africa's share is small and doesn't grow much. Does that mean African economies didn't grow?
+What does a *share* hide that the previous chart showed?
+
+Finally, look at the 2010s bar. In the previous chart it was conspicuously short,
+and you were asked why. Here it looks like every other bar. How comes?
+:::
+
+
+As a final note, the same effect could have been reached by just using `position="fill"` instead of manually
+calculating the percentages. 
+Similar to the explanation about `geom_bar` above, this can be a convenient shortcut, 
+but by calculating it yourself you achieve the same results with more transparency and flexibility. 

@@ -1,0 +1,231 @@
+::: {.exercise}
+**Part (a): which countries went against the trend?**
+
+Earlier in this section we noticed that some Asian countries went against the overall trend,
+with fertility still *increasing* well after everyone else had started to decline.
+The spaghetti plot was far too crowded to tell which ones, so let's ask the data instead.
+
+Fill in the blanks below to find, for each Asian country, the year in which its fertility was highest,
+and then keep only the countries that peaked after 1980.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_asia_peaks
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+```
+
+```{webr}
+#| exercise: ex_asia_peaks
+# Fill in the blanks below:
+peaks <- gap |>
+  filter(continent == "Asia") |>
+  group_by(...) |>
+  slice_max(order_by=..., n=1, with_ties=FALSE) |>
+  filter(year > 1980) |>
+  arrange(desc(year))
+peaks
+```
+
+::: { .hint exercise="ex_asia_peaks"}
+::: { .callout-tip title="Hint:"}
+- You want the highest fertility *per country*, so that is what you should group by
+  (see @sec-groupbyslice).
+- `slice_max` keeps the rows with the highest value of the column you give it in `order_by`.
+  Here, a country's peak is the year in which its *fertility* was highest.
+- `n=1` keeps a single row per country, and `with_ties=FALSE` makes sure you get exactly one row
+  even if two years are tied for the highest value.
+:::
+:::
+
+::: {.solution exercise="ex_asia_peaks"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+Since you want the peak of each separate country, you group by `country`.
+`slice_max` then keeps, within each group, the row with the highest value of the column
+given in `order_by` -- here `fertility`, since that is the variable whose peak we are after.
+`n=1` asks for a single row per country, and `with_ties=FALSE` guarantees exactly one row
+even where two years are tied for the highest fertility (which happens more often than you would think,
+since fertility is rounded to two decimals).
+
+The result is five countries: Timor-Leste, Lao, Maldives, Yemen and Oman.
+Note how the `fertility` column already tells you which of them are the extreme ones you spotted
+in the graph: Yemen and Oman peak at 9.22 and 8.35, far above anything else in Asia,
+while the other three peak around 6.4 to 7.3 and are hidden in the crowd.
+
+```{webr}
+#| exercise: ex_asia_peaks
+#| solution: true
+# Solution with blanks filled in:
+peaks <- gap |>
+  filter(continent == "Asia") |>
+  group_by(country) |>
+  slice_max(order_by=fertility, n=1, with_ties=FALSE) |>
+  filter(year > 1980) |>
+  arrange(desc(year))
+peaks
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_asia_peaks
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(
+      nrow(.result) == 1,
+      "You got a single row for the whole of Asia. Did you group by country before slicing?")
+    gradethis::fail_if(
+      !"country" %in% names(.result),
+      "Your result should still have a `country` column, with one row per country.")
+    gradethis::fail_if(
+      "country" %in% names(.result) &&
+        !setequal(as.character(.result$country),
+                  c("Timor-Leste", "Lao", "Maldives", "Yemen", "Oman")),
+      "You should end up with the five Asian countries whose fertility peaked after 1980. Which column should `slice_max` order by?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+
+})
+```
+
+::: {.exercise}
+**Part (b): show them**
+
+Now that you know which countries to talk about, you can put them back in the graph.
+The trick is to draw *all* Asian countries in grey first,
+and then draw only the countries you are interested in on top of that in colour.
+
+The `peaks` data frame from part (a) is already available:
+the second line uses `peaks$country` to select the country names,
+and then uses it to filter the full history of those five countries.
+
+Fill in the blanks to:
+
+- make sure the grey background lines are drawn per country rather than all connected;
+- tell the second `geom_line` to use the `outliers` data rather than all of Asia.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_asia_outliers
+library(dslabs)
+library(tidyverse)
+gap <- as_tibble(gapminder)
+peaks <- gap |>
+  filter(continent == "Asia") |>
+  group_by(country) |>
+  slice_max(order_by=fertility, n=1, with_ties=FALSE) |>
+  filter(year > 1980) |>
+  arrange(desc(year))
+```
+
+```{webr}
+#| exercise: ex_asia_outliers
+#| warning: false
+# Fill in the blanks below:
+asian_countries <- gap |> filter(continent == "Asia")
+outliers <- asian_countries |> filter(country %in% peaks$country)
+
+ggplot(asian_countries, aes(x=year, y=fertility)) +
+  geom_line(aes(group=...), color="grey75") +
+  geom_line(data=..., aes(color=country), linewidth=1) +
+  labs(title="Fertility in Asia",
+       subtitle="The five countries that peaked after 1980",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)",
+       y="Fertility (children per woman)",
+       x="",
+       color="Selected countries") +
+  theme_classic()
+```
+
+::: { .hint exercise="ex_asia_outliers"}
+::: { .callout-tip title="Hint:"}
+- The grey lines suffer from exactly the problem described above:
+  nothing is mapped to colour, so ggplot puts every Asian country in a single group
+  and connects them all into one zigzag.
+- The second `geom_line` should draw the `outliers` data frame created on the second line,
+  overriding the data given in the `ggplot` call for that layer only.
+:::
+:::
+
+::: {.solution exercise="ex_asia_outliers"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+For the grey background lines, nothing is mapped to colour,
+so ggplot would put every Asian country into a single group and connect them all into one zigzag --
+the same gotcha as the spaghetti plot above.
+Adding `group=country` gives each country its own line.
+
+The second `geom_line` gets `data=outliers`, which overrides the data given in the `ggplot` call
+for that layer only. Because `color=country` is mapped inside that layer,
+only the five highlighted countries end up in the legend.
+
+```{webr}
+#| exercise: ex_asia_outliers
+#| solution: true
+#| warning: false
+# Solution with blanks filled in:
+asian_countries <- gap |> filter(continent == "Asia")
+outliers <- asian_countries |> filter(country %in% peaks$country)
+
+ggplot(asian_countries, aes(x=year, y=fertility)) +
+  geom_line(aes(group=country), color="grey75") +
+  geom_line(data=outliers, aes(color=country), linewidth=1) +
+  labs(title="Fertility in Asia",
+       subtitle="The five countries that peaked after 1980",
+       caption="Source: Gapminder.org, via the R package dslabs (CC-BY)",
+       y="Fertility (children per woman)",
+       x="",
+       color="Selected countries") +
+  theme_classic()
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_asia_outliers
+#| check: true
+
+gradethis::grade_this({
+  if (inherits(.result, "ggplot") && length(.result$layers) >= 2) {
+    gradethis::fail_if(
+      is.null(rlang::get_expr(.result$layers[[1]]$mapping$group)),
+      "The grey lines are still connected into one big zigzag. Which aesthetic tells ggplot to draw one line per country?")
+    gradethis::fail_if(
+      !setequal(as.character(.result$layers[[2]]$data$country), as.character(peaks$country)),
+      "The coloured layer should draw the five countries from `outliers`. Which data should this `geom_line` use?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+
+})
+```
+
+This exercise represented a typical data science cycle:
+you plot all data (the 'spaghetti plot' made earlier), 
+and notice something odd.
+Then, you use data wrangling commands to investigate which cases displayed the odd behaviour (part A of this exercise),
+and finally used that to plot those specific cases to understand the story better (part B of this exercise).
+
+::: {.challenge title="Reading the outliers"}
+Yemen and Oman are the two you could actually see in the earlier plot,
+and both show the same shape: fertility *rises* for two decades before it starts to fall.
+Why would fertility go up before it goes down?
+
+Timor-Leste is stranger still: it drops until the late 1970s and only then starts climbing.
+Look up what happened there in 1975, and what happened in 1999.
+
+Finally, two questions about the method rather than the substance:
+
+- We picked "peaked after 1980" as our criterion. Try 1970 and 1985 instead: the list grows to nine
+  countries and shrinks to one. Now try 1975 -- you get exactly the same five as with 1980.
+  What does that tell you about how much our five depend on where we drew the line?
+- China's fertility rose further than any other Asian country
+  (from 4.0 children per woman in 1960 to 7.4 in 1963),
+  but it does not show up in our list at all. Add `"China"` to the `outliers` and see if you can
+  work out why our criterion missed it.
+:::
