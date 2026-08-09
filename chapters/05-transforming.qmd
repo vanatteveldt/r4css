@@ -63,8 +63,8 @@ Thinking ahead for the next chapter on visualization:
 | title    | character     | Title of the film                                                                        |
 | test     | character     | Detailed Bechdel-test outcome: one of `ok`, `dubious`, `men`, `notalk`, `nowomen`, sometimes with a `-disagree` suffix when the rating was contested |
 | budget   | numeric (dbl) | Production budget in US dollars (inflation-adjusted)                        |
-| domestic_gross | numeric (dbl) | Domestic (US) box-office gross in US dollars                                             |
-| foreign_gross | numeric (dbl) | International box-office gross in US dollars                                             |
+| domestic_gross | numeric (dbl) | Domestic (US) box-office gross in US dollars (inflation-adjusted)                                            |
+| foreign_gross | numeric (dbl) | International box-office gross in US dollars (inflation-adjusted)                                             |
 :::
 
 
@@ -553,7 +553,7 @@ we can calculate the average budget of films per decade:
 
 
 ```{webr}
-#| exercise: ['demo_groupby_mutate', 'demo_groupby_mutate2']
+#| exercise: ['demo_groupby_mutate', 'demo_groupby_mutate2', 'demo_groupby_slice']
 #| setup: true
 library(tidyverse)
 bechdel_decade <- read_csv("data/bechdel.csv") |>
@@ -601,7 +601,35 @@ Note that the list of relatively expensive movies is not saved as an object here
 
 ### Selecting items with `slice_*`   {#sec-groupbyslice}
 
-<!-- TODO: Add explanation and demo for group_by |> slice_max etc. -->
+A final useful operation on groups is to `slice` them,
+for example to take the highest grossing film per decade:
+
+```{webr}
+#| exercise: demo_groupby_slice
+highestgross_per_decade <- bechdel_decade |>
+  mutate(gross=domestic_gross + foreign_gross) |> 
+  group_by(decade) |>
+  slice_max(order_by=gross, n=1, with_ties=TRUE)
+highestgross_per_decade |>
+  select(decade, year, title, gross)
+```
+::: {.challenge}
+- Do those films make sense to you? 
+- It seems odd that the 2010s had a relatively low highest grossing film. What could cause this? How can you check this in the data?
+  (hint: try changing decade to year in the code above, and then adding `|> print(n=100)` after the select to print all rows)
+- How do `slice` and `group_by` interact? What would happened if you `slice` without a `group_by`?
+:::
+
+The code above takes a *slice* for each group, in this case taking the single (`n=1`)
+row with the highest gross within that decade. 
+The `with_ties=TRUE` (which is also the default) means that in the unlikely case that two films had identical gross,
+it would keep both rather than only selecting the first - set it to `FALSE` to ensure you get only a single row per group.
+
+Besides `slice_max` and its companion `slice_min`, 
+you can also use `slice_head` or `slice_tail` to select the first or last row(s) in each group
+(especially useful if the data is already ordered); and `slice_sample` to take a random sample of rows from each group
+(useful for stratified samples).
+
 
 ### Exercise: Bechdel test over time (part 2)
 

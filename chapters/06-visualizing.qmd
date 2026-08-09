@@ -546,10 +546,10 @@ Some important things to note in the code above:
 
 ::: {.challenge title="Did the world get poorer in the 2010s?"}
 
-You might also have noticed that the 2010's total is actually lower than the 2000s. 
+You might also have noticed that the 2010s total is actually lower than the 2000s. 
 Of course, the world didn't suddenly get much poorer. 
 
-- What do you think causes the 2010's values to be lower than the 2000s? 
+- What do you think causes the 2010s values to be lower than the 2000s? 
 - How can you confirm that this is the case?
 - What are good ways to fix this? 
 
