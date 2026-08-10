@@ -44,13 +44,13 @@ as_tibble(fivethirtyeight::bechdel) |>
 
 - **File**: [co2_emissions.csv](co2_emissions.csv)
 - **Source**: [Our World in Data](https://github.com/owid/co2-data), based on the [Global Carbon Budget](https://globalcarbonbudgetdata.org/) (Global Carbon Project) and [National contributions to climate change](https://zenodo.org/records/7636699/latest) (Jones et al.)
-- **Description**: Annual greenhouse gas emissions per country from 1850 onwards: CO2 (total, per capita, and cumulative since 1750), methane and nitrous oxide (both in CO2 equivalents), and total greenhouse gases. Includes a `World` row alongside the individual countries; regional and income-group aggregates were dropped, as were the energy columns from the original dataset.
+- **Description**: Annual greenhouse gas emissions per country from 1850 onwards: CO2 (total, per capita, and cumulative since 1750), methane and nitrous oxide (both in CO2 equivalents), and total greenhouse gases. Global, regional and income-group aggregates were dropped, as were the energy columns from the original dataset.
 - **License**: CC-BY 4.0
 
 Code:
 ```{r}
 readr::read_csv("https://owid-public.owid.io/data/co2/owid-co2-data.csv") |>
-  dplyr::filter(!is.na(iso_code) | country == "World", year >= 1850) |>
+  dplyr::filter(!is.na(iso_code), year >= 1850) |>
   dplyr::select(country, year, population, co2, co2_per_capita, cumulative_co2,
                 methane, nitrous_oxide, total_ghg) |>
   dplyr::mutate(population = round(population),
@@ -72,6 +72,7 @@ readr::read_csv("https://ourworldindata.org/grapher/temperature-anomaly.csv?csvT
   dplyr::filter(Year <= 2025) |>
   dplyr::select(region = Entity, year = Year, temp_anomaly = Average,
                 temp_lower = `Lower bound`, temp_upper = `Upper bound`) |>
+  dplyr::arrange(year) |>
   readr::write_csv(here::here("data/temperature_anomaly.csv"))
 ```
 

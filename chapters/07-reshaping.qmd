@@ -2,9 +2,9 @@
 title: "Reshaping data (todo)"
 webr:
   resources:
-    - ../data/dutch_demographics.csv
-    - ../data/dutch_elections_2023.csv
-    - ../data/shapes_nl.rds
+    - ../data/temperature_anomaly.csv
+    - ../data/co2_emissions.csv
+    - ../data/income_groups.csv
 editor_options: 
   chunk_output_type: console
 ---
@@ -12,37 +12,156 @@ editor_options:
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
+```{webr}
+#| autorun: true
+#| include: false
+library(tidyverse)
+```
 
+## Introduction
+
+So far, all data wrangling operations in this book operated 
+on the rows, columns, or cells of data frames:
+filtering the rows, selecting the columns, mutating or summarizing the values. 
+
+This chapter expands on this by operating on the overall **shape** of data frames.
+In the first section we will use `pivot` to turn columns into rows and the other way around.
+Next, we will use `join` to combine multiple data sets together. 
+We will use these techniques to look at the relation between global temperature rise and greenhouse gas emissions.  
+
+<!-- 
+Q: What we don't teach anywhere yet:
+- bind_rows
+- unnest (but will see that with strings in any case)
+- separate / unite 
+- replace_na
+- rowwise
+Do we need to teach this anywhere?
+-->
+
+### Data used in this chapter
+
+This chapter will use data from the website [Our world in data](https://ourworldindata.org).
+This is a very rich resource for various country-level facts and statistics. 
+In particular we will use three data sets:
+
+- [Global Temperature Anomaly](https://ourworldindata.org/grapher/temperature-anomaly),
+  derived from the British [Met Office Hadley Centre HadCRUT5 data](https://www.metoffice.gov.uk/hadobs/hadcrut5/), 
+  contains the yearly temperature from 1850 compared to a pre-industrial level baseline
+  ([Open Government License](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/))
+- [Greenhouse Gas Emissions](https://github.com/owid/co2-data), based on the 
+  [Global Carbon Budget](https://globalcarbonbudgetdata.org/) (Global Carbon Project) and [National contributions to climate change](https://zenodo.org/records/7636699/latest) datasets,
+  contains the CO2 and other greenhouse gas emissions per year and per country from 1850 (CC-BY license)
+- [World Bank Income Groups](https://ourworldindata.org/grapher/world-bank-income-groups) based on
+  the [World Bank country classification](https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups)
+  gives an annual classification from 1987 of countries into lower to high income groups  (CC-BY licensed)
+
+We will be using smaller subsets of these data files that are redistributed along with this book.
+If you're curious, you can see the [data sets documentation](https://github.com/vanatteveldt/r4css/blob/main/data/README.md) which contains the R code used to download and preprocess the files. 
 
 ## Pivotting data: wide vs long {#sec-pivot}
+ 
+Let's take a look at the temperature anomaly dataset:
 
-```{r}
+```{webr}
+#| exercise: 'temp_data'
+#| warning: false
 library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/temperature_anomaly.csv", "temperature_anomaly.csv")
+temp <- read_csv("temperature_anomaly.csv")
+head(temp)
+```
 
-### Data
+As you can see, this contains data per year for each 'region' (hemisphere or world average).
+One row represents a combination of a year and a region,
+with values for the temperature anomaly and the upper and lower confidence interval. 
 
-# CO2 data from Global Carbon Budget (2025); Jones et al. (2025) – with major processing by Our World in Data
+Let's see if we can recreate a version of the famous 'barcode plot' on temperature rise: 
+
+```{webr}
+#| exercise: ['temp_barcode', 'temp_pivot_wider', 'temp_pivot_wider2']
+#| setup: true
 temp <- read_csv("data/temperature_anomaly.csv")
-table(temp$region)
-ggplot(temp, aes(x=year, y=temp_anomaly, color=region)) + 
-  geom_line()  
-
-
-### Using pivot_wider
-
-# (2) We notice a gap between south and north, this is a good usecase for teaching pivot_wider:
 temp_diff <- temp |> 
   select(year, region, temp_anomaly) |> 
   pivot_wider(names_from=region, values_from=temp_anomaly) |>
   rename(south=`Southern Hemisphere`, north=`Northern Hemisphere`) |>
   mutate(diff=north - south) 
+```
+```{webr}
+#| exercise: temp_barcode
+ggplot(temp, aes(x=year, fill=temp_anomaly, y=fct_reorder(region, temp_anomaly))) + 
+  geom_tile() + 
+  scale_fill_gradient2(low="darkblue", mid="white", high="darkred", 
+                       midpoint=.54, guide=NULL) + 
+  labs(title="Temperature anomaly per hemisphere",
+       x="",
+       y="")
+```
 
+(Note that to produce the colors we used `scale_fill_gradient2`, which controls how
+data values are mapped to colors (see @sec-advancedggplot for more information).
+The neutral midpoint is set to .54, the average value for 1961-2010 also used in the original.)
+
+### Long to wide data: `pivot_wider`
+
+As you can see in the graph, the data is split by 'region', which contains rows for both hemispheres as well as for a global average. 
+It is also clear that the northern hemisphere is warming up more quickly than the southern. 
+However, if we want to calculate that gap we run into a problem: 
+the values for north and south are in different rows, 
+while we would need them in different columns on the same row to do a calculation.
+
+In the lingo of tidyverse: we have **long data** (variables are in rows)
+that we want to turn into **wide data** (variables are in columns). 
+
+To do so, we use the function `pivot_wider`:
+
+```{webr}
+#| exercise: temp_pivot_wider
+temp_diff <- temp |> 
+  select(year, region, temp_anomaly) |> 
+  pivot_wider(names_from=region, values_from=temp_anomaly) |>
+  rename(south=`Southern Hemisphere`, north=`Northern Hemisphere`) |>
+  mutate(diff=north - south) 
+head(temp_diff)
+```
+
+As you can see, there is now one row per year,
+with three data columns: one each for the unique values of the region
+(`names_from=region`). 
+The values represent the temperature anomaly in this year and region
+(`values_from=temp_anomaly`). 
+
+We can now plot this difference:
+
+```{webr}
+#| exercise: temp_pivot_wider2
 temp_diff |>
   ggplot(aes(x=year, y=diff)) + 
   geom_hline(yintercept=0, color="red", alpha=.2) + 
   geom_line()
+```
 
-# Add a callout on the imporance of selecting out any columns with variation
+::: {.challenge title="Why the `select` function?"}
+
+In the code example for `pivot_wider` above, we used a `select` to drop the confidence interval 
+variables before pivotting. Why do you think we do this?
+
+Remove the `select` line and re-run the example. 
+Does the result make any sense? Why does it happen?
+:::
+
+As you saw when you removed the `select` line, this is a crucial step before pivoting.
+The reason for this is that each column that is not used in the pivot (i.e. the `names_from` and `values_from` columns) 
+are treated as identifying unique rows. So, each year is given a new row (as expected),
+but without the select each `temp_lower` and `temp_upper` value is also seen as identifying a row!
+So, the result is not one row per year, but one row per year, lower, and upper combination. 
+Since the lower and upper bound tend to be unique, this means we create 3 rows per year.
+
+The lesson here is: **before** doing `pivot_wider`, **always** make sure the data only contiains the columns
+uniquely identifying the rows (here: `year`) and the names and values columns (`region` and `temp_anomaly`). 
+
+```{r, eval=F}
 
 ### Using pivot_longer
 
@@ -73,6 +192,43 @@ ghg_sources |>
   ggplot(aes(x=year, y=value, color=source)) + geom_line()
 
 # Callout on 'tidy' data, esp for ggplot
+
+### Exercise: compare two years
+# e.g. (from claude:)
+
+# NOTE: NEEDS SELECT
+co2 |> filter(year %in% c(1990, 2020)) |>
+  pivot_wider(names_from = year, values_from = co2, names_prefix = "y") |>
+  mutate(change = 100 * (y2020 - y1990) / y1990)
+# Might even be a good moment to demo a cleveland / difference lollipot chart
+
+### Demo: dumbbell chart (from claude)
+
+# geom_segment needs the start and end of each line in the same row,
+# so this plot can only be made from the wide format
+big_emitters <- co2 |>
+  filter(year == 2020, country != "World") |>
+  slice_max(co2, n = 16) |>
+  pull(country)
+
+per_capita <- co2 |>
+  filter(year %in% c(1990, 2020), country %in% big_emitters) |>
+  select(country, year, co2_per_capita) |>
+  pivot_wider(names_from = year, values_from = co2_per_capita, names_prefix = "y") |>
+  mutate(change = y2020 - y1990)
+
+ggplot(per_capita, aes(y = fct_reorder(country, y2020))) +
+  geom_segment(aes(x = y1990, xend = y2020, color = change > 0), linewidth = 1.2) +
+  geom_point(aes(x = y1990), color = "grey50", size = 2) +
+  geom_point(aes(x = y2020, color = change > 0), size = 3) +
+  # Default colors map 'increase' to blue-green, which reads backwards for emissions
+  scale_color_manual(values = c(`TRUE` = "firebrick", `FALSE` = "steelblue"), guide = "none") +
+  labs(x = "CO2 emissions per capita (tonnes)", y = NULL,
+       title = "Emissions per capita, 1990 (grey) to 2020")
+
+# Challenge: the US falls from 20.2 to 13.9, India rises from 0.7 to 1.9.
+# Which of the two is doing better? Does per capita or total emissions matter?
+# (scale_color_manual is @sec-advancedggplot material - forward reference or drop the color)
 ```
 
 
@@ -80,11 +236,12 @@ ghg_sources |>
 ## Joining multiple data sets
 
 Claude: 
+
 - 1:many blowup needs to be singalled explicitly
 - coverage loss for income classification is a good explicit lesson
 - order bar plot
 
-```{r}
+```{r, eval=F}
 # Are the rich or the poor countrires polluting?
 # Let's get income class data
 income <- read_csv("data/income_groups.csv")
@@ -119,22 +276,32 @@ income |> select(country=Entity, year=Year, income=`World Bank's income classifi
   summarize(co2=sum(co2, na.rm=T)) |>
   ggplot(aes(x=year, y=co2, fill=income)) + geom_area()
 
+# Maybe turn this into a demo+challenge instead?
 # Challenge: why are low-income countries emitting less co2 over time?
 # what is the bump in upper-middle countries in 2010? (answer: countries (esp china) are reclassified)
 # How could you fix this? (answer: use a constant measure, e.g. use the 2020 classification instead)
 # what changes if you use cumulative co2 instead? (answer: it makes the rich world's share clearer)
 ```
 
+## Important take-away (callout)
+
+for both joinign and pivoting the columns play an important role
+this makes it very important to *first* select/rename to get the right columns
+and then call the join or pivot
+plus specific rules on what the 'right' columns are 
+
 ## Exercise: Are co2 emissions and temperature correlated over time?
 
 (chapter-level exercise combining joining and pivoting)
 
-```{r}
+```{r eval=F}
 # Part A: Join
 world_temp <- temp |> filter(region == "World")
 world_co2 <- co2 |> group_by(year) |> summarize(co2=sum(cumulative_co2, na.rm=TRUE))
 temp_and_co2 <- inner_join(world_temp, world_co2) 
 cor.test(temp_and_co2$temp_anomaly, temp_and_co2$co2)
+
+# Challenge: is the correlation actually meaningful? How to fix this?
 
 # Part B: Pivot to plot
 temp_and_co2 |> select(year, co2, temp_anomaly) |>
@@ -143,7 +310,6 @@ temp_and_co2 |> select(year, co2, temp_anomaly) |>
   mutate(index=value/mean(value) * 100) |>
   ggplot(aes(x=year, y=index, color=name)) + geom_line() 
 
-# Challenge: is the correlation actually meaningful? How to fix this?
 ```
 
 
