@@ -5,11 +5,145 @@ webr:
     - ../data/dutch_demographics.csv
     - ../data/dutch_elections_2023.csv
     - ../data/shapes_nl.rds
+editor_options: 
+  chunk_output_type: console
 ---
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
+
+
 ## Pivotting data: wide vs long {#sec-pivot}
 
+```{r}
+library(tidyverse)
+
+### Data
+
+# CO2 data from Global Carbon Budget (2025); Jones et al. (2025) – with major processing by Our World in Data
+temp <- read_csv("data/temperature_anomaly.csv")
+table(temp$region)
+ggplot(temp, aes(x=year, y=temp_anomaly, color=region)) + 
+  geom_line()  
+
+
+### Using pivot_wider
+
+# (2) We notice a gap between south and north, this is a good usecase for teaching pivot_wider:
+temp_diff <- temp |> 
+  select(year, region, temp_anomaly) |> 
+  pivot_wider(names_from=region, values_from=temp_anomaly) |>
+  rename(south=`Southern Hemisphere`, north=`Northern Hemisphere`) |>
+  mutate(diff=north - south) 
+
+temp_diff |>
+  ggplot(aes(x=year, y=diff)) + 
+  geom_hline(yintercept=0, color="red", alpha=.2) + 
+  geom_line()
+
+# Add a callout on the imporance of selecting out any columns with variation
+
+### Using pivot_longer
+
+# Just to teach the syntax, let's reverse the pivot_wider
+pivot_longer(temp_diff, north:diff)
+pivot_longer(temp_diff, -year, names_to="region", values_to="temperature_anomaly")
+
+
+### Carbon dioxide data
+
+# For a more serious use of pivot_longer let's have a look at the carbon data
+co2  <- read_csv("data/co2_emissions.csv")
+# Note: We remove 'world' from the csv so we can reinforce the groupby_summarize
+co2 |> 
+  group_by(year) |>
+  summarize(co2=sum(co2, na.rm=TRUE)) |>
+  ggplot(aes(x=year, y=co2)) + geom_line()
+
+#  plot the co2, methane, no and ghg 
+# This requires pivot_longer (to use color=variable)
+ghg_sources <- co2 |>
+  select(country, year, co2, methane, nitrous_oxide) |>
+  pivot_longer(co2:nitrous_oxide, names_to="source")
+
+ghg_sources |> 
+  group_by(year, source) |>
+  summarize(value=sum(value, na.rm=TRUE)) |>
+  ggplot(aes(x=year, y=value, color=source)) + geom_line()
+
+# Callout on 'tidy' data, esp for ggplot
+```
+
+
+
 ## Joining multiple data sets
+
+Claude: 
+- 1:many blowup needs to be singalled explicitly
+- coverage loss for income classification is a good explicit lesson
+- order bar plot
+
+```{r}
+# Are the rich or the poor countrires polluting?
+# Let's get income class data
+income <- read_csv("data/income_groups.csv")
+income_2020 <- income |> filter(Year==2020) |> select(country=Entity, income=`World Bank's income classification`)
+
+# Cutoff at 2020 and join
+# Naive: inner join
+
+co2_2020 <- co2 |> filter(year == 2020)
+combined <- inner_join(co2_2020, income_2020) 
+ggplot(combined, aes(y=income, x=cumulative_co2)) + geom_col()
+# Note: Should summarize first!
+
+# Callout (or challenge) on key columns and renaming/selecting (preferred) vs using by
+
+
+### Explaining inner / full / left / right
+combined_left <- left_join(co2_2020, income_2020) 
+filter(combined_left, is.na(income))
+
+### Explain semi and anti join as useful shorthand and debugging tools
+anti_join(co2_2020, income_2020)
+semi_join(co2_2020, income_2020)
+
+# challenge to interpret this, especially venezuela,
+# and figure out a way of dealing with it
+
+### Exercise: co2 by country income type over time
+income |> select(country=Entity, year=Year, income=`World Bank's income classification`) |>
+  inner_join(co2) |>
+  group_by(year, income) |>
+  summarize(co2=sum(co2, na.rm=T)) |>
+  ggplot(aes(x=year, y=co2, fill=income)) + geom_area()
+
+# Challenge: why are low-income countries emitting less co2 over time?
+# what is the bump in upper-middle countries in 2010? (answer: countries (esp china) are reclassified)
+# How could you fix this? (answer: use a constant measure, e.g. use the 2020 classification instead)
+# what changes if you use cumulative co2 instead? (answer: it makes the rich world's share clearer)
+```
+
+## Exercise: Are co2 emissions and temperature correlated over time?
+
+(chapter-level exercise combining joining and pivoting)
+
+```{r}
+# Part A: Join
+world_temp <- temp |> filter(region == "World")
+world_co2 <- co2 |> group_by(year) |> summarize(co2=sum(cumulative_co2, na.rm=TRUE))
+temp_and_co2 <- inner_join(world_temp, world_co2) 
+cor.test(temp_and_co2$temp_anomaly, temp_and_co2$co2)
+
+# Part B: Pivot to plot
+temp_and_co2 |> select(year, co2, temp_anomaly) |>
+  pivot_longer(-year) |>
+  group_by(name) |>
+  mutate(index=value/mean(value) * 100) |>
+  ggplot(aes(x=year, y=index, color=name)) + geom_line() 
+
+# Challenge: is the correlation actually meaningful? How to fix this?
+```
+
+
