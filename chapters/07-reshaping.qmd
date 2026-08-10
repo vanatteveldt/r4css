@@ -79,7 +79,7 @@ with values for the temperature anomaly and the upper and lower confidence inter
 Let's see if we can recreate a version of the famous 'barcode plot' on temperature rise: 
 
 ```{webr}
-#| exercise: ['temp_barcode', 'temp_pivot_wider', 'temp_pivot_wider2']
+#| exercise: ['temp_barcode', 'temp_pivot_wider', 'temp_pivot_wider2', 'temp_pivot_longer', 'temp_pivot_longer2']
 #| setup: true
 temp <- read_csv("data/temperature_anomaly.csv")
 temp_diff <- temp |> 
@@ -101,7 +101,9 @@ ggplot(temp, aes(x=year, fill=temp_anomaly, y=fct_reorder(region, temp_anomaly))
 
 (Note that to produce the colors we used `scale_fill_gradient2`, which controls how
 data values are mapped to colors (see @sec-advancedggplot for more information).
-The neutral midpoint is set to .54, the average value for 1961-2010 also used in the original.)
+The neutral midpoint is set to .54, the average value for 1961-2010 also used in the original.
+We also use `geom_tile`, which paints a filled rectangle at the specified position -- 
+and since there are so many years they come out as thin bars)
 
 ### Long to wide data: `pivot_wider`
 
@@ -158,39 +160,116 @@ but without the select each `temp_lower` and `temp_upper` value is also seen as 
 So, the result is not one row per year, but one row per year, lower, and upper combination. 
 Since the lower and upper bound tend to be unique, this means we create 3 rows per year.
 
-The lesson here is: **before** doing `pivot_wider`, **always** make sure the data only contiains the columns
+The lesson here is: **before** doing `pivot_wider`, **always** make sure the data only contains the columns
 uniquely identifying the rows (here: `year`) and the names and values columns (`region` and `temp_anomaly`). 
 
-```{r, eval=F}
+### From wide to long data: `pivot_longer`
 
-### Using pivot_longer
+As you might expect, `pivot_longer` is the opposite of pivot_wider,
+turning columns into rows. We can use it to 'undo' our earlier pivot_longer:
 
-# Just to teach the syntax, let's reverse the pivot_wider
+```{webr}
+#| exercise: temp_pivot_longer
 pivot_longer(temp_diff, north:diff)
-pivot_longer(temp_diff, -year, names_to="region", values_to="temperature_anomaly")
+```
+As you can see from the result, changed the columns from `north` to `diff` into rows,
+creating four rows for each year (the original three regions, and a new 'diff' row).
+
+Here is another example that achieves the same goal with different syntax:
+
+```{webr}
+#| exercise: temp_pivot_longer2
+temp_diff |> 
+  pivot_longer(-year, names_to="region", values_to="temp_anomaly")
+```
+
+As you can see, rather than specifying the columns you want to pivot, 
+we here specify which columns to leave alone
+by using a *negative selection*: placing a minus before the column name(s). 
+We also explcitly specify the names for the new columns containing the *names* and *values*. 
+
+Note that the column names here need to be quoted (enclosed in `"` or `'`), 
+since they don't refer to an existing column or object. 
 
 
 ### Carbon dioxide data
 
-# For a more serious use of pivot_longer let's have a look at the carbon data
-co2  <- read_csv("data/co2_emissions.csv")
-# Note: We remove 'world' from the csv so we can reinforce the groupby_summarize
+Let's have a look at the greenhouse emission data, which shows one of the common places
+where we need `pivot_longer` in our daily work. 
+
+```{webr}
+#| exercise: 'co2_data'
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/co2_emissions.csv", "co2_emissions.csv")
+co2 <- read_csv("co2_emissions.csv")
+head(co2)
+```
+
+Just to explore this data, let's have a look at the rise in global co2 emission:
+
+```{webr}
+#| exercise: ['co2_plot',  'co2_pivot', 'co2_pivotplot']
+#| setup: true
+co2 <- read_csv("data/co2_emissions.csv")
+ghg_sources <- co2 |>
+  select(country, year, co2, methane, nitrous_oxide) |>
+  pivot_longer(co2:nitrous_oxide, names_to="type")
+
+```
+
+```{webr}
+#| exercise: 'co2_plot'
+#| warning: false
 co2 |> 
   group_by(year) |>
   summarize(co2=sum(co2, na.rm=TRUE)) |>
   ggplot(aes(x=year, y=co2)) + geom_line()
+```
 
-#  plot the co2, methane, no and ghg 
-# This requires pivot_longer (to use color=variable)
+### `pivot_longer` for plotting different columns
+
+The CO2 dataset shown above shows a common pattern: 
+for each case (country and year) it gives multiple measurements as columns.
+As illustrated earlier, this is convenient if you want to do calculations over the columns,
+or if you want to investigate statistical relations between the different columns.
+
+If we want to plot them as different lines though, `ggplot` expects them to be in different rows,
+so we can use e.g. `color=type` to plot them. 
+Converting columns into rows means turning wide data into long data, so we use `pivot_longer`:
+
+```{webr}
+#| exercise: 'co2_pivot'
 ghg_sources <- co2 |>
   select(country, year, co2, methane, nitrous_oxide) |>
-  pivot_longer(co2:nitrous_oxide, names_to="source")
+  pivot_longer(co2:nitrous_oxide, names_to="type")
+head(ghg_sources)
+```
 
+As you can see, we select the columns to pivot (`co2:nitrous_oxide`) and pivot them into a new `type` column,
+keeping the default `value` name for the values. We can now summarize and plot this data:
+
+```{webr}
+#| exercise: 'co2_pivotplot'
+#| warning: false
 ghg_sources |> 
-  group_by(year, source) |>
+  group_by(year, type) |>
   summarize(value=sum(value, na.rm=TRUE)) |>
-  ggplot(aes(x=year, y=value, color=source)) + geom_line()
+  ggplot(aes(x=year, y=value, color=type)) + geom_line() +
+  theme_classic() + 
+  labs(title="Global greenhouse gas emissions over time",
+       y="Megaton co2-equivalent",
+       x="",
+       color="Greenhouse Gas")
+```
 
+Since `type` is now a column, we could now simply specify `color=type` to create one line per greenhouse gas type.
+As an added bonus, the `summarize(value=sum(value))` now automatically summarizes the values for each gas. 
+Often, if you have one operation that you need to apply to multiple columns, it can be a good idea to pivot them into rows first
+(although for advanced R users there is also the `mutate(across())` option - see the [documentation](https://dplyr.tidyverse.org/reference/across.html) for more info).
+
+
+```{r, eval=F}
 # Callout on 'tidy' data, esp for ggplot
 
 ### Exercise: compare two years

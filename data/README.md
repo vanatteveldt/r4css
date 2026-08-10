@@ -56,6 +56,7 @@ readr::read_csv("https://owid-public.owid.io/data/co2/owid-co2-data.csv") |>
   dplyr::mutate(population = round(population),
                 dplyr::across(dplyr::where(is.numeric) & !c(year, population),
                               \(x) round(x, 2))) |>
+  arrange(-year) |>
   readr::write_csv(here::here("data/co2_emissions.csv"))
 ```
 
