@@ -1,5 +1,5 @@
 ---
-title: "Reshaping data (todo)"
+title: "Reshaping data"
 webr:
   resources:
     - ../data/temperature_anomaly.csv
@@ -296,18 +296,13 @@ Practicality beats purity, as [our competitors in the Python world](https://peps
 :::
 
 
-### Practice: the change in emissions per capita
+### Exercise: Change in emissions per capita
 
 {{< include exercises/_ch07_ex_change_emissions.qmd >}}
 
-### A dumbbell chart of the change
+::: {.challenge title="Plotting the change"}
 
-Now that we have the change per country, let's visualize it.
-Since a single line needs both the 1990 and the 2020 value in the same row, we need the wide `change_in_emissions` data we just computed rather than the long format.
-
-The code below picks the 16 largest emitters (by total CO2 in 2020) and draws a line from their 1990 to their 2020 emissions per capita, with an arrowhead showing the direction of change.
-It uses a couple of new tricks -- `geom_segment()` with an `arrow`, and a `left_join()` to attach the change we computed to the list of big emitters -- that we haven't covered yet.
-`left_join()` in particular is a small preview of the next section, where we'll properly introduce combining data from multiple tables.
+Now that we have the change per country, let's visualize it:
 
 ```{webr}
 #| setup: true
@@ -324,8 +319,8 @@ change_in_emissions <- co2 |>
 #| exercise: demo_dumbbell
 #| warning: false
 co2 |>
-  filter(year == 2020, country != "World") |>
-  left_join(change_in_emissions, by = "country") |>
+  filter(year == 2020) |>
+  left_join(change_in_emissions, join_by(country)) |>
   slice_max(co2, n = 16) |>
   ggplot(aes(y = fct_reorder(country, y1990), x = y1990, xend = y2020, color = change < 0)) +
   geom_segment(arrow = arrow(length = unit(0.15, "cm"), type = "closed")) +
@@ -336,91 +331,430 @@ co2 |>
   theme(legend.position = "none")
 ```
 
-::: {.challenge}
-The US dropped from 20.2 to 13.9 tonnes CO2 per capita between 1990 and 2020, while India rose from 0.7 to 1.9.
-
-Which of the two countries is "doing better" on climate? Does your answer change if you look at *total* emissions instead of emissions *per capita*? What does each of these two measures hide?
+- This plot type is called a 'dumbbell' plot. Why? And how are the two geoms used to construct the plot? What do you think the `xend` aethetic is for?
+- What do you think the `left_join` above does?
+- Why do we need to use both the new `change_in_emissions` and the older `co2` data sets?
+- The 1990 and 2020 data are in separate columns, i.e. a wide format. We earlier said that ggplot generally needs a long format. 
+  Why is the wide format correct here?
+- Substantively, why have some countries increased their emissions, while other decreased? Are these the countries you would expect?
+- Is India or the US "doing better" on climate? What can we base this on?
 :::
 
 
 
-## Joining multiple data sets
+## Joining multiple data sets using `*_join`
 
+<!--
 Claude: 
 
 - 1:many blowup needs to be singalled explicitly
 - coverage loss for income classification is a good explicit lesson
 - order bar plot
+-->
 
-```{r, eval=F}
-# Are the rich or the poor countrires polluting?
-# Let's get income class data
-income <- read_csv("data/income_groups.csv")
-income_2020 <- income |> filter(Year==2020) |> select(country=Entity, income=`World Bank's income classification`)
+The plot above used `left_join` to combine two data sets: 
+the `change_in_emissions` dataset containing the 1990 and 2020 CO2 per capita, 
+and the `co2` dataset which contained the total CO2 per country. 
 
-# Cutoff at 2020 and join
-# Naive: inner join
+Combining or **joining** data sets is a crucial operation in many data science pipelines. 
+For example, you can join multiple survey waves; information about participants with survey questions,
+metadata about measurements with the actual measurements; or two sources of data about the same countries.
 
-co2_2020 <- co2 |> filter(year == 2020)
-combined <- inner_join(co2_2020, income_2020) 
-ggplot(combined, aes(y=income, x=cumulative_co2)) + geom_col()
-# Note: Should summarize first!
-
-# Callout (or challenge) on key columns and renaming/selecting (preferred) vs using by
+Returning to the example of climate change, 
+let's see whether rich or poor countries are the main source of pollution. 
+ 
+First, let's get data about the World Bank country income classifications:
 
 
-### Explaining inner / full / left / right
-combined_left <- left_join(co2_2020, income_2020) 
-filter(combined_left, is.na(income))
-
-### Explain semi and anti join as useful shorthand and debugging tools
-anti_join(co2_2020, income_2020)
-semi_join(co2_2020, income_2020)
-
-# challenge to interpret this, especially venezuela,
-# and figure out a way of dealing with it
-
-### Exercise: co2 by country income type over time
-income |> select(country=Entity, year=Year, income=`World Bank's income classification`) |>
-  inner_join(co2) |>
-  group_by(year, income) |>
-  summarize(co2=sum(co2, na.rm=T)) |>
-  ggplot(aes(x=year, y=co2, fill=income)) + geom_area()
-
-# Maybe turn this into a demo+challenge instead?
-# Challenge: why are low-income countries emitting less co2 over time?
-# what is the bump in upper-middle countries in 2010? (answer: countries (esp china) are reclassified)
-# How could you fix this? (answer: use a constant measure, e.g. use the 2020 classification instead)
-# what changes if you use cumulative co2 instead? (answer: it makes the rich world's share clearer)
+```{webr}
+#| exercise: 'income_data'
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/income_groups.csv", "income_groups.csv")
+income <- read_csv("income_groups.csv")
+head(income)
 ```
 
-## Important take-away (callout)
+As you can see, this classifies each country into an income_group such as `Low-income` for each year from 1987. 
 
-for both joinign and pivoting the columns play an important role
-this makes it very important to *first* select/rename to get the right columns
-and then call the join or pivot
-plus specific rules on what the 'right' columns are 
+Let's combine this with the CO2 data and make a bar plot of the CO2 emissions per income group in 2020:
 
-## Exercise: Are co2 emissions and temperature correlated over time?
+```{webr}
+#| exercise: ['join1', 'join2', 'join3', 'join4', 'join5', 'join6', 'join7', 'join8', 'join9', 'join10', 'join11', 'join12']
+#| setup: true
+co2 <- read_csv("data/co2_emissions.csv")
+income <- read_csv("data/income_groups.csv")
+```
 
-(chapter-level exercise combining joining and pivoting)
+```{webr}
+#| exercise: 'join1'
+inner_join(co2, income) |>
+  filter(year == 2020) |>
+  group_by(income_group) |>
+  summarize(co2=sum(cumulative_co2, na.rm=T))|>
+  ggplot(aes(y=fct_reorder(income_group, co2), x=co2)) + 
+  geom_col() + 
+  labs(title="Total cumulative CO2 emissions by country income classification",
+       x="Cumulative CO2 (mt)", y="") + 
+  theme_classic()
+```
 
-```{r eval=F}
-# Part A: Join
+So, looking at all historical CO2 emissions, the rich countries emitted the most CO2 of all income groups by far. 
+How does that change if you look at 2020 emissions rather than historical emissions?
+
+### Joining: key columns
+
+If you look closely, right above the graph you can see a warning message printed in red:
+`` Joining with `by = join_by(country, year)` ``. This message is key to understanding how a join works:
+One or more columns are identified as the **key** or index columns (in this case `country` and `year`).
+For each unique key value, the rows from both data sets that share that value are combined.
+This results in a dataset with the key columns and all other columns from both data sets.
+In this case, it creates a data set with CO2 emissions and income classifications for all countries and years. 
+
+If you don't specify the key columns, R will automatically join on the columns with the same name in both data sets,
+giving an error message if no shared columns exist. 
+You can also explicitly specify the columns:
+
+```{webr}
+#| exercise: 'join2'
+co2_2020 <- filter(co2, year == 2020)
+income_2020 <- filter(income, year == 2020)
+inner_join(co2_2020, income_2020, join_by(country))
+```
+
+Since this excluded the `year` column from the join, the resulting dataset actually has *two* year columns: `year.x` and `year.y`.
+
+You can also specify two key columns with different names,
+for example if country is named 'state' in the second dataset:
+
+```{webr}
+#| exercise: 'join3'
+co2_2020 <- filter(co2, year == 2020)
+income_2020 <- filter(income, year == 2020) |> rename(state=country)
+inner_join(co2_2020, income_2020,
+           join_by(country == state),
+           suffix=c("_co2", "_inc"))
+```
+
+Note how this also used the `suffix=` argument to specify how the year column should be renamed.
+
+Although this shows that it is possible to make the `join` command relatively complex,
+my recommendation is to not actually do this.
+Instead, I would always use `select` and/or `rename` to ensure both data frames have **identical names for the key columns**,
+and **non-identical names for any other columns**.
+This way, it's easier to understand what is going on:
+In the `join_by(left_column == right_column)` syntax, you have to look back to see which data set is left and right,
+making it hard to parse.
+I would still advise listing the key columns with a simple `join_by()` argument to make it clear what you are joining on
+(and to silence the warning message).
+
+So, to obtain the combined 2020 data I would first preprocess both data sets, and then do a simple join:
+
+```{webr}
+#| exercise: 'join4'
+co2_2020 <- filter(co2, year == 2020) |> select(country, co2, cumulative_co2)
+income_2020 <- filter(income, year == 2020) |> select(country, income_group)
+combined <- inner_join(co2_2020, income_2020, join_by(country))
+arrange(combined, desc(co2))
+```
+
+### Which rows are joined? `inner_join`, `left_join`, `right_join` and `full_join`
+
+The income classification data above was given from 1987, while the co2 data starts in 1850. 
+What does that mean for the resulting data set?
+
+```{webr}
+#| exercise: 'join5'
+combined <- inner_join(co2, income, by=c("country", "year"))
+bind_rows(
+  summarize(co2, from = min(year), to = max(year)) |> add_column(dataset="co2"),
+  summarize(income, from = min(year), to = max(year)) |> add_column(dataset="income"),
+  summarize(combined, from = min(year), to = max(year)) |> add_column(dataset="combined"),
+)
+```
+
+(Note how this uses `summarize` without `group_by` to compute overall summary values,
+adds the dataset name with `add_column`, and then adds the three data sets together with `bind_rows`)
+
+As you can see, the combined data set only has rows from 1987 to 2024:
+`inner_join` keeps only rows that occur in both data sets.
+Try replacing it with `left_join`, `right_join` and `full_join`. What changes?
+
+To better understand what's going on, let's create an example data set with CO2 and income data 
+for different countries:
+
+```{webr}
+#| exercise: 'join6'
+co2_subset <- co2 |>
+  filter(year == 2020, country %in% c("China", "India", "Russia", "United States")) |>
+  select(country, co2)
+co2_subset
+```
+```{webr}
+#| exercise: 'join7'
+income_subset <- income |>
+  filter(year == 2020, country %in% c("Russia", "United States", "United Kingdom")) |>
+  select(country, income_group)
+income_subset
+```
+
+So, in this (toy) example we use CO2 data for China, India, Russia and the US; 
+but income data for Russia, the US and UK. 
+
+We've seen what happens with an `inner_join`: only the matching rows are kept, in this case Russia and US.
+What do you think will happen with a `left_join`?
+
+
+```{webr}
+#| exercise: 'jointoy'
+#| setup: true
+co2 <- read_csv("data/co2_emissions.csv")
+income <- read_csv("data/income_groups.csv")
+co2_subset <- co2 |>
+  filter(year == 2020, country %in% c("China", "India", "Russia", "United States")) |>
+  select(country, co2)
+income_subset <- income |>
+  filter(year == 2020, country %in% c("Russia", "United States", "United Kingdom")) |>
+  select(country, income_group)
+
+```
+```{webr}
+#| exercise: 'jointoy'
+left_join(co2_subset, income_subset)
+```
+
+Does this make sense to you? Why does the result include missing values (`NA`s)? What happens if you replace it with `right_join`
+or `full_join`?
+
+This example hopefully makes the behaviour of the different joins fully clear:
+* `inner_join` keeps only rows occurring in both data sets
+* `left_join` keeps all rows in the first (left hand) data set, inserting `NA` where rows are missing in the other set
+* `right_join` keeps all rows in the second (right hand) data set, inserting `NA` where rows are missing in the other set
+* `full_join` keeps all rows from both data sets, inserting `NA` where rows are missing in either set. 
+
+
+::: {.callout-tip title="When to use which join?"}
+
+The different join types depend on the use case. 
+In my experience only `inner_join` and `left_join` are used in most cases:
+
+* Use `inner_join` when your analysis is only useful if the data is complete, i.e. both datasets are equally important to your analysis
+* Use `left_join` to add information from a secondary data set to the more important data, accepting that there might be missing values in the columns from the secondary data. 
+
+Since it feels more natural to list the primary data set first, I tend to use left rather than right joins.
+The only exception is if you want to include the join in a longer pipeline and the earlier processing steps are
+used for the secondary data set -- but even then I would probably just split the pipeline in two in most cases. 
+`full_join` is used even less frequently, as there are very few cases where your analysis can work with missing data
+from both data sets.  
+
+One final tip: when running joins in R studio, keep an eye on the number of rows in the original and combined data sets
+in the environment pane. If the combined data has a different row count than expected, 
+this is a good indicator that data is missing or coded differently: perhaps both data sets have a 'country' column,
+but the first data set would writes `United States` while the second uses `USA`. 
+In that case, an `inner_join` would silently drop the US from the result,
+leading to a lower row count than expected. 
+:::
+
+### Emissions over time
+
+
+Let's see how emissions by income group changed over time:
+
+```{webr}
+#| exercise: join8
+#| warning: false
+inner_join(income, co2, by=c("country", "year")) |>
+  group_by(year, income_group) |>
+  summarize(co2=sum(co2, na.rm=TRUE)) |>
+  ggplot(aes(x=year, y=co2, fill=income_group)) + geom_area()
+```
+
+(Note the use of `geom_area` to create a stacked area chart, which is useful
+for showing how both a total value and its composition change over time)
+
+::: {.challenge title="What happened to low-income emissions?"}
+
+The general trend we can see in the graph makes sense: 
+overall CO2 emissions increase, especially driven by increased emissions of developing countries. 
+However, at least two things are more puzzling:
+Why would low-income countries actually emit less over time?
+And what can explain the strange jump in upper-middle income country emissions in 2010?
+
+To answer the latter question, you can have a look at the income data for china around that time:
+
+```{webr}
+#| exercise: join9
+income |> filter(country == "China", year > 2005)
+```
+
+How does that explain the shift in 2010? And is there a similar explanation for the drop in emissions by low-income countries?
+:::
+
+### One to many joins
+
+To fix the problem that showed up in the example above, 
+we could 'freeze' the income classifications by taking only the most recent version:
+
+```{webr}
+#| exercise: join10
+income_latest <- income |>
+  group_by(country) |> 
+  slice_max(year, n=1) |>
+  select(country, income_group)
+income_latest
+```
+
+Now, we can join it to the CO2 data over time.
+To test, let's have a look at the recent values for China:
+
+
+```{webr}
+#| exercise: ['join_latest', 'join_fixedplot']
+#| setup: true
+co2 <- read_csv("data/co2_emissions.csv")
+income <- read_csv("data/income_groups.csv")
+income_latest <- income |>
+  group_by(country) |> 
+  slice_max(year, n=1) |>
+  select(country, income_group)
+combined <- inner_join(income_latest, co2, join_by(country)) 
+```
+```{webr}
+#| exercise: join_latest
+combined <- inner_join(income_latest, co2, join_by(country)) 
+filter(combined, country == "China", year > 2005)
+```
+
+As you can see, the income group is now fixed for each country.
+We call this type of join a **one-to-many** join. 
+Technically, the data sets are joined by country;
+and since `co2` has multiple rows for each country (one per year)
+while `income_latest` only has a single row,
+the data from this row is repeated for each year in the `co2` data. 
+
+Now, we can recreate the graph above with income data fixed:
+
+```{webr}
+#| exercise: join_fixedplot
+combined |>
+  group_by(year, income_group) |>
+  summarize(co2=sum(co2, na.rm=TRUE)) |>
+  ggplot(aes(x=year, y=co2, fill=income_group)) + geom_area()
+```
+
+### Many to many joins
+
+A final category of joins is the many-to-many join.
+
+For example, if we would join the `income` and `co2` data 
+by country alone, it will create rows for each possible combination
+of income year and co2 year:
+
+```{webr}
+#| exercise: join11
+co2_subset <- co2 |>
+  filter(country == "China", year %in% 2009:2010) |>
+  select(country, co2_year=year, co2)
+income_subset <- income |>
+  filter(country == "China", year %in% 2009:2010) |>
+  select(country, income_year=year, income_group)
+inner_join(co2_subset, income_subset, join_by(country))
+```
+
+We selected only two rows for each dataset (China in 2009 and 2010).
+The resulting dataset, however, has four rows:
+it creates a row for each combination of `co2_year` and `income_year`,
+copying the corresponding `co2` or `income_group` value in those rows.
+
+Note that in data science, there are very few use cases for many-to-many joins,
+as it generally creates row pairs that substantively do not make a lot of sense:
+why would you want to combine 2009 income group data with 2010 emissions data?
+More commonly, many to many joins happen by mistake: either because the join columns
+are not correctly specified (as is arguably the case in the example above),
+or because a dataset had unexpected duplicate key values.
+For this reason, R outputs a warning: `Detected an unexpected many-to-many relationship`,
+which you can supress by explicitly setting `relationship = "many-to-many"` in the join
+to indicate that the many to many join is intentional. 
+
+
+### Semi and anti-join
+
+As a final addition, there are two more joins that are used to filter data rather than combine columns:
+`semi_join(a, b, join_by(columns))` filters `a` to keep only rows where corresponding rows existing in `b`;
+while `anti_join(a, b, join_by(columns))` keeps only the rows in `a` that have no corresponding row in `b`. 
+
+The most frequent use case for this is to explore and debug problems. 
+Suppose we would have picked 2020 as a fixed year for the income groups.
+We can then use `anti_join` to check if we
+actually have income data for all countries that we have co2 data for:
+
+```{webr}
+#| exercise: join12
+co2_2020 <- filter(co2, year == 2020)
+income_2020 <- filter(income, year == 2020)
+anti_join(co2_2020, income_2020, join_by(country))
+```
+
+As you can see, this lists 12 countries for which we don't have income data.
+11 of these are sub-state territories like Anguilla or micro-states like the Vatican,
+but Venezuela is harder to understand. It turns out that the World Bank suspended the classification
+of Venezuela between 2020 and 2024 before re-classifying it as a lower middle income country. 
+Such use of `anti_join` can be quite useful to prevent mistakes or understand strange outcomes,
+as ommitting a large emitter like Venezuela because we picked 2020 as the classification year
+is probably not what we intended!
+
+
+::: {.callout-tip title="Key and value columns and the importance of (re)naming"}
+
+For understanding the behaviour of both joining and pivoting,
+it makes sense to think of a data frame as consisting of **key columns** and **value columns**.
+Key columns (such as country and year) identify cases, 
+while value columns (such as co2) represent measurements or values of these cases.
+
+This gives us better terms for understanding the preprocessing needed for pivoting and joining:
+
++ Before doing `pivot_wider`, it is important to `select` only key columns and the single value column
+  that is to be pivoted. Other value columns will be mistakenly seen as key columns and create a row for each value!
++ Before joining, it is important that the key columns match in both datasets, and that only the key columns share the same column name.
+  It's easier to use `rename` and/or `select` to ensure that key columns are named the same and value columns are unique,
+  then use the `join_by(a==b)` syntax and/or dealing with suffixed column names later. 
+
+Similarly, when doing `pivot_longer`, you have to specify the value columns that are to be pivoted (`pivot_longer(value_1:value_n)`);
+or alternatively you can specify the key column(s) with a negative selection (`pivot_longer(-key_1:-key_n)`).
+:::
+
+### Exercise: Are CO2 emissions and temperature correlated over time?
+
+{{< include exercises/_ch07_ex_temp_co2.qmd >}}
+
+The correlation test above suggests a strong relation between temperature and cumulative CO2 emissions.
+But two variables that both tend to increase over time will often be strongly correlated even if they have nothing to do with each other.
+Let's put both series on the same plot, rescaled to a common index, to visualize the relation:
+
+```{webr}
+#| setup: true
+#| exercise: demo_temp_co2
+temp <- read_csv("data/temperature_anomaly.csv")
+co2 <- read_csv("data/co2_emissions.csv")
 world_temp <- temp |> filter(region == "World")
-world_co2 <- co2 |> group_by(year) |> summarize(co2=sum(cumulative_co2, na.rm=TRUE))
-temp_and_co2 <- inner_join(world_temp, world_co2) 
-cor.test(temp_and_co2$temp_anomaly, temp_and_co2$co2)
+world_co2 <- co2 |> group_by(year) |> summarize(co2 = sum(cumulative_co2, na.rm = TRUE))
+temp_and_co2 <- inner_join(world_temp, world_co2)
+```
 
-# Challenge: is the correlation actually meaningful? How to fix this?
-
-# Part B: Pivot to plot
-temp_and_co2 |> select(year, co2, temp_anomaly) |>
+```{webr}
+#| exercise: demo_temp_co2
+temp_and_co2 |>
+  select(year, co2, temp_anomaly) |>
   pivot_longer(-year) |>
   group_by(name) |>
-  mutate(index=value/mean(value) * 100) |>
-  ggplot(aes(x=year, y=index, color=name)) + geom_line() 
-
+  mutate(index = value / mean(value) * 100) |>
+  ggplot(aes(x = year, y = index, color = name)) + 
+  geom_line() + 
+  labs(title="Global cumulative CO2 emissions and temperature anomalies since 1850",
+       subtitle="(indexed, mean=100)",
+       x = "", y="", color="") + 
+  theme_classic()
 ```
 
-
+(Note the use of `pivot_longer` to get both series into one column so they can share a single `color` aesthetic,
+and `mutate` within each `group` to rescale both series to the same starting index, so they're comparable despite having very different units and magnitudes)

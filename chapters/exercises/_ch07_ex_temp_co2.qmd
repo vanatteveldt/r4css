@@ -1,0 +1,91 @@
+::: {.exercise}
+Now that we've covered both pivoting and joining, let's combine them to answer a substantive question:
+is there a relation between rising global temperatures and cumulative CO2 emissions over time?
+
+1. `filter()` the temperature data to keep only the `World` region.
+2. `group_by()` year and `summarize()` the co2 data to get the total *cumulative* CO2 emitted (globally) per year.
+3. `inner_join()` the two results together.
+4. Use `cor.test()` to test the correlation between `temp_anomaly` and `co2`.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_temp_co2
+temp <- read_csv("data/temperature_anomaly.csv")
+co2 <- read_csv("data/co2_emissions.csv")
+```
+
+```{webr}
+#| exercise: ex_temp_co2
+world_temp <- temp |> filter(...)
+world_co2 <- co2 |> group_by(year) |> summarize(co2 = sum(..., na.rm = TRUE))
+temp_and_co2 <- inner_join(...)
+cor.test(temp_and_co2$temp_anomaly, temp_and_co2$co2)
+```
+
+::: { .hint exercise="ex_temp_co2"}
+::: { .callout-tip title="Hint:"}
+- For `world_temp`, use `filter(region == "World")` to keep only the global average, not the two hemispheres.
+- For `world_co2`, use `sum(cumulative_co2, na.rm = TRUE)` -- note that this is `cumulative_co2`, not `co2`! We want the total emitted since 1750, not just that year's emissions.
+- For `temp_and_co2`, use `inner_join(world_temp, world_co2)`. Since these two data sets now only share a `year` column, R will automatically join on that.
+:::
+:::
+
+::: {.solution exercise="ex_temp_co2"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- `world_temp <- temp |> filter(region == "World")` keeps only the global (not per-hemisphere) rows.
+- `world_co2 <- co2 |> group_by(year) |> summarize(co2 = sum(cumulative_co2, na.rm = TRUE))` sums the *cumulative* CO2 across all countries for each year, giving the running global total.
+- `temp_and_co2 <- inner_join(world_temp, world_co2)` combines the two by year (their only shared column).
+
+```{webr}
+#| exercise: ex_temp_co2
+#| solution: true
+world_temp <- temp |> filter(region == "World")
+world_co2 <- co2 |> group_by(year) |> summarize(co2 = sum(cumulative_co2, na.rm = TRUE))
+temp_and_co2 <- inner_join(world_temp, world_co2)
+cor.test(temp_and_co2$temp_anomaly, temp_and_co2$co2)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_temp_co2
+#| check: true
+
+gradethis::grade_this({
+  co2_raw <- .envir_result$co2
+
+  world_temp <- .envir_result$world_temp
+  if (is.data.frame(world_temp) && "region" %in% names(world_temp)) {
+    gradethis::fail_if(
+      !all(unique(world_temp$region) == "World"),
+      "`world_temp` should only contain the `World` region -- check your `filter()`."
+    )
+  }
+
+  world_co2 <- .envir_result$world_co2
+  if (is.data.frame(world_co2) && all(c("year", "co2") %in% names(world_co2))) {
+    correct_2020 <- sum(co2_raw$cumulative_co2[co2_raw$year == 2020], na.rm = TRUE)
+    wrong_2020   <- sum(co2_raw$co2[co2_raw$year == 2020], na.rm = TRUE)
+    student_2020 <- world_co2$co2[world_co2$year == 2020]
+    gradethis::fail_if(
+      length(student_2020) == 1 &&
+        isTRUE(all.equal(student_2020, wrong_2020)) &&
+        !isTRUE(all.equal(student_2020, correct_2020)),
+      "It looks like you summed `co2` (that year's emissions) rather than `cumulative_co2` (the running total since 1750) -- use `cumulative_co2` instead."
+    )
+  }
+
+  temp_and_co2 <- .envir_result$temp_and_co2
+  if (is.data.frame(temp_and_co2)) {
+    gradethis::fail_if(
+      !all(c("temp_anomaly", "co2") %in% names(temp_and_co2)),
+      "`temp_and_co2` is missing `temp_anomaly` or `co2` -- did the `inner_join()` work as expected?"
+    )
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
