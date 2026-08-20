@@ -1,0 +1,113 @@
+::: {.exercise}
+Using the `co2` dataset, compute the change in CO2 emissions per capita between 1990 and 2020 for each country.
+
+1. `filter()` the data to keep only the correct rows.
+2. `select()` only the columns you actually need: the new row identifiers, the new columns, and the new values. 
+3. `pivot_wider()` to spread the two years into separate columns.
+4. `mutate()` to compute the `change` between the two years.
+
+This should result in a dataset that looks like this:
+
+| country     | y2020 | y1990 | change |
+|:------------|------:|------:|-------:|
+| Afghanistan | 0.28  | 0.17  | 0.11   |
+| Albania     | 1.69  | 1.68  | 0.0100 |
+| ...         | ...   | ...   | ...    |
+
+Build the pipeline up one step at a time: uncomment and complete a line, run the code to see what you get, and only then move on to the next line.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_change_emissions
+co2 <- read_csv("data/co2_emissions.csv")
+```
+
+```{webr}
+#| exercise: ex_change_emissions
+change_in_emissions <- co2 |>
+  # filter(...) |>
+  # select(...) |>
+  # pivot_wider(names_from=..., values_from=..., names_prefix="y") |>
+  mutate()
+head(change_in_emissions)
+```
+
+::: { .hint exercise="ex_change_emissions"}
+::: { .callout-tip title="Hint:"}
+- For the `filter`, you need to select only the years that you need to compare
+- For the `select`, you should keep the country (new rows), year (new columns) and co2_per_capita.
+- For pivot_wider, give the name of the column that forms the new columns (the years) and the new values (the CO2 per capita). Don't quote the columns.
+- For the mutate, have a look at how the columns were named after the pivot, and then use `mutate(change = ... - ...)` to compute the difference.
+:::
+:::
+
+::: {.solution exercise="ex_change_emissions"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use `filter(year %in% c(1990, 2020))` to keep only the two years.
+- Use `select(country, year, co2_per_capita)` *before* pivoting -- any column you don't select is treated as identifying a unique row, so without this step you get far more rows than expected (see the callout on tidy data earlier in this chapter).
+- Use `pivot_wider(names_from = year, values_from = co2_per_capita, names_prefix = "y")`. The `names_prefix` is needed because `1990` and `2020` are not valid column names on their own.
+- Use `mutate(change = y2020 - y1990)` to compute the change.
+
+```{webr}
+#| exercise: ex_change_emissions
+#| solution: true
+change_in_emissions <- co2 |>
+  filter(year %in% c(1990, 2020)) |>
+  select(country, year, co2_per_capita) |>
+  pivot_wider(names_from = year, values_from = co2_per_capita, names_prefix = "y") |>
+  mutate(change = y2020 - y1990)
+head(change_in_emissions)
+```
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_change_emissions
+#| check: true
+
+gradethis::grade_this({
+  student_result <- .envir_result$change_in_emissions
+
+  if (is.data.frame(student_result)) {
+    if ("year" %in% names(student_result)) {
+      # Not pivoted yet -- diagnose filter and select first, in order
+      gradethis::fail_if(
+        !all(unique(student_result$year) %in% c(1990, 2020)),
+        "Start by `filter` to keep only the years that you need to compare"
+      )
+      gradethis::fail_if(
+        !setequal(names(student_result), c("country", "year", "co2_per_capita")),
+        "Now `select()` only the columns we need: country (the new rows), year (the new columns) and co2_per_capita. Any extra column will be treated as identifying a unique row once you pivot."
+      )
+      gradethis::fail(
+        "Looks good so far -- now use `pivot_wider(names_from = year, values_from = co2_per_capita, names_prefix = \"y\")` to spread the years into columns."
+      )
+    }
+    gradethis::fail_if(
+      dplyr::n_distinct(student_result$country) < nrow(student_result),
+      "You have more rows than unique countries -- did you `select()` only `country`, `year`, and `co2_per_capita` before pivoting?"
+    )
+    if (all(c("y1990", "y2020") %in% names(student_result))) {
+      co2_raw <- .envir_result$co2
+      student_row <- student_result[student_result$country == "Afghanistan", ]
+      total_co2 <- co2_raw$co2[co2_raw$country == "Afghanistan" & co2_raw$year == 1990]
+      percapita_co2 <- co2_raw$co2_per_capita[co2_raw$country == "Afghanistan" & co2_raw$year == 1990]
+      gradethis::fail_if(
+        nrow(student_row) == 1 &&
+          isTRUE(all.equal(student_row$y1990, total_co2)) &&
+          !isTRUE(all.equal(student_row$y1990, percapita_co2)),
+        "Great work! However, it looks like you selected total CO2 (`co2`) rather than CO2 per capita (`co2_per_capita`). Change the column name to `co2_per_capita`."
+      )
+    }
+    gradethis::fail_if(
+      !"change" %in% names(student_result),
+      "I don't see a `change` column yet -- use `mutate()` to add it."
+    )
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```

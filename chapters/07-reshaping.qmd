@@ -96,11 +96,12 @@ ggplot(temp, aes(x=year, fill=temp_anomaly, y=fct_reorder(region, temp_anomaly))
                        midpoint=.54, guide=NULL) + 
   labs(title="Temperature anomaly per hemisphere",
        x="",
-       y="")
+       y="") + 
+  theme_minimal()
 ```
 
 (Note that to produce the colors we used `scale_fill_gradient2`, which controls how
-data values are mapped to colors (see @sec-advancedggplot for more information).
+data values are mapped to colors -- see @sec-advancedggplot for more information.
 The neutral midpoint is set to .54, the average value for 1961-2010 also used in the original.
 We also use `geom_tile`, which paints a filled rectangle at the specified position -- 
 and since there are so many years they come out as thin bars)
@@ -109,7 +110,8 @@ and since there are so many years they come out as thin bars)
 
 As you can see in the graph, the data is split by 'region', which contains rows for both hemispheres as well as for a global average. 
 It is also clear that the northern hemisphere is warming up more quickly than the southern. 
-However, if we want to calculate that gap we run into a problem: 
+Now suppose we want to calculate the gap between the hemispheres by subtracting the Southern anomaly from the Northern,
+we run into a problem: 
 the values for north and south are in different rows, 
 while we would need them in different columns on the same row to do a calculation.
 
@@ -188,11 +190,11 @@ we here specify which columns to leave alone
 by using a *negative selection*: placing a minus before the column name(s). 
 We also explcitly specify the names for the new columns containing the *names* and *values*. 
 
-Note that the column names here need to be quoted (enclosed in `"` or `'`), 
+Note that the new column names here need to be quoted (enclosed in `"` or `'`), 
 since they don't refer to an existing column or object. 
 
 
-### Carbon dioxide data
+### Plotting data with multiple columns: a case for `pivot_longer`
 
 Let's have a look at the greenhouse emission data, which shows one of the common places
 where we need `pivot_longer` in our daily work. 
@@ -227,8 +229,6 @@ co2 |>
   ggplot(aes(x=year, y=co2)) + geom_line()
 ```
 
-### `pivot_longer` for plotting different columns
-
 The CO2 dataset shown above shows a common pattern: 
 for each case (country and year) it gives multiple measurements as columns.
 As illustrated earlier, this is convenient if you want to do calculations over the columns,
@@ -236,7 +236,8 @@ or if you want to investigate statistical relations between the different column
 
 If we want to plot them as different lines though, `ggplot` expects them to be in different rows,
 so we can use e.g. `color=type` to plot them. 
-Converting columns into rows means turning wide data into long data, so we use `pivot_longer`:
+In other words, we have **wide data**, but ggplot generally expects **long data**. 
+For turning wide data into long data, we use `pivot_longer`:
 
 ```{webr}
 #| exercise: 'co2_pivot'
@@ -269,46 +270,77 @@ Often, if you have one operation that you need to apply to multiple columns, it 
 (although for advanced R users there is also the `mutate(across())` option - see the [documentation](https://dplyr.tidyverse.org/reference/across.html) for more info).
 
 
-```{r, eval=F}
-# Callout on 'tidy' data, esp for ggplot
+::: {.callout-tip title="Tidy data"}
+As defined in the excellent book [R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-tidy-data) (written by the main creator of tidyverse),
+a dataset is tidy if (1) each variable is a column, (2) each row an observation, and (3) each value is a cell. 
+In other words, **rows should constitute the units of measurement**, and **columns should be distinct variables** that are measured on each unit. 
 
-### Exercise: compare two years
-# e.g. (from claude:)
+In general it is a good idea to preprocess your data to ensure it is 'tidy':
+if you have many columns that actually represent a repeated measurement 
+(e.g. answers to the same survey question over time, or counts of different words),
+it is probably a good idea to pivot these into rows. 
 
-# NOTE: NEEDS SELECT
-co2 |> filter(year %in% c(1990, 2020)) |>
-  pivot_wider(names_from = year, values_from = co2, names_prefix = "y") |>
-  mutate(change = 100 * (y2020 - y1990) / y1990)
-# Might even be a good moment to demo a cleveland / difference lollipot chart
+That said, it should be noted that what is a distinct measurement can depend on the data question one is trying to answer:
+to compute the difference between anomalies in the southern and northern hemisphere, 
+we conceive them as distinct measurements on the same unit (year). 
+In other words, years are the units of measurement and so we should
+make sure each row is exactly one year. 
+If we want to plot distinct lines for each region, however, 
+the anomaly is the unique measurement and the year - region combination
+becomes the unit of observation, so we now need to pivot back to having each row be a year - region combination.
 
-### Demo: dumbbell chart (from claude)
+The beauty is that the `pivot` commands make it quite easy to switch between wide and long, 
+and it can actually happen that the easiest way to achieve a specific goal is to first pivot to wide, do some calculations over the columns, 
+and then pivot back to long and summarize or plot over the rows. 
+Practicality beats purity, as [our competitors in the Python world](https://peps.python.org/pep-0020/) say. 
+:::
 
-# geom_segment needs the start and end of each line in the same row,
-# so this plot can only be made from the wide format
-big_emitters <- co2 |>
-  filter(year == 2020, country != "World") |>
-  slice_max(co2, n = 16) |>
-  pull(country)
 
-per_capita <- co2 |>
-  filter(year %in% c(1990, 2020), country %in% big_emitters) |>
+### Practice: the change in emissions per capita
+
+{{< include exercises/_ch07_ex_change_emissions.qmd >}}
+
+### A dumbbell chart of the change
+
+Now that we have the change per country, let's visualize it.
+Since a single line needs both the 1990 and the 2020 value in the same row, we need the wide `change_in_emissions` data we just computed rather than the long format.
+
+The code below picks the 16 largest emitters (by total CO2 in 2020) and draws a line from their 1990 to their 2020 emissions per capita, with an arrowhead showing the direction of change.
+It uses a couple of new tricks -- `geom_segment()` with an `arrow`, and a `left_join()` to attach the change we computed to the list of big emitters -- that we haven't covered yet.
+`left_join()` in particular is a small preview of the next section, where we'll properly introduce combining data from multiple tables.
+
+```{webr}
+#| setup: true
+#| exercise: demo_dumbbell
+co2 <- read_csv("data/co2_emissions.csv")
+change_in_emissions <- co2 |>
+  filter(year %in% c(1990, 2020)) |>
   select(country, year, co2_per_capita) |>
   pivot_wider(names_from = year, values_from = co2_per_capita, names_prefix = "y") |>
   mutate(change = y2020 - y1990)
-
-ggplot(per_capita, aes(y = fct_reorder(country, y2020))) +
-  geom_segment(aes(x = y1990, xend = y2020, color = change > 0), linewidth = 1.2) +
-  geom_point(aes(x = y1990), color = "grey50", size = 2) +
-  geom_point(aes(x = y2020, color = change > 0), size = 3) +
-  # Default colors map 'increase' to blue-green, which reads backwards for emissions
-  scale_color_manual(values = c(`TRUE` = "firebrick", `FALSE` = "steelblue"), guide = "none") +
-  labs(x = "CO2 emissions per capita (tonnes)", y = NULL,
-       title = "Emissions per capita, 1990 (grey) to 2020")
-
-# Challenge: the US falls from 20.2 to 13.9, India rises from 0.7 to 1.9.
-# Which of the two is doing better? Does per capita or total emissions matter?
-# (scale_color_manual is @sec-advancedggplot material - forward reference or drop the color)
 ```
+
+```{webr}
+#| exercise: demo_dumbbell
+#| warning: false
+co2 |>
+  filter(year == 2020, country != "World") |>
+  left_join(change_in_emissions, by = "country") |>
+  slice_max(co2, n = 16) |>
+  ggplot(aes(y = fct_reorder(country, y1990), x = y1990, xend = y2020, color = change < 0)) +
+  geom_segment(arrow = arrow(length = unit(0.15, "cm"), type = "closed")) +
+  geom_point(size = 2) +
+  labs(x = "CO2 emissions per capita (tonnes)", y = NULL,
+       title = "Emissions per capita, 1990 to 2020") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+::: {.challenge}
+The US dropped from 20.2 to 13.9 tonnes CO2 per capita between 1990 and 2020, while India rose from 0.7 to 1.9.
+
+Which of the two countries is "doing better" on climate? Does your answer change if you look at *total* emissions instead of emissions *per capita*? What does each of these two measures hide?
+:::
 
 
 
