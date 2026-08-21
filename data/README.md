@@ -108,7 +108,26 @@ library(tidyverse)
 read_csv("~/Downloads/1976-2024-president.csv") |>
   select(year, state, state_po, candidate, party=party_simplified, votes=candidatevotes, totalvotes) |>
   replace_na(list(party="Other")) |>
-  mutate(candidate=str_to_title(candidate), party=str_to_title(party),
+  mutate(candidate=str_to_title(candidate), party=str_to_title(party), state=str_to_title(state),
          party=if_else(party=="Libertarian", "Other", party)) |>
   write_csv(here::here("data/us-president.csv))
+```
+
+## US State level metadata
+
+- **File**: [us-president.csv](us-states.csv)
+- **Source**: [MIT Election Lab](https://electionlab.mit.edu/data)
+- **Description***: The data file election-context-2018.csv contains demographic and past election data at the county level that can easily be merged with 2018 election returns to analyze the 2018 election. Data for Alaska is not included.
+- ** License**: MIT
+
+Code:
+```{r}
+read_csv("https://raw.githubusercontent.com/MEDSL/2018-elections-unoffical/refs/heads/master/election-context-2018.csv") |>
+  select(state, total_population, white_pct, age29andunder_pct, age65andolder_pct, lesscollege_pct, median_hh_inc) |>
+  group_by(state) |>
+  summarize(population=sum(total_population, na.rm=T), 
+            across(white_pct:median_hh_inc, \(x) sum(x*total_population, na.rm=T)/population)) |>
+  mutate(college_pct=1-lesscollege_pct) |>
+  select(-lesscollege_pct) |>
+  write_csv(here::here("data/us-states.csv"))
 ```
