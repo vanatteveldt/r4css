@@ -93,3 +93,22 @@ readr::read_csv("https://ourworldindata.org/grapher/world-bank-income-groups.csv
   readr::write_csv(here::here("data/income_groups.csv"))
 ```
 
+## US Presidential election results
+
+- **File**: [us-president.csv](us-president.csv)
+- **Source**: [MIT Election Lab](https://electionlab.mit.edu/data)
+- **Description***: This data file contains constituency (state-level) returns for elections to the U.S. presidency from 1976 to 2024.
+- ** License**: CC0 1.0 / Public Domain
+
+Code:
+```{r}
+library(tidyverse)
+# Download from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/42MVDX
+# For some reason they require a guestbook signing to download a CC-0 file... :( 
+read_csv("~/Downloads/1976-2024-president.csv") |>
+  select(year, state, state_po, candidate, party=party_simplified, votes=candidatevotes, totalvotes) |>
+  replace_na(list(party="Other")) |>
+  mutate(candidate=str_to_title(candidate), party=str_to_title(party),
+         party=if_else(party=="Libertarian", "Other", party)) |>
+  write_csv(here::here("data/us-president.csv))
+```
