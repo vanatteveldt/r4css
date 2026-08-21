@@ -344,13 +344,6 @@ co2 |>
 
 ## Joining multiple data sets using `*_join`
 
-<!--
-Claude: 
-
-- 1:many blowup needs to be singalled explicitly
-- coverage loss for income classification is a good explicit lesson
-- order bar plot
--->
 
 The plot above used `left_join` to combine two data sets: 
 the `change_in_emissions` dataset containing the 1990 and 2020 CO2 per capita, 

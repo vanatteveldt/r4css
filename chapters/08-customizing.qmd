@@ -28,6 +28,228 @@ From chapter 6:
 6.8  Saving        ggsave() — short practical callout; file formats, size/dpi
 -->
 
+### Data used in this chapter
+
+For the examples in this chapter, we will use a dataset of state-level presidential voters
+from 1976 to 2024 published by the [MIT Election Data + Science Lab](https://electionlab.mit.edu/data):
+
+```{webr}
+#| exercise: usdata
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/us-president.csv", "us-president.csv")
+votes <- read_csv("us-president.csv")
+head(votes)
+```
+
+As you can see, this dataset contains the total number of votes for each candidate
+in each U.S. State for the elections from 1976. 
+
+For convenience, let's also create a dataset of aggregated results for each election
+
+#| exercise: usdata2
+#| setup: true
+votes <- read_csv("data/us-president.csv")
+```{webr}
+#| exercise: usdata2
+#| warning: false
+votes_per_year <- votes |>
+  group_by(year, party) |>
+  summarize(votes=sum(votes)) |>
+  mutate(voteshare=votes/sum(votes))
+head(votes_per_year)
+```
+
+Note the use of `summarize` followed by a `sum(votes)` in the subsequent mutate:
+since summarize by default drops the last grouping level,
+the second `sum(votes)` is summed at the year level, so each party's votes is divided
+by the total number of votes that year. 
+
+Finally, we will use a data set of state-level metadata from [a 2018 analysis](https://github.com/MEDSL/2018-elections-unoffical/)
+by the same MIT lab:
+
+```{webr}
+#| exercise: usdata3
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/us-states.csv", "us-states.csv")
+meta <- read_csv("us-states.csv")
+head(meta)
+```
+
+This contains the total population,
+percentage White, percentage young (<30) and old (65), median household income and percentage college educated per state
+(except Alaska, strangely)
+
+## Scales: the link between values and aesthetics
+
+```{webr}
+#| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4']
+#| setup: true
+votes <- read_csv("data/us-president.csv")
+votes_per_year <- votes |>
+  group_by(year, party) |>
+  summarize(votes=sum(votes)) |>
+  mutate(voteshare=votes/sum(votes))
+```
+```{webr}
+#| exercise: usline 
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() + 
+  theme_classic()
+```
+
+Substantively, this looks about right: 
+Democrats and Republicans both hover around 50%, with third parties playing a very marginal role
+(with the 1992 bid by Ross Perot as the most notable exception).
+
+However, anyone who follows US politics will probably be bothered by the colors:
+Republicans are traditionally depicted with red, and democrat with blue, which is inversed in the graph. 
+
+### Discrete scales
+
+The reason for this is the way ggplot assigns colors by default: 
+for a categorical variable (like party), it assigns colors alphabetically, starting with red 
+for the first category, in this case Democrats. 
+
+To override the default way values are turned into colors (or other aesthetics), 
+you use a `scale` function:
+
+```{webr}
+#| exercise: usline2
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  theme_classic()
+```
+
+In this case, we used `scale_color_manual`. All scale functions are named using this pattern:
+`scale_{aesthetic}_{type}`, so in this case we change the scale for the `color` aesthetic,
+and use a `manual` scale. 
+The `values=` argument within this scale should then be a named vector which assigns a color name 
+(or hex pattern such as `#ff0000`) to each value. 
+
+Another common option is to stick to an automatic scale, but use a different palette. 
+Try replacing the scale function in the above example with  `scale_color_brewer(palette="Accent")` --
+this uses the 'Accent' palette in the [ColorBrewer](https://ggplot2-book.org/scales-colour#brewer-scales) 
+package. Another good option can be the Viridis scale which are designed to be colorblind safe
+and also work when printed greyscale: `scale_color_viridis_d()` (d for **d**iscrete, i.e. categorical data)
+
+### Color gradients
+
+Let's make a scatter plot of 2024 state-level votes:
+
+```{webr}
+#| exercise: usdot 
+votes |>
+  filter(year == 2024, party == "Democrat") |>
+  inner_join(meta, join_by(state)) |>
+  mutate(voteshare=votes / totalvotes) |>
+  ggplot(aes(x=college_pct, y=white_pct, size=population, color=voteshare)) + 
+  geom_point(alpha=.7)
+```
+
+Again, substantively this makes some sense: 
+Democrats seem to do better in states with higher levels of education and a more ethnically diverse population.
+
+However, aesthetically the graph leaves a lot to be desired.
+A first thing to remedy would be the color scale:
+let's make sure the vote share runs from red (strongly republican) to blue (strongly democrat):
+
+```{webr}
+#| exercise: usdot2
+votes |>
+  filter(year == 2024, party == "Democrat") |>
+  inner_join(meta, join_by(state)) |>
+  mutate(voteshare=votes / totalvotes) |>
+  ggplot(aes(x=college_pct, y=white_pct, size=population, color=voteshare)) + 
+  geom_point(alpha=.7) + 
+  scale_color_gradient(low="red", high="blue", 
+                      name="Democrat vote share")
+```
+
+As you can see, this is close to the `scale_color_manual` we saw earlier, but now we use a `gradient`
+running from low to high. 
+Also note that we can set the name of the legend (or axis) here, which is equivalent to setting it in the `labs()` as we did earlier.
+
+### Numerical scales and transformations
+
+A second thing that we could improve is the display of the numerical scales.
+The default setting for the percentages is to display it as a regular number,
+e.g. 40 for college education or .4 for vote share, while both are actually 40%. 
+Also, the default for population is to use scientific notation, showing `1e+7` rather than `10,000,000`.
+
+As you might have guessed, all this can be fixed in the scales:
+
+```{webr}
+#| exercise: usdot3
+library(scales)
+votes |>
+  filter(year == 2024, party == "Democrat") |>
+  inner_join(meta, join_by(state)) |>
+  mutate(voteshare=votes / totalvotes) |>
+  ggplot(aes(x=college_pct, y=white_pct, size=population, color=voteshare)) + 
+  geom_point(alpha=.7) + 
+  scale_color_gradient(low="red", high="blue", 
+                       labels = label_percent(),
+                       name = "Democrat vote share"
+  ) + 
+  scale_size_continuous(transform = "sqrt") +
+  scale_y_continuous(labels = label_percent(scale = 1), name="White population share") + 
+  scale_x_continuous(labels = label_percent(scale = 1), name="College educated share") 
+```
+
+Some points to note:
+
+- `scale_x_continuous` and `scale_y_continuous` are used to customize the scale for the x and y axis. 
+  In particular, we use `labels=label_percent()` to render them as percentages, 
+  setting `scale = 1` to indicate that the numbers are already coded as 0-100 (rather than the default 0-1).
+- We set the same `labels = label_percent()` in the `scale_color_gradient` to display the numbers in the legend as percentages.
+  We don't set `scale = 1` here as the vote share is actually a number between 0 and 1.
+- `label_percent` is part of the `scales` package, so we either include it as a `library`, or we need to 
+  use `labels = scales::label_percent()` in the ggplot call. 
+- Finally, we set `transform = "sqrt"` in `scale_size_continuous` to make the dot size proportional to the square root of the population,
+  rather than having it scale linearly. In this graph the effect is relatively small, but very often a small number of outliers can dominate a scale.
+  In that case, using a square root or even `transform=log10` can be an effective way to also see variation in the smaller cases.
+
+As a final example, let's use `scale_fill_gradient2` to make a gradient with an explicit mid-point:
+
+```{webr}
+#| exercise: usdot4
+library(scales)
+votes |>
+  filter(year == 2024, party == "Democrat") |>
+  inner_join(meta, join_by(state)) |>
+  mutate(voteshare=votes / totalvotes) |>
+  ggplot(aes(x=college_pct, y=white_pct, size=population, fill=voteshare)) + 
+  geom_point(alpha=.7, shape=21) + 
+  scale_fill_gradient2(low="red", mid="white", high="blue", midpoint = .5, 
+                       labels = scales::label_percent(),
+                       name = "Democrat vote share"
+  ) + 
+  scale_size_continuous(
+    transform = "sqrt",
+    range = c(1, 5),
+    breaks = c(1000000, 2500000, 10000000, 25000000),
+    labels = label_comma()
+  ) + 
+  scale_y_continuous(labels = scales::label_percent(scale = 1), name="White population share") + 
+  scale_x_continuous(labels = scales::label_percent(scale = 1), name="College educated share") + 
+  theme_minimal()
+```
+
+Please take a good look at this code as it contains quite a number of moving parts.
+None of it is really complex by itself, but it can take a minute to understand all the different options.
+
+Some things worthy of note:
+
+- Using `scale_fill_gradient2` with `mid="white"`, and  `midpoint = .5` means that 
+  the scale first goes from red to white and then from white to blue, with 50% vote being displayed as white. 
+  This can be a very useful option if there is a natural mid-point which would not show as clearly with a default gradient. 
+- Since white circles are hard to see on a grey or white background, we use `shape=21` to select a shape with an outline `color`
+  as well as a `fill`. We leave the color to the default black, and map the fill to the vote share. 
+- In the scale_size_continuous, we now explicitly give the range of sizes to use -- try setting it to `range = c(0, 10)` to see the difference!
+  We also specify which values should be shown in the legend (1 to 25 million) and set `labels = label_comma()` to suppress scientific notation.
+
+
 
 ## Comparing groups side by side: facets {#sec-vis-facets}
 
