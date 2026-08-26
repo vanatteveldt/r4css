@@ -1,0 +1,420 @@
+::: {.exercise}
+Let's put stacking, colors and annotations together to recreate a real published figure:
+Figure 1 from the original 538 article,
+[The Dollar-And-Cents Case Against Hollywood's Exclusion of Women](https://archive.ph/e7xDQ)
+(open it in a new tab so you can compare as you go).
+
+The starting code below already does the data preparation:
+it bins `year` into 5-year periods labeled like `1970-'74`,
+and strips the `-disagree` suffix from `test` so we're left with five categories:
+`nowomen`, `notalk`, `men`, `dubious` and `ok`, from clearest fail to clearest pass.
+We've also created two helper variables:
+the 538 color palette with red shades for the "fail" categories, and blue shades for "pass";
+and a `breaks` variable that contains the labels that should be shown on the y axis:
+
+```{webr}
+#| warning: false
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+
+fig1data <- bechdel |>
+  mutate(test = str_remove(test, "-disagree"),
+         lustrum = floor(year / 5) * 5) |>
+  group_by(lustrum) |>
+  mutate(start = min(year),
+         end = max(year),
+         period = str_glue("{start}-\n'{str_sub(end, 3, 4)}"))
+
+# Useful helper variables:
+colors <- c(nowomen = "#ff2700", notalk = "#ff9380", men = "#ffc9bf",
+            dubious = "#6bb2d5", ok = "#008fd5")
+periods <- fig1data |> pull(period) |> unique() |> sort()
+breaks <- periods[seq(1, length(periods), by = 2)]
+
+print("fig1data:")
+head(fig1data)
+
+print("breaks:")
+breaks
+```
+
+Note that this code uses some interesting 'tricks':
+
+- We compute the `lustrum` (5 year period) by dividing, flooring, and multiplying again. 
+- We create a `period` variable using `str_glue`, 'glueing' together the start year, a literal dash, newline and apostrophe,
+  and the last two digits of the end year of that period
+  (see @sec_str for more details on the `str_*` functions)
+- We extract the unique periods with `pull(column) |> unique() |> sort()`, and then select all odd labels by 
+  indexing with a `seq`uence from 1 to the number of periods, incrementing by 2 every step. 
+
+A number of things are still missing:
+
+- The bar plot should be turned  into a stacked *proportion* scaling every bar to 100%, 
+  with the correct ordering of the factor levels. 
+- The colors given above should be used for the bars
+- You should add a title and subtitle to match the original plot
+- The Y axis should be in percentages with the right labels
+- The X axis should have the labels only for the first half of each decade
+- You should add two text annotations for PASS and FAIL in the top and bottom center, respectively. 
+
+Fix all the TODOs below. You can run the graph at any moment to see how you are doing,
+and of course you can ask for hints on which functions to use. 
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ex_bechdel_stacked
+#| warning: false
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+
+fig1data <- bechdel |>
+  mutate(test = str_remove(test, "-disagree"),
+         lustrum = floor(year / 5) * 5) |>
+  group_by(lustrum) |>
+  mutate(start = min(year),
+         end = max(year),
+         period = str_glue("{start}-\n'{str_sub(end, 3, 4)}")) 
+
+colors <- c(nowomen = "#ff2700", notalk = "#ff9380", men = "#ffc9bf",
+            dubious = "#6bb2d5", ok = "#008fd5")
+periods <- fig1data |> pull(period) |> unique() |> sort()
+breaks <- periods[seq(1, length(periods), by = 2)]
+```
+
+```{webr}
+#| exercise: ex_bechdel_stacked
+#| warning: false
+# Fix the TODO items below
+ggplot(fig1data) +
+  # TODO 1: Re-order the outcomes from nowomen (top) to ok (bottom), and make sure they stack to 100%
+  geom_bar(aes(x = period, fill = test)) +
+  # TODO 2: Add code to set the color values for the scales
+  # TODO 3: Add a title and subtitle
+  # TODO 4: Change the y axis to percentages
+  # TODO 5: Set x axis breaks to only the first halves of each decade
+  # TODO 6: Add text annotations for PASS and FAIL
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+```
+
+::: { .hint exercise="ex_bechdel_stacked"}
+::: { .callout-tip title="Hint:"}
+- **TODO 1**: reorder inside the `fill` mapping itself with `factor(test, levels = ...)` -- and since `colors` is already a named vector in the right order, `names(colors)` gives you that order without retyping it.
+  Remember that `position_stack()` (used by both `"stack"` and `"fill"`) places the *first* factor level at the top of the bar, so `ok` (the clearest pass) needs to be the *last* level to end up at the bottom.
+  For turning the counts into a 0-100% stack, look at the `position` argument of `geom_bar()`.
+- **TODO 2**: `scale_fill_manual(values = ...)` takes a named vector mapping category to color -- `colors` already is one.
+- **TODO 3**: `labs(title = ..., subtitle = ...)`.
+- **TODO 4**: `scale_y_continuous(labels = ...)` -- `scales::label_percent()` is a ready-made label function for this.
+- **TODO 5**: `scale_x_discrete(breaks = ...)` -- the `breaks` variable already contains exactly the labels you want shown.
+- **TODO 6**: two `annotate("text", label = ..., x = ..., y = ...)` calls, one placed in the upper half of the bars (around `y=.75`) and one in the lower half (around `y=.25`).
+:::
+:::
+
+::: {.solution exercise="ex_bechdel_stacked"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+Since `position_stack()` puts the first factor level at the top,
+listing `test` from clearest fail (`nowomen`) to clearest pass (`ok`) puts `ok` at the bottom of each bar, matching the original.
+`position="fill"` turns the counts into proportions.
+Given that stacking order, the upper half of the bars (`y=.75`) is the "fail" categories, and the lower half (`y=.25`) is "pass".
+
+```{webr}
+#| exercise: ex_bechdel_stacked
+#| solution: true
+ggplot(fig1data) +
+  geom_bar(aes(x = period, fill = factor(test, levels = names(colors))), position = "fill") +
+  scale_fill_manual(values = colors, guide = "none") +
+  labs(title = "The Bechdel Test Over Time",
+       subtitle = "How women are represented in movies") +
+  scale_y_continuous(name = "", labels = scales::label_percent()) +
+  scale_x_discrete(name = "", breaks = breaks) +
+  annotate("text", label = "FAIL", y = .75, x = 5, size = 20, fontface = "bold") +
+  annotate("text", label = "PASS", y = .25, x = 5, size = 20, fontface = "bold") +
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_bechdel_stacked
+#| check: true
+
+gradethis::grade_this({
+  if (inherits(.result, "ggplot")) {
+    built <- tryCatch(ggplot2::ggplot_build(.result), error = function(e) NULL)
+    gradethis::fail_if(is.null(built), "Something went wrong building the plot -- check for errors above.")
+
+    bar_data <- built$data[[1]]
+    gradethis::fail_if(
+      !"ymax" %in% names(bar_data) || !isTRUE(all.equal(max(bar_data$ymax), 1, tolerance = 1e-6)),
+      "Your bars don't reach 100%. Did you set `position = \"fill\"` on `geom_bar()`?"
+    )
+
+    # Colors and stacking order, checked on the period with the most categories present
+    counts <- table(bar_data$x)
+    full_x <- as.numeric(names(counts)[which.max(counts)])
+    bar_x <- bar_data[bar_data$x == full_x, ]
+    bar_x <- bar_x[order(bar_x$ymin), ]
+    expected_order <- unname(colors[c("ok", "dubious", "men", "notalk", "nowomen")])
+    gradethis::fail_if(
+      !setequal(bar_x$fill, colors),
+      "The bar colors don't match the `colors` palette -- did you use `scale_fill_manual(values = colors)`?"
+    )
+    gradethis::fail_if(
+      !identical(bar_x$fill, expected_order),
+      "The stacking order is wrong. Which category should end up at the very bottom of the bar (the clearest 'pass'), and which at the very top (the clearest 'fail')?"
+    )
+
+    gradethis::fail_if(
+      !identical(.result$labels$title, "The Bechdel Test Over Time"),
+      "The title doesn't match the original -- check `labs(title = ...)`."
+    )
+    gradethis::fail_if(
+      !identical(.result$labels$subtitle, "How women are represented in movies"),
+      "The subtitle doesn't match the original -- check `labs(subtitle = ...)`."
+    )
+
+    y_labels <- ggplot2::layer_scales(.result)$y$get_labels()
+    gradethis::fail_if(
+      !any(grepl("%", y_labels)),
+      "The y axis should show percentages -- try `scales::label_percent()` as the `labels` argument."
+    )
+
+    x_labels <- ggplot2::layer_scales(.result)$x$get_labels()
+    x_labels <- x_labels[!is.na(x_labels)]
+    gradethis::fail_if(
+      !identical(sort(x_labels), sort(breaks)),
+      "The x axis should only show the labels in the `breaks` variable (every other period)."
+    )
+
+    text_layers <- Filter(function(l) inherits(l$geom, "GeomText"), .result$layers)
+    texts <- do.call(rbind, lapply(text_layers, function(l) data.frame(y = l$data$y, label = l$aes_params$label)))
+    gradethis::fail_if(
+      is.null(texts) || !any(texts$label == "FAIL" & texts$y > 0.5),
+      "The upper half of the bars (around y=.75) should be labeled 'FAIL'."
+    )
+    gradethis::fail_if(
+      is.null(texts) || !any(texts$label == "PASS" & texts$y < 0.5),
+      "The lower half of the bars (around y=.25) should be labeled 'PASS'."
+    )
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+
+::: {.challenge title="How close can you get?"}
+Compare your result to the original figure. A few things are still different:
+
+- The original draws a thick black line separating "pass" from "fail" in each bar.
+- Functioning as a legend, the original has small labels on the right-hand side naming each of the five categories, connected to the chart with a short tick mark.
+- Colors, fonts, axis styling -- how many of the remaining differences can you track down and fix?
+
+Some of these (especially the dividing line and the side labels) go well beyond what we've covered in this book.
+The `{webr}` block below starts you off with the solution to the exercise above -- feel free to experiment,
+look up ggplot functions you haven't seen yet, and see how far you get.
+There's no single right answer here, and no checker: this is purely for the fun of it.
+:::
+
+```{webr}
+#| warning: false
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+
+fig1data <- bechdel |>
+  mutate(test = str_remove(test, "-disagree"),
+         lustrum = floor(year / 5) * 5) |>
+  group_by(lustrum) |>
+  mutate(start = min(year),
+         end = max(year),
+         period = str_glue("{start}-\n'{str_sub(end, 3, 4)}")) 
+
+colors <- c(nowomen = "#ff2700", notalk = "#ff9380", men = "#ffc9bf",
+            dubious = "#6bb2d5", ok = "#008fd5")
+periods <- fig1data |> pull(period) |> unique() |> sort()
+breaks <- periods[seq(1, length(periods), by = 2)]
+
+ggplot(fig1data) +
+  geom_bar(aes(x = period, fill = factor(test, levels = names(colors))), position = "fill") +
+  scale_fill_manual(values = colors, guide = "none") +
+  labs(title = "The Bechdel Test Over Time",
+       subtitle = "How women are represented in movies") +
+  scale_y_continuous(name = "", labels = scales::label_percent()) +
+  scale_x_discrete(name = "", breaks = breaks) +
+  annotate("text", label = "FAIL", y = .75, x = 5, size = 20, fontface = "bold") +
+  annotate("text", label = "PASS", y = .25, x = 5, size = 20, fontface = "bold") +
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+```
+
+Below is our solution -- don't peek until you've had a go yourself! 
+
+:::: {.callout-note collapse="true" title="Our solution -- click to expand"}
+
+Here's how far we took it.
+This uses several tricks not covered elsewhere in the book which are explained below the code,
+but have a look at the code first and see if you can understand what's going on. 
+There are many other ways to reach a similar result -- this is just one of them.
+
+```{webr}
+#| warning: false
+# (1) Define labels, ordering, and color as a data frame
+outcomes <- tribble(
+  ~position, ~test, ~outcome_color, ~label,
+  1, "nowomen", "#ff2700", "Fewer than\ntwo women",
+  2, "notalk","#ff9380", "Women don't\ntalk to each\nother",
+  3, "men", "#ffc9bf", "Women only\ntalk about men",
+  4, "dubious","#6bb2d5", "Dubious",
+  5, "ok","#008fd5", "Passes\nBechdel\nTest",
+)
+
+# (2) Compute figure data and join with outcomes
+fig1data <- read_csv("data/bechdel.csv") |>
+  mutate(test = str_remove(test, "-disagree"),
+         lustrum = floor(year / 5) * 5) |>
+  group_by(lustrum) |>
+  mutate(start = min(year),
+         end = max(year),
+         period = str_glue("{start}-\n'{str_sub(end, 3, 4)}")) |>
+  inner_join(outcomes, join_by(test))
+
+# (3) Compute the positioning for the right hand labels
+labels <- fig1data |>
+  filter(period == "2010-\n'13") |>
+  count(position, label)  |>
+  arrange(desc(position)) |>
+  mutate(proportion=n/sum(n),
+         y=cumsum(proportion) - 0.5 * proportion)
+
+# (4) Compute the y position for the pass/fail line segments
+pass_line <- fig1data |>
+  group_by(period) |>
+  summarize(y = mean(test %in% c("ok", "dubious"))) |>
+  mutate(x = as.numeric(factor(period)))
+
+# (5) The actual plot
+ggplot(fig1data) + 
+  geom_bar(aes(x=period, fill=fct_reorder(outcome_color, position)), position="fill", width=.96) + 
+  scale_fill_identity() + 
+  # (6) Add the line separating pass from fail
+  geom_segment(data = pass_line, aes(x = pmax(0.52, x - .52), xend = pmin(9.48, x + .52), y = y), linewidth = 1) +
+  geom_segment(data = pass_line, aes(x = x + .5, y = y, yend = lead(y)), linewidth = 1) +
+  # (7) Pass/fail annotations and outcome labels
+  annotate("text", label="FAIL", y=.75, x=5, size=16, fontface="bold") + 
+  annotate("text", label="PASS", y=.25, x=5, size=16, fontface="bold") +
+  geom_text(data=labels, aes(x=9.7, y=y, label=label), hjust=0, size=3) + 
+  geom_segment(data=labels, aes(x=9.48, xend=9.6, y=y)) + 
+  # General captions, scales and theming 
+  labs(title="The Bechdel Test Over Time",
+       subtitle = "How women are represented in movies",
+       ) + 
+  scale_y_continuous(name = "",
+                     # (8) Only add '%' for the 100% mark
+                     labels = function(x) ifelse(x == 1, "100%", x * 100),
+                     # (9) Remove the vertical space between the bar and the axis line
+                     expand = expansion(mult = c(0, 0.05))) + 
+  scale_x_discrete(breaks=c("1970-\n'74", "1980-\n'84", "1990-\n'94", "2000-\n'04", "2010-\n'13"),
+                   name="",
+                   expand = expansion(add = 0.48)) +
+  theme_minimal() + 
+  theme(panel.grid = element_blank(),
+        title = element_text(family = "sans"),
+        plot.title = element_text(family = "sans", face = "bold"),
+        plot.title.position = "plot",
+        axis.text = element_text(family = "mono", face = "bold"),
+        axis.ticks.y = element_line(linewidth = .25, color="grey"),
+        axis.ticks.length.y = unit(8, units="pt"),
+        axis.line.x = element_line()
+  ) +
+  # (10) Add the grey band with the source attribution
+  annotate("rect", xmin = -1, xmax = 12, ymin = -0.16, ymax = -0.1, fill = "grey50") +
+  annotate("text", x = 11, y = -.13, label = "SOURCE: BECHDELTEST.COM",
+           color = "white", hjust = 1, size = 3, family = "mono") +
+  annotate("text", x = -.5, y = -.13, label = "🦊 FIVETHIRTYEIGHT",
+           color = "white", hjust = 0, size = 3, family = "mono") +
+  # (11) Make space for the outcome labels
+  theme(plot.margin = margin(t = 5.5, r = 70, b = 10, l = 5.5))+
+  coord_cartesian(ylim=c(0, 1), xlim=c(1, 9), clip = "off")
+```
+
+Some explanation:
+
+1. We first define the colors, labels and positioning for the outcome labels in a separate data frame
+   The alternative is spreading this information over the graph in various scale, annotation etc. calls,
+   which makes it much harder to change later. 
+   In general, it can be a good idea to place this kind of information in a separate data frame 
+   rather than inside long blocks of code since it separates substantive decisions from implementation code.
+2. Next, we compute the figure data as before, but join it with the outcomes data frame created in (1).
+   This makes the color and positioning of the outcomes available in the plot.
+3. We then compute the positioning of the outcome labels on the right hand side.
+   The goal is to compute a `y` position that is halfway in the bar for that outcome in the last period. 
+   This first counts the number of films in each outcome for the last period using `count`,
+   and converts it to a percentage by dividing by `sum(n)`.
+   Next, it takes the cumulative sum of these percentages ordered by descending position, 
+   which effectively computes the upper limit of each bar since they are stacked. 
+   Finally, we subtract half of the current bar's size to get the midpoint for the bar.
+4. We compute the y position of the line separating pass from fail for each bar. 
+   The trick here is computing the mean of a boolean (yes/no) variable, i.e. whether it has passed.
+   R treats `TRUE` as 1 and `FALSE` as zero, so the mean is the same as the percentage of cases that passed.
+   A second trick is defining the x position as a number based on the factor level.
+   For categorical axes, ggplot also accepts numerical positions from 1 to the number of bars drawn. 
+5. In the `ggplot` call, we set the width of the bars to 0.96 to mimic the small gaps in the original.
+   We can now also set the fill to `outcome_color` and use  `scale_fill_identity`, which 
+   tells ggplot to treat the values as actual color names rather than categorical values that need to be mapped to a palette.
+   We can also use `fct_reorder(outcome_color, position)` here since we joined the position column to the data,
+   so we can order the outcomes based on this position. 
+6. We now add the line between the pass and fail bars based on the `pass_line` data constructed in (4). 
+   Note that ggplot will draw the first bar with 1 as the center, so a bar of width 0.96 will be drawn from `0.52-1.48`,
+   leaving a 4 point gap between the bars.
+   So, for the horizontal bars, we compute x as `x - .52` and xend as `x + .52`: since the width of each bar is .96,
+   ggplot renders it from -0.48 to 0.48 with a .04 gap between two bars, so we use .52 to cover the gap as well.
+   This would also extend left and right of the first and last bars, 
+   so we use `pmax` and `pmin` to limit the values to 0.52 and 9.48 rather than
+   0.48 and 9.52 for the first and last value. 
+   For the vertical bars, we draw a line between this bar and the next, setting `x=x+.5` to point to the right hand side of the bar,
+   and draw a line from `y` to `lead(y)`, which takes the next ('leading') value of the same column. 
+   For the last bar this will give `NA` (since there is no next bar), so no vertical bar is drawn at the end. 
+7. The pass/fail annotations are simple text annotations. 
+   For the outcome labels and segments, however, we can now use the `labels` dataset we created in the step (3),
+   and use a `geom_segment` and `geom_segment` line based on this dataset rather than having to specify 5 separate annotations
+   for the text and lines.  
+   We draw the line from 9.48 to 9.6 and start the text at 9.7 (left-justified),
+   which draws them to the right of the last bar, again using the fact that the last (9th) bar is drawn to 9.48.
+8. The original figure had `100%` for the top mark, but `0`, `25` etc without percentage sign for the rest.
+   There is no built-in option for this, but we can achieve this by using a function to compute the label,
+   setting it to `"100%"` for y==1 and to a simple `y*100` for the rest
+9. The original figure had no space between the bottom of the bar and the axis line. 
+   This is copied by setting the expansion of the vertical scale to 0 for the bottom and 5% for the top
+   using `mult=c(0, 0.05)`.
+   Similarly, the space to the left of the graph is set to exactly `0.48` to ensure there is no space between the bar and the tick marks,
+   using `add` rather than `mult` since here we give the exact space to be added to the plot,
+   rather than a factor with which to multiply it. 
+10.To copy the grey bar with the source attribution, we use annotations in negative vertical positions.
+   Note that these are dependent on the exact size of the graph, so would need to be tweaked after fixing
+   the exact output format. 
+11.Finally, we make space for the outcome labels on the right and the grey attribution bar by
+   setting larger margins on the right and bottom of the plot and specifying `clip="off"` in the 
+   coordinate function (to prevent these elements from being clipped).
+   We also fix the `xlim` and `ylim` to make sure the axes don't extend beyond the actual bar chart,
+   because otherwise the negative values used in the grey bar would be seen as part of the plotting area,
+   and the axes would actually be drawn below the gray bar instead of the other way around. 
+
+As said, this shows a number of "tricks" that might be useful in specific circumstances.
+Some things, such as using a data frame for the outcome colors and labels,
+using a `geom` with separate data for plotting multiple data-driven annotations,
+and using numbers for horizontal positions in categorical scales are useful in many circumstances.
+Using the black bar between the blue-ish and red-ish colors and the big pass/fail annotations also 
+drive home the overall message in a very clear way.
+Using annotations linked to the data rather than a generic legend is also quite a useful way to 
+make a graph both more aesthetically pleasing and easier to read, since the reader doesn't have to 
+make a connection between the colors and labels.  
+
+Other tricks, especially the grey bar at the bottom and suppressing the percentage mark,
+are not as useful and done here mostly to showcase how much you can customize plots if desired.
+Especially the use of a custom annotation which has to be fine-tuned every time the plot size changes
+instead of a simple `caption=` is probably not really worth it in most applications. 
+But now you know that you can if you really want to!
+
+::::

@@ -46,6 +46,16 @@
 
 /*-- scss:rules --*/
 
+.callout-title-container {
+    font-size: 1.1em;
+}
+
+.callout.callout-titled > .callout-header {
+    padding-top: 0.5em;
+    padding-bottom: 0.35em;
+    margin-bottom: 0;
+}
+
 div.challenge,
 div.exercise {
     border-radius: 4px;

@@ -1,9 +1,7 @@
----
-title: "Visualizing data"
----
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# Visualizing data {#sec-vis}
 
 ## Why visualize? {#sec-vis-why}
 
@@ -825,6 +823,48 @@ Finally, `complete` in this form only completes years (and continents) that are 
 If there are years that are left out for all continents, you can fix this by using
 `complete(year=full_seq(year, 1), continent)` instead, which creates the full sequence for the year variable between the observed extremes.
 
+::: {.callout-tip title="Saving plots for production"}
+
+By default, ggplot shows the plot in the viewer pane (or on this website),
+which is useful for your own exploration. 
+However, for making production-level graphics (for publications or reports),
+you want to save and use them in a good way. 
+
+On this interactive website, your only real option is to use the 'Save image as' in the context (right-click) menu.
+When using R on your own computer you can also directly save the image from the preview pane.
+Since the output then depends on the size and ratio of your pane, this is not a very good option
+to create production-ready plots in a reproducible way. 
+
+The easiest option is to create the whole report using [Quarto](https://quarto.org/). 
+Quarto is a tool for writing data-driven books and reports
+and R and ggplot are integrated natively into it (in fact, this book is written completely using quarto). 
+You can render the report as a PDF or Word document
+and the pictures will be included automatically. 
+In this case, you can use [execution options](https://quarto.org/docs/computations/execution-options.html)
+to control e.g. figure size in the output. 
+
+A second good option is to save the plot automatically from code
+using the `ggsave` function. This can save a specific plot, or save the last plot that was displayed,
+and allows you to specify output format, size, etc. 
+This is especially useful for published scientific articles, 
+as publishers generally want separate files for each image. 
+
+```{r, eval=F}
+# Save the last plot 
+ggplot(anscombe, aes(x=x1, y=y1)) + geom_point()
+ggsave("figure1.png", width = 1000, height = 1000, units = "px")
+
+# Assign and save a specific plot
+fig2 <- ggplot(anscombe, aes(x=x2, y=y2)) + geom_point()
+ggsave("figure2.pdf", fig2, width = 20, height = 10, units = "cm", dpi=300)
+```
+
+When saving plots to a file like this, it's important to check the actual outputhe file:
+especially fonts can scale differently than you might expect, so the best way to create quality 
+plots is to first settle on a format and size and then tweak font size, margins etc until you are satisfied,
+checking the rendered file after each change. 
+
+:::
 
 ### Exercise: Which countries go against the trend?
 

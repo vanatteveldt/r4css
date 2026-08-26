@@ -165,7 +165,7 @@ Since the lower and upper bound tend to be unique, this means we create 3 rows p
 The lesson here is: **before** doing `pivot_wider`, **always** make sure the data only contains the columns
 uniquely identifying the rows (here: `year`) and the names and values columns (`region` and `temp_anomaly`). 
 
-### From wide to long data: `pivot_longer`
+### From wide to long data: `pivot_longer` {#sec-pivot-longers}
 
 As you might expect, `pivot_longer` is the opposite of pivot_wider,
 turning columns into rows. We can use it to 'undo' our earlier pivot_longer:
@@ -194,7 +194,7 @@ Note that the new column names here need to be quoted (enclosed in `"` or `'`),
 since they don't refer to an existing column or object. 
 
 
-### Plotting data with multiple columns: a case for `pivot_longer`
+### Plotting data with multiple columns: a case for `pivot_longer` {#sec-co2}
 
 Let's have a look at the greenhouse emission data, which shows one of the common places
 where we need `pivot_longer` in our daily work. 

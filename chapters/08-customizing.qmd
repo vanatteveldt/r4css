@@ -1,32 +1,24 @@
+---
+title: "Advanced Visualization"
+webr:
+  resources:
+    - ../data/us-president.csv
+    - ../data/us-states.csv
+    - ../data/bechdel.csv
+editor_options: 
+  chunk_output_type: console
+---
+
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-# Advanced GGplot usage (todo) {#sec-advancedggplot}
+```{webr}
+#| autorun: true
+#| include: false
+library(tidyverse)
+```
 
-::: {.callout-note}
-**Proposed chapter scope:** 
-The second half of the ggplot material split off from the visualizing chapter: 
-facets, scales, and guides (legends/axes), plus more advanced theming. 
-
-Placed after the reshaping chapter (@sec-pivot) rather than immediately after visualizing, 
-since faceting and multi-series plots often need data pivoted long first 
-(map a series name to `color`, facet by it).
-:::
-
-<!-- 
-
-From chapter 6:
-
-6.4  Stacked bars  geom_col(position="fill") | Bechdel: recreate FiveThirtyEight Figure 1
-     + scales      GOG: position adjustments; scale_fill_manual() with original red/blue palette
-                   Note: colorblind-safe palette alternatives (scale_fill_brewer / ggthemes)
-
-
-6.7  Facets        facet_wrap() | Gapminder: same line graph split by continent
-                   GOG: "the same plot, applied to each subset"; facet_wrap vs facet_grid
-
-6.8  Saving        ggsave() — short practical callout; file formats, size/dpi
--->
+# Advanced GGplot usage {#sec-advancedggplot}
 
 ### Data used in this chapter
 
@@ -47,9 +39,11 @@ in each U.S. State for the elections from 1976.
 
 For convenience, let's also create a dataset of aggregated results for each election
 
+```{webr}
 #| exercise: usdata2
 #| setup: true
 votes <- read_csv("data/us-president.csv")
+```
 ```{webr}
 #| exercise: usdata2
 #| warning: false
@@ -82,9 +76,10 @@ percentage White, percentage young (<30) and old (65), median household income a
 ## Scales: the link between values and aesthetics
 
 ```{webr}
-#| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4']
+#| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4', 'usdot5', 'ustheme', 'ustheme2', 'ustheme3', 'plot_annotate']
 #| setup: true
 votes <- read_csv("data/us-president.csv")
+meta <- read_csv("data/us-states.csv")
 votes_per_year <- votes |>
   group_by(year, party) |>
   summarize(votes=sum(votes)) |>
@@ -102,7 +97,7 @@ Democrats and Republicans both hover around 50%, with third parties playing a ve
 (with the 1992 bid by Ross Perot as the most notable exception).
 
 However, anyone who follows US politics will probably be bothered by the colors:
-Republicans are traditionally depicted with red, and democrat with blue, which is inversed in the graph. 
+Republicans are traditionally depicted with red, and democrat with blue, which is reversed in the graph. 
 
 ### Discrete scales
 
@@ -121,17 +116,37 @@ ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
   theme_classic()
 ```
 
-In this case, we used `scale_color_manual`. All scale functions are named using this pattern:
-`scale_{aesthetic}_{type}`, so in this case we change the scale for the `color` aesthetic,
-and use a `manual` scale. 
+In this plot, we used `scale_color_manual`, creating a `manual` scale for the `color` aesthetic.
 The `values=` argument within this scale should then be a named vector which assigns a color name 
 (or hex pattern such as `#ff0000`) to each value. 
 
 Another common option is to stick to an automatic scale, but use a different palette. 
 Try replacing the scale function in the above example with  `scale_color_brewer(palette="Accent")` --
 this uses the 'Accent' palette in the [ColorBrewer](https://ggplot2-book.org/scales-colour#brewer-scales) 
-package. Another good option can be the Viridis scale which are designed to be colorblind safe
+package. Another good option can be the Viridis scale which is designed to be colorblind safe
 and also work when printed greyscale: `scale_color_viridis_d()` (d for **d**iscrete, i.e. categorical data)
+
+
+::: {.callout-tip title="Aesthetics, Geoms and Scales"}
+In @sec-vis we introduced the *aesthetic mapping* created by the `aes()` function,
+and explained how it linked columns in your data (e.g. `year` or `party`) to
+aesthetic elements of the graph (such as the `x` position or `color` or a point or line).
+In other words, it links values from your data to the geometrical elements that are drawn on the screen. 
+
+Scales can be seen as the bridge between the value and the aesthetic, and define how specific values are displayed.
+All scales have (mostly sensible) defaults based on your data: if you supply a `color` mapping,
+ggplot will inspect the values, determine whether it needs a qualitative palette (for categorical data)
+or a color gradient (for numerical data), and use a color range that matches the values in the data. 
+
+The role of the `scale_*` functions is to customize the way values are visualized. 
+GGplot defines multiple functions for this, all named using the same `scale_{aesthetic}_{type}`.
+So, to set a manual color scale we used `scale_color_manual`.
+All aesthetics can be set with scales; for example, `scale_linewidth_continuous` would create a continuous scale for the linewidth aesthetic.
+
+The arguments for the scale functions depend on the scale type used.
+For example, the manual scale had the `values=` argument, while a color gradient allows you to set `low=` and `high=` colors
+and a `scale_size_continuous` has a `range=` argument to specify the size of point to represent the smallest and lowest values.
+:::
 
 ### Color gradients
 
@@ -181,6 +196,7 @@ As you might have guessed, all this can be fixed in the scales:
 
 ```{webr}
 #| exercise: usdot3
+#| warning: false
 library(scales)
 votes |>
   filter(year == 2024, party == "Democrat") |>
@@ -210,10 +226,15 @@ Some points to note:
   rather than having it scale linearly. In this graph the effect is relatively small, but very often a small number of outliers can dominate a scale.
   In that case, using a square root or even `transform=log10` can be an effective way to also see variation in the smaller cases.
 
-As a final example, let's use `scale_fill_gradient2` to make a gradient with an explicit mid-point:
+### Axis scales: Breaks and limits
+
+The axis scale above uses the ggplot default of fitting the data and creating a sensible amount of ticks. 
+We can customize this using the `breaks=` and `limits=` arguments to the x and y scales. 
+While we're at it,  let's also use `scale_fill_gradient2` to make a gradient with an explicit mid-point:
 
 ```{webr}
 #| exercise: usdot4
+#| warning: false
 library(scales)
 votes |>
   filter(year == 2024, party == "Democrat") |>
@@ -231,8 +252,17 @@ votes |>
     breaks = c(1000000, 2500000, 10000000, 25000000),
     labels = label_comma()
   ) + 
-  scale_y_continuous(labels = scales::label_percent(scale = 1), name="White population share") + 
-  scale_x_continuous(labels = scales::label_percent(scale = 1), name="College educated share") + 
+  scale_y_continuous(
+    labels = label_percent(scale = 1), 
+    name="White population share",
+    limits=c(0, 100),
+    breaks=c(0, 20, 40, 60, 80, 100)
+  ) + 
+  scale_x_continuous(
+    labels = label_percent(scale = 1), 
+    name="College educated share",
+    n.breaks=5,
+  ) + 
   theme_minimal()
 ```
 
@@ -241,6 +271,9 @@ None of it is really complex by itself, but it can take a minute to understand a
 
 Some things worthy of note:
 
+- We've added `limits=c(0, 100)` to force the y axis to display a full percentage scale
+- We've added `breaks=c(0, ..., 100)` to manually specify the y axis tick marks,
+  and use `n.breaks=5` to specify the x axis should have 5 marks. 
 - Using `scale_fill_gradient2` with `mid="white"`, and  `midpoint = .5` means that 
   the scale first goes from red to white and then from white to blue, with 50% vote being displayed as white. 
   This can be a very useful option if there is a natural mid-point which would not show as clearly with a default gradient. 
@@ -249,25 +282,287 @@ Some things worthy of note:
 - In the scale_size_continuous, we now explicitly give the range of sizes to use -- try setting it to `range = c(0, 10)` to see the difference!
   We also specify which values should be shown in the legend (1 to 25 million) and set `labels = label_comma()` to suppress scientific notation.
 
+### Guides
 
+A final useful argument for the `scale_*` function is `guide=`. \
+This allows you to customize the *guides*, i.e. the legend or axis marks:
+
+```{webr}
+#| exercise: usdot5
+#| warning: false
+library(scales)
+votes |>
+  filter(year == 2024, party == "Democrat") |>
+  inner_join(meta, join_by(state)) |>
+  mutate(voteshare=votes / totalvotes) |>
+  ggplot(aes(x=college_pct, y=white_pct, size=population, fill=voteshare)) +
+  geom_point(alpha=.7, shape=21) +
+  scale_fill_gradient2(low="red", mid="white", high="blue", midpoint = .5,
+                       labels = scales::label_percent(),
+                       name = "Democrat vote share",
+                       guide = guide_colorbar(reverse = TRUE, direction="horizontal", 
+                                              position="bottom", order=99)
+  ) +
+  scale_size_continuous(
+    transform = "sqrt",
+    range = c(1, 5),
+    breaks = c(1000000, 2500000, 10000000, 25000000),
+    labels = label_comma(),
+    guide = guide_legend(override.aes = list(fill="purple"))
+  ) +
+  scale_y_continuous(
+    labels = label_percent(scale = 1), 
+    name="White population share",
+    limits=c(0, 100),
+    breaks=c(0, 20, 40, 60, 80, 100),
+    guide="none"
+  ) + 
+  scale_x_continuous(
+    labels = label_percent(scale = 1), 
+    name="College educated share",
+    n.breaks=5,
+    guide=guide_axis(angle=45)
+  ) + 
+  theme_minimal()
+```
+
+You can see a number of applications in this example (admittedly, not all of them equally useful in this plot):
+
+- In the fill scale, we add a `guide = guide_colorbar()` (the default guide for color gradients)
+   with options to  reverse it to descending order, position it on the bottom, make it horizontal rather than 
+  vertical, and order it so it would come as the last guide
+- In the size scale, we add a `guide_legend` (the default guide for most aesthetics),
+  overriding one aesthetic to make the dots purple
+- In the y scale, we disable the guide meaning that the percentages are not displayed
+- We add a `guide_axis` to the x scale, setting the text angle to 45 degrees. 
+
+## Theming your plot
+
+The customizations in the previous section all changed the way data was visualized in the plot.
+With *theming*, we can control the other visual aspects of the plot such as 
+the backgroun color, font styles, grid lines etc. 
+
+As an example, let's spice up the first plot used above:
+
+```{webr}
+#| exercise: ustheme
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  labs(title="Share of votes in US presidential election over time",
+       y = "Vote share", x = "", color="Party") + 
+  scale_y_continuous(labels = scales::label_percent(), n.breaks=6) + 
+  theme_classic()  + 
+  theme(text = element_text(family="monospace", size = 12),
+        plot.background = element_rect(fill="pink"),
+        panel.grid.major.y = element_line(color="grey", linetype=2),
+        axis.title.x = element_blank(),
+        legend.position="bottom", legend.title.position = "top")
+```
+
+This accomplishes a number of things:
+
+First, `theme_classic()` selects an existing theme as a starting point. If you type `theme_` and then press control_space, 
+Rstudio should show you a list of available themes (Note that this also works great with `geom_` and `scale_`!)
+
+Subsequently, the `theme()` function further customizes the theme:
+
+- All text is set to use the "monospace" font at size 12 using the `element_text` helper function.
+  Note that you can also set the font for individual elements, e.g. `plot.title` or `axis.title`.
+- The plot background is set to a delightful pink using the `element_rect` (rectangle) helper
+- The major horizontal gridlines are set to a dashed grey line using `element_line`. Note
+  that you can also set the style for more grid lines using a less specific argument,
+  e.g. `panel.grid=` or `panel.grid.major=`. 
+- The x axis title is removed by setting it to `element_blank()` 
+  (which can be used to remove almost all plot elements, e.g. `legend.title=element_blank()` removes the legend title)
+- Finally, the legend is moved to the bottom with the title displayed on the top. 
+  You can also use `legend.position="none"` to disable all legends for the plot. 
+
+This only shows a tiny fraction of the available theming options,
+but they all work similarly to these so you can just play around with it.
+The argument names are very systematic, so you can e.g. type `theme(panel.` and press control+space to get a list of available panel options. 
+For a complete list and explanation of available arguments, see the [documention for the theme function](https://www.rdocumentation.org/packages/ggplot2/versions/4.0.2/topics/theme)
+
+Please note that font rendering is highly device specific. 
+The above example used the `monospace` font family, which (probably) works in your browser because 
+the browser recognizes that family, but probably won't work in Rstudio which ships with `family=mono`.
+For a more flexible handling of fonts, please see the [showtext](https://github.com/yixuan/showtext) package. 
+
+As a final note, you can see overlap between `labs`, `scale`, `guide`, and `theme` for some options:
+legend position can be set either in the guide or in the theme;
+legend titles can be set either in the labs or in the scale;
+and axis and other titles can be removed in the labs, the scale, or the theme.
+Any of those places is fine, so just put it where it's most convenient. 
+
+::: {.callout-tip title="`library(scales)` vs. `scales::`"}
+In the last example, we used `scales::label_percent` rather than calling `library(scales)` at the top.
+
+Technically, using `library` *attaches* the package, making all functions available directly in the rest of the session.
+Sometimes, however, it's more convenient
+to use the `package::function` notation instead: it makes it clearer where a function comes from,
+and prevents having 20 `library()` calls at the top of a script of which some might not even be used anymore.
+
+Either notation works fine, and you can choose which you prefer. 
+As a rule of thumb, I would advise using `library(package)` for packages (such as tidyverse) that are used throughout a script, 
+and `package::` for functions that are only used once or twice. 
+:::
+
+### Re-using themes
+
+If you are writing a report with multiple figures, 
+it makes sense to set things like font and color preferences globally 
+rather than on each plot separately. There are two mechanisms for this.
+
+First, you can use theme_set() to change defaults for all plots in this session:
+
+```{webr}
+#| exercise: ustheme2
+theme_set(theme_classic() + 
+          theme(plot.background = element_rect(fill="lightblue")))
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  labs(title="Share of votes in US presidential election over time",
+       y = "Vote share", x = "", color="Party") + 
+  scale_y_continuous(labels = scales::label_percent(), n.breaks=6)  
+```
+
+Note that you can call `theme_set()` without argument to revert back to the default theme. 
+
+Alternatively, since themes are just objects, you can assign your theme to a variable and re-use it:
+
+```{webr}
+#| exercise: ustheme3
+my_theme <- theme_classic() + 
+            theme(plot.background = element_rect(fill="lightblue"))
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  labs(title="Share of votes in US presidential election over time",
+       y = "Vote share", x = "", color="Party") + 
+  scale_y_continuous(labels = scales::label_percent(), n.breaks=6)  +
+  my_theme
+```
 
 ## Comparing groups side by side: facets {#sec-vis-facets}
 
-<!-- Continue from line graph: facet_wrap(~ continent) to split by continent.
-     Callout: facet_wrap vs facet_grid; scales = "free" option.
-     GOG point: facets are just "the same plot, applied to each subset" — the grammar scales. -->
+When visualizing complex data, it can be tempting to put as much information in a graph as possible. 
+In theory, every aesthetic can be used to represent a variable, 
+so it's possible to visualize many different variables.
+However, putting too much information in a plot can quickly render it very hard to read:
+3 lines in a graph is fine, but 12 different line colors with 4 different line types is often very hard to read.
 
-## Saving your plot {#sec-vis-save}
+An alternative way to display more information is to use `facets`.
+For example, we can plot vote shares in a number of key states:
 
-<!-- Short practical section: ggsave("filename.png", plot, width, height, dpi).
-     Note common formats (PNG for screen, PDF/SVG for publication).
-     One show-and-tell chunk, no exercise needed. -->
+```{webr}
+key_states <- c("Arizona",  "Florida", "Michigan", "Pennsylvania")
 
-## Recreating a published figure {#sec-vis-stacked}
+votes |> 
+  filter(state %in% key_states, party %in% c("Democrat", "Republican"), !is.na(candidate)) |>
+  mutate(voteshare=votes/totalvotes) |>
+  ggplot(aes(x=year, y=voteshare, color=party)) + geom_line() + 
+  facet_wrap(vars(state)) + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  theme_minimal() + 
+  theme(panel.grid.minor = element_blank())
+```
 
-<!-- Goal: reproduce FiveThirtyEight Figure 1 from the Bechdel article.
-     Stacked proportional bar: geom_col(position = "fill").
-     Callout: position adjustments (stack / fill / dodge).
-     scale_fill_manual() to match the original red/blue palette.
-     Note: colorblind-safe alternatives — scale_fill_brewer() or ggthemes::scale_fill_colorblind().
-     Challenge: can you get the axis labels and title to match the original? -->
+As you can see, this produces a separate graph for each of the selected states.
+This works by using `facet_wrap`, which automatically arranges the graphs in a grid
+which can be controlled by setting `nrow` and `ncol`. 
+As you can see, by default the x and y axis scales are kept the same for all graphs,
+so you can easily compare values between graphs. 
+
+Note that for technical reasons, you need to enclose the column names in `vars()` similar to how
+you put the columns in `aes` for specifying the mapping. 
+
+### Facet on multiple variables with `facet_grid`
+
+The example above showed faceting on a single variable. If you have multiple variables that you want to facet on,
+you can also use `facet_grid` to specify which variables to use as rows and columns.
+
+To show this, let's go back to the CO2 emissions data introduced in @sec-co2:
+
+```{webr}
+#| exercise: facet_grid
+co2 <- read_csv("data/co2_emissions.csv") |>
+  select(country, year, co2, methane, nitrous_oxide) |>
+  pivot_longer(co2:nitrous_oxide, names_to="ghg_type") 
+head(co2)
+```
+
+Now, let's create separate graphs per country and greenhouse gas type for four large emitters:
+
+
+```{webr}
+#| exercise: facet_grid2
+#| setup: true
+co2 <- read_csv("data/co2_emissions.csv") |>
+  select(country, year, co2, methane, nitrous_oxide) |>
+  pivot_longer(co2:nitrous_oxide, names_to="ghg_type") 
+```
+```{webr}
+#| exercise: facet_grid2
+co2 |>
+  filter(country %in% c("United States", "China", "Russia", "India")) |>
+  ggplot(aes(x=year, y=value)) + geom_line() +
+  facet_grid(cols=vars(country), rows=vars(ghg_type), scales="free_y") + 
+  theme_minimal()
+```
+
+As you can see, this places the four countries in the columns, 
+and places separate graphs in the rows for each of the greenhouse gas types.
+By specifying `scales="free_y"`, it allows the vertical scales to differ between the rows,
+avoiding methane and nitrous oxides being dwarved by the much higher co2 emissions. 
+
+## Annotations
+
+A central goal in making good graphs is to ensure that a graph should be self-explanatory:
+it should be understandable and interpretable without needing to read or understand the surrounding text. 
+Most of the tools needed for this have been discussed already, especially good plot and axis titles and
+useful legends. 
+
+Sometimes, however, it really helps to add annotations to a graph to make it easier to understand.
+For example, let's add some annotations to the line graph made in the first example:
+```{webr}
+#| exercise: plot_annotate
+ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_hline(yintercept=.5, color="gold", linewidth = .25, lty=2) + 
+  geom_line() + 
+  scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen")) +
+  scale_x_continuous(breaks = scales::breaks_width(4), guide=guide_axis(angle=90)) + 
+  annotate("label", x=1992, y=.205, label="Ross Perot", color="darkgreen", vjust=0) +
+  theme_classic() +
+  theme(legend.position="bottom", 
+        plot.margin = margin(t = 5.5, r = 60, b = 5.5, l = 5.5)
+  ) + 
+  coord_cartesian(clip = "off") +
+  annotate("text", x=2024, y=.5, label="50%\nVote Share", color="gold", hjust=0) 
+```
+
+This shows three different annotations:
+
+- First, the `geom_hline` paints a simple horizontal line at y-intercept 0.5 (50%),
+  using `color`, `linewidth` and `lty` (line type) to style the line. 
+  Note that this geom is placed *before* the actual plot geom to ensure that the plot lines
+  are drawn over the hline: ggplot plots the geoms in the order given, so later geoms overwrite earlier ones. 
+- Next, we place a textual annotation at the position of the 'other' vote share in 1992. 
+  Using vjust=0 justifies the label so the bottom is at the given y value. 
+  This uses the "label" annotation, which draws a small box around the text.
+- Finally, we add a regular "text" annotation to explain the 50% line. 
+  This is positioned all the way at the right hand side, with `x=2024` and `hjust=0`, 
+  which left aligns the text to start from 2024. 
+  Of course, the graph only runs to 2024, so it would normally be mostly outside the plotting area.
+  This is solved by increasing the right margin in the theme, and setting `clip="off"` in the cartesian coordinates,
+  meaning that the text won't be clipped if it's plotted outside the actual plotting limits. 
+  
+Finally, note the use of `breaks = scales::breaks_width(4)` and `guide=guide_axis(angle=90))`
+in the `scale_x`. This ensures every election receives a label on the x axis, setting them at 90 degrees to avoid overlapping.
+
+## Exercise: Recreating a published figure {#sec-vis-stacked}
+
+Let's bring together stacking, colors and annotations to recreate a figure from a real published article.
+
+{{< include exercises/_ch08_ex_bechdel_stacked.qmd >}}
+
