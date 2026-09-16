@@ -113,6 +113,92 @@ read_csv("~/Downloads/1976-2024-president.csv") |>
   write_csv(here::here("data/us-president.csv))
 ```
 
+## US county-level demographics
+
+- **File**: [us-counties.csv](us-counties.csv)
+- **Source**: US Census Bureau, American Community Survey (ACS) 2020-2024 5-year estimates, via the [Census Data API](https://www.census.gov/data/developers/data-sets/acs-5year.html) and the [tidycensus](https://walker-data.com/tidycensus/) package
+- **Description**: County-level demographic and socioeconomic indicators for the US (population, non-white share, female share, age brackets under 30/65+, median household income, unemployment, and share with a bachelor's degree or higher), identified by 5-digit FIPS code (kept as a string, not an integer, to preserve leading zeros). Puerto Rico is excluded.
+- **License**: Public Domain (US Government Work). This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.
+
+Code:
+```{r}
+library(tidycensus)
+library(tidyverse)
+
+# Needs a free Census API key (https://api.census.gov/data/key_signup.html),
+# stored as CENSUS_API_KEY in .Renviron
+census_api_key(Sys.getenv("CENSUS_API_KEY"))
+
+acs_year <- 2024  # = the 2020-2024 5-year file, released 2026-01-29
+
+simple <- get_acs(
+  geography = "county",
+  variables = c(
+    total_population = "B01003_001",  # total population
+    median_hh_inc    = "B19013_001",  # median household income
+    race_total       = "B03002_001",  # total, Hispanic-origin-by-race table
+    nhwhite          = "B03002_003",  # not Hispanic/Latino, white alone
+    female           = "B01001_026",  # total female
+    clf              = "B23025_003",  # civilian labor force (16+)
+    unemployed       = "B23025_005"   # civilian labor force, unemployed
+  ),
+  year = acs_year, survey = "acs5", output = "wide"
+) |>
+  select(GEOID, NAME, ends_with("E")) |>          # drop margins of error
+  rename_with(\(x) str_remove(x, "E$"), .cols = -c(GEOID, NAME))
+
+# Age groups: sum the relevant brackets of B01001 (sex by age)
+# male   under 30 = _003 .. _011,  65+ = _020 .. _025
+# female under 30 = _027 .. _035,  65+ = _044 .. _049
+under30 <- sprintf("B01001_%03d", c(3:11, 27:35))
+plus65  <- sprintf("B01001_%03d", c(20:25, 44:49))
+
+age <- get_acs(geography = "county", table = "B01001",
+               year = acs_year, survey = "acs5") |>
+  filter(variable %in% c(under30, plus65)) |>
+  mutate(group = if_else(variable %in% under30, "under30", "plus65")) |>
+  summarise(n = sum(estimate), .by = c(GEOID, group)) |>
+  pivot_wider(names_from = group, values_from = n)
+
+# Education: B15003 is educational attainment for the population 25+
+# _001 = total 25+;  _022 .. _025 = bachelor's, master's, professional, doctorate
+edu <- get_acs(geography = "county", table = "B15003",
+               year = acs_year, survey = "acs5") |>
+  filter(variable %in% c("B15003_001", sprintf("B15003_%03d", 22:25))) |>
+  mutate(group = if_else(variable == "B15003_001", "adults25", "bachelor_plus")) |>
+  summarise(n = sum(estimate), .by = c(GEOID, group)) |>
+  pivot_wider(names_from = group, values_from = n)
+
+# Suffixes to strip so "Autauga County" becomes "Autauga".
+# Longest first; note "Planning Region" only occurs in Connecticut.
+county_suffix <- paste0(
+  " (City and Borough|Census Area|Planning Region|Municipality|",
+  "Municipio|County|Parish|Borough|city|City)$"
+)
+
+simple |>
+  left_join(age, by = "GEOID") |>
+  left_join(edu, by = "GEOID") |>
+  separate_wider_delim(NAME, delim = ", ",
+                       names = c("county", "state"), too_many = "merge") |>
+  mutate(
+    fips              = GEOID,
+    county            = str_remove(county, county_suffix),
+    nonwhite_pct      = 100 * (1 - nhwhite / race_total),
+    female_pct        = 100 * female / total_population,
+    age29andunder_pct = 100 * under30 / total_population,
+    age65andolder_pct = 100 * plus65 / total_population,
+    clf_unemploy_pct  = 100 * unemployed / clf,
+    college_pct       = 100 * (bachelor_plus / adults25)
+  ) |>
+  filter(!str_starts(fips, "72")) |>   # drop Puerto Rico
+  select(fips, state, county, total_population, nonwhite_pct, female_pct,
+         age29andunder_pct, age65andolder_pct, median_hh_inc,
+         clf_unemploy_pct, college_pct) |>
+  arrange(fips) |>
+  write_csv(here::here("data/us-counties.csv"))
+```
+
 ## US State level metadata
 
 - **File**: [us-president.csv](us-states.csv)
@@ -144,6 +230,6 @@ atrrr::auth(user = Sys.getenv("BSKY_HANDLE"), password = Sys.getenv("BSKY_APP_PA
 posts <- atrrr::search_post("eleições2024", lang="pt", since = "2024-01-01", until = "2024-12-31", limit = 10000)
 
 posts |> 
-  dplyr::select(uri, author_handle:text, reply_count:quotes) |> 
+  dplyr::select(uri, author_handle:text, created_at, indexed_at, reply_count:quotes) |> 
   readr::write_csv("data/bluesky_brazil_elections_2024.csv")
 ```
