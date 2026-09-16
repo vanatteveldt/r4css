@@ -9,6 +9,7 @@
 .httr-oauth
 models/
 .Rproj.user
+.Renviron
 
 **/*.quarto_ipynb
 /.RData

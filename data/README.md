@@ -131,3 +131,19 @@ read_csv("https://raw.githubusercontent.com/MEDSL/2018-elections-unoffical/refs/
   select(-lesscollege_pct) |>
   write_csv(here::here("data/us-states.csv"))
 ```
+
+## Brazilian Bluesky posts
+
+- **File**: [bluesky_brazil_elections_2024.csv](bluesky_brazil_elections_2024.csv)
+- **Source**: Scraped directly from Bluesky
+- **Description**: All 2024 bluesky posts in Portuguese mentioning the elections hashtag
+- **License**: (c) individual authors; collected via public API for non-commercial educational use.
+Code:
+```{r}
+atrrr::auth(user = Sys.getenv("BSKY_HANDLE"), password = Sys.getenv("BSKY_APP_PASSWORD"))
+posts <- atrrr::search_post("eleições2024", lang="pt", since = "2024-01-01", until = "2024-12-31", limit = 10000)
+
+posts |> 
+  dplyr::select(uri, author_handle:text, reply_count:quotes) |> 
+  readr::write_csv("data/bluesky_brazil_elections_2024.csv")
+```
