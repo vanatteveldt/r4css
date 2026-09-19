@@ -3,6 +3,7 @@ title: "Transforming data"
 webr:
   resources:
     - ../data/bechdel.csv
+    - ../data/us-counties.csv
 ---
 
 <!-- TODO: dplyr now allows summarize(..., .by=c(columns)).
@@ -634,3 +635,368 @@ you can also use `slice_head` or `slice_tail` to select the first or last row(s)
 ### Exercise: Bechdel test over time (part 2)
 
 {{< include exercises/_ch05_ex_groupby_mutate.qmd >}}
+
+## Column types: texts, numbers, and dates {#sec-column-types}
+
+In R, every object and column has a data *type*,
+for example `character` (for textual data) or `numeric` (confusingly abbreviated to `<dbl>` because internally it's stored with 'double' precision). 
+This type is very important in determining how data is handled
+and what operations are possible. 
+For example, you can add numbers together but not texts.
+
+In most cases, R will automatically detect the type when you load 
+a file. For example, `read_csv` reads the first 1,000 rows of a file
+and then guesses the right column type. 
+
+In some cases, however, you might want to change this yourself.
+Consider the following dataset of US county-level demographics:
+
+```{webr}
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/us-counties.csv", "us-counties.csv")
+counties <- read_csv("us-counties.csv")
+head(counties)
+```
+
+As you can see, this has a 5-digit `fips` (Federal Information Processing Standards) code identifying each county. In this case, it is ingested as a character (`<chr>`) column because it starts with a 0 (which would be lost as a number, since `01001` and `1001` are the same numerical value). 
+
+Now, you could change this default in `read_csv`: try adding `col_types = list(fips="numeric")` as an argument to `read_csv` in the code above, and checking whether the column type changed to numeric (`<dbl>`). 
+
+However, you can also change column types in a mutate call. For example, the following will change the character column to a numeric column:
+
+```{webr}
+#| exercise: ['asnumeric', 'ascharacter', 'ascharacter2', 'format', 'scales']
+#| setup: true
+library(tidyverse)
+counties <- read_csv("data/us-counties.csv")
+counties_num <- mutate(counties, fips = as.numeric(fips))
+```
+
+```{webr}
+#| exercise: 'asnumeric'
+counties_num <- mutate(counties, fips = as.numeric(fips))
+head(counties_num)
+```
+
+Similarly, you could use `as.character` to turn it back into a textual column:
+
+```{webr}
+#| exercise: 'ascharacter'
+mutate(counties_num, fips = as.character(fips))
+```
+
+However, this of course does not bring back the leading zero. 
+For this, we can use the `str_pad` function to 'pad' a 'string' to a given length. Try replacing `as.character` in the code above with `str_pad(fips, width=5, pad = "0")`. Note that `str_pad` is part of the `stringr` package for dealing with textual data, which will be covered in @sec-stringr for more details. 
+
+### Formatting numbers
+
+Now suppose we want to display the column `nonwhite_pct` as a textual percentage.
+We could use `as.character` to convert it to a character column:
+
+```{webr}
+#| exercise: 'ascharacter2'
+mutate(counties, nonwhite_pct = as.character(nonwhite_pct))
+```
+
+However, this mostly shows that the number is internally stored with way more decimals than we will ever need (and probably also more than warranted by the actual measurement precision). 
+We could use the format function to set the number of digits:
+
+```{webr}
+#| exercise: 'format'
+mutate(counties, nonwhite_pct = format(nonwhite_pct, digits=2))
+```
+
+Interestingly, this works but gives a single decimal digit for the percentages.
+The reason for that is that `digits` specifies the minimum number of *significant digits*, rather than the number of decimal places. 
+
+The easiest way to achieve a fixed number of decimal places is to use the
+`number()` function from the `scales` packages, which is included when you installed
+tidyverse but not loaded by default:
+
+
+```{webr}
+#| exercise: 'scales'
+library(scales)
+mutate(counties, nonwhite_pct = number(nonwhite_pct, accuracy=.01, suffix="%"))
+```
+
+## Working with Dates and Times
+
+Many data sets in social science research have a temporal dimension:
+(social) media coverage of a campaign or issue changing over time; 
+yearly or even daily economic indicators; panel survey responses per week or per year. 
+
+Working with such data requires handling date or date+time columns. 
+For example, let's look at a dataset of Bluesky posts around the Brazilian 2024
+elections (see [the book's github repository](https://github.com/vanatteveldt/r4css/blob/main/data/README.md#brazilian-bluesky-posts) for the R code used to scrape these posts):
+
+```{webr}
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/bluesky_brazil_elections_2024.csv", "bluesky_brazil_elections_2024.csv")
+posts <- read_csv("bluesky_brazil_elections_2024.csv")
+head(posts)
+```
+```{webr}
+#| setup: true
+#| exercise: ['wday', 'floor_date', 'format', 'dmy', 'mdy_hm', 'ggplotdate', 'with_tz']
+library(tidyverse)
+posts <- read_csv("data/bluesky_brazil_elections_2024.csv")
+formatted <- posts |> 
+  mutate(prettydate=format(created_at, format="%A, %d %B %Y")) |>
+  select(created_at, prettydate, text)
+```
+
+
+As you can see, this dataset includes a row for every post, which have a `created_at` and `indexed_at` column, 
+representing the timestamp they were created by the user's client and indexed by the bluesky server, respectively.
+Both columns are automatically recognized and parsed as timestamps (`dttm` means date and time).
+
+### Extracting parts of a date
+
+When working with dates or timestamps, you commonly want to do things such as calculating the day of week,
+or grouping events by day, week, or month. 
+This is made very easy with functions from the `lubridate` package (see the [cheat sheet](https://rstudio.github.io/cheatsheets/lubridate.pdf)).
+For example, we can use `wday` to calculate the day of the week for each post,
+and see on which days people posted the most:
+
+```{webr}
+#| exercise: wday
+posts |> 
+  mutate(weekday=wday(created_at, label=TRUE)) |>
+  group_by(weekday) |>
+  tally()
+```
+
+Looking at these results, when do people post the most. Does that make sense? 
+What could cause this?
+(Spoiler: see the section on time zones below).
+
+Other extraction functions include `date` (to strip the time part), `year`, `quarter`, `month`, etc. 
+
+### Grouping dates and timestamps with `floor_date`
+
+Besides the extraction functions mentioned above, a very useful function is `floor_date`. 
+This function 'rounds down' a date to the start of a period such as year, quarter, day, or hour. 
+This allows you to easily group posts (or other items) that were created in the same quarter or day.
+For example, the code below shows the number of posts per month:
+
+```{webr}
+#| exercise: floor_date
+posts |>
+  mutate(month=floor_date(created_at, unit="month")) |>
+  group_by(month) |>
+  tally()
+```
+
+Note that rounding down to the month is quite different from extracting the month:
+`month(as.Date("2024-04-17"))` will return 4 (the month number), 
+while `floor_date(as.Date("2024-04-17"), unit="month")` will return "2024-04-01", i.e. the first date of that particular month.
+So, if you want to know if people post more in the evening or in the morning, you want to extract the hour using `hour()`,
+since that will pool all posts at the same hour, regardless of the day.
+If you want to make an hourly timeline of posts over multiple days, you should use `floor_date(unit="hour")`,
+which returns distinct hours for each day. 
+
+::: {.callout-note collapse="true" title="On week numbers"}
+
+For some applications, weeks are the most logical unit of analysis. 
+Many activities, including work, leisure, and (social) media production and consumption follow weekly patterns.
+When aggregating per month, for example, some months will have four weekends while other months have five,
+which can make a big difference for looking at sporting, dating, but also religious activities. 
+
+A possible issue here is that years don't always start on a Monday, so weeks can be spread over two calendar years,
+but of course we would like every week to have seven days. 
+Using `floor_date` on weeks is safe, as every date will be 'rounded down' to the previous Sunday (or Monday, if you set `week_start=1`).
+Wednesday, January 1st will simply be changed to Sunday 29 December of the previous year.
+
+When calculating the week number for a given date, however, it becomes more complicated.
+The `week()` function will simply start the first week on January first running to January 7, regardless of the day of week.
+Although simple, this means that the weeks won't always start on a Monday (or Sunday), which is generally not how we think of weeks.
+
+The most standardized solution is to use ISO weeks, named after the ISO 8601 standard which defines week 1 of a year as the first Monday-Sunday
+week with at least four days in it. So, if January 1st is a Friday (or Saturday or Sunday), it will be seen as part of the last week of the previous year,
+while if the year starts on a Thursday (or Monday-Wednesday) this will be week 1, and the last days of the previous year are also seen as part of that week.
+
+The advantage of this is that every week is a full Monday-Sunday week, but the price is that some days belong to a week from a different calendar year. 
+For this reason, the `isoyear` function provides the year that corresponds to the week number,
+so for Friday January 1st the `isoyear` will be the previous calendar year.
+
+To see this in action, the following code shows the `isoyear` and `isoweek` for the last and first day of two years:
+
+```{webr}
+tibble(date=c("2008-12-31", "2009-01-01", "2009-12-31", "2010-01-01")) |>
+  mutate(weekday=wday(date, label=TRUE), year=year(date), 
+         isoyear=isoyear(date), isoweek=isoweek(date))
+```
+
+Note that while `floor_date(unit="week")` by default assumes a week starting on Sunday, the ISO standard defines weeks as starting on Monday.
+If this is a problem, you can use `floor_date(unit="week", week_start=1)` to tell `floor_date` to start on Mondays.
+Alternatively, there is a related pair of functions, `epiweek` and `epiyear`, which give the epidemiological week: this is a very similar standard to `isoweek`, but starts the week on Sunday rather than Monday. 
+:::
+
+
+
+### Parsing and formatting dates
+
+In the example above, the timestamps were automatically recognized as such and parsed by R,
+either implicly (e.g. when reading data in `read_csv`) or explictly (e.g. in `as.Date("2024-01-01")`)
+The reason for this is that they were all given in the unambiguous ISO standard notation:
+`"2024-04-17"` for a simple date, or `"2024-12-16T18:42:03Z"` for a timestamp.
+In general, this is the preferred format for dates and times: 
+First, it is not ambiguous in the way `4/7/76` is (is it fourth of July or April 7? And how sure are you that it's 1976?).
+Additionally, since it goes from largest to smallest unit, it sorts properly using alphabetic sorting.
+
+However, in many cases we will have to use data which is produced with a national standard, 
+and we might want to label graphs with dates that are more readable to a specific audience. 
+
+To format dates, the best option is the `format` function:
+
+```{webr}
+#| exercise: format
+formatted <- posts |> 
+  mutate(prettydate=format(created_at, format="%A, %d %B %Y")) |>
+  select(created_at, prettydate, text)
+head(formatted)
+```
+
+As you can see, the function takes a `format` parameter. This parameter gives the template to be used for formatting the dates,
+and can include literal characters (such as `,` or `-`) as well as `%`-placeholders for the year, month, et cetera.
+The table below gives a list of the most commonly used placeholders:
+
+| Code | Meaning                  | Example (for 2024-04-07 18:42:03) |
+|------|--------------------------|-----------------------------------|
+| `%Y` | Year, four digits        | 2024                              |
+| `%y` | Year, two digits         | 24                                |
+| `%m` | Month number             | 04                                |
+| `%B` | Month name               | April                             |
+| `%b` | Month name, abbreviated  | Apr                               |
+| `%d` | Day of the month         | 07                                |
+| `%A` | Weekday name             | Sunday                            |
+| `%a` | Weekday, abbreviated     | Sun                               |
+| `%H` | Hour (24-hour clock)     | 18                                |
+| `%M` | Minute                   | 42                                |
+| `%S` | Second                   | 03                                |
+
+: Common date and time format codes {#tbl-format-codes}
+
+To parse dates, the easiest option is to use the parsing functions that are shipped with `lubridate`.
+These functions tell R the order of fields to read, and R takes care of the rest.
+So, to parse the `prettydate` column we created earlier, we use the
+`dmy` function since the field is formatted day-month-year:
+
+```{webr}
+#| exercise: dmy
+formatted |> 
+  mutate(parsed = dmy(prettydate))
+```
+
+As you can see, this re-parses the date part of the original timestamp and deals with 
+the fact that the month is given as a name automatically 
+(but see the note below on languages for month and week names).
+Similar functions are included for parsing timestamps. 
+The example below shows how the date is `format`ted using American m/d/y notation with time included,
+and then parsed using `mdy_hm` (month-day-year_hour-minute):
+
+```{webr}
+#| exercise: mdy_hm
+
+posts |> 
+  select(created_at) |>
+  mutate(timestamp=format(created_at, format="%m/%d/%Y %H:%M"),
+         parsed=mdy_hm(timestamp))
+```
+
+### Time zones
+
+As a final complication, timestamps in R are always associated with a time zone.
+In the CSV file we used for the Brazilian Bluesky posts, 
+this was explicitly given at the end of the timestamp: the `Z` in `2024-12-16T18:42:03Z` 
+means the 'plus zero' time zone, that is UTC or Greenwich Mean Time 
+(also known as Zulu time, after the NATO alphabet pronunciation of the letter Z). 
+You can check the current time zone of the timestamp column by calling `tz(posts$created_at)`.
+
+Of course, since most of the posts will be from Brazil, it might be more appropriate to set it to 
+Brazilian time using the `with_tz` function.
+For example, the code below adds a version of the timestamp in Brazilian time,
+and shows a line plot of hourly posts in both time zones:
+
+```{webr}
+#| exercise: with_tz
+posts |> 
+  mutate(
+    created_br=with_tz(created_at, "America/Sao_Paulo"),
+    hour_utc = hour(created_at),
+    hour_br = hour(created_br)) |>
+  ggplot() + 
+  geom_line(aes(x=hour_utc, colour="UTC"), stat="count") +
+  geom_line(aes(x=hour_br, colour="Brazil"), stat="count")+
+  labs(x="Time of day", y="# of posts", colour="Time zone") + 
+  theme_minimal()
+```
+
+As you can see, the Brasilia time zone is 3 hours behind UTC, 
+placing most posts between 9:00 and 22:00 rather than the less plausible noon to after midnight. 
+
+This example works because the data was explicitly given in the UTC time zone. 
+Often, however, you might read data that implicitly assumes a local time zone.
+In that case, you should tell R what the time zone is by using e.g. `created_at=force_tz(created_at, "America/Sao_Paulo")`.
+So, use `with_tz` to change the time zone on a column that already has a correct time zone, 
+and `force_tz` to tell R that the column is actually in a different time zone. 
+
+### Dates in graphs
+
+Although we will discuss visualization in more detail in @sec-vis and @sec-advancedggplot,
+it is useful to know that ggplot handles dates and timestamps well by default.
+This means that it will automatically use sensible names to place on an axis.
+For example, when plotting the number of posts per week it will decide
+that given the specific period, quarterly ticks make most sense:
+
+```{webr}
+#| exercise: ggplotdate
+posts |> 
+  mutate(week=floor_date(created_at, unit="week", week_start=1)) |>
+  group_by(week) |>
+  tally() |>
+  ggplot(aes(x=week, y=n)) + geom_line() 
+``` 
+
+Note that you can change this default using scales:
+try adding `+ scale_x_datetime(date_labels="%G-%V", date_breaks="4 weeks")` to the code above
+(and see @sec-advancedggplot for a more in-depth explanation of ggplot scales)
+
+::: {.callout-note collapse="true" title="Month and weekday names and locales"}
+
+When dealing with month or weekday names, the results will of course be language-specific. 
+By default, the formatting and parsing functions used above will use the local settings of the machine
+the code is run on. You might have noticed that the graph above uses English month names in the browser.
+If you run it on your own computer, it might use another language depending on your local settings.
+
+If you only work with the language matching your local settings, this is probably fine:
+R will automatically parse and format dates using the right month or day names.
+
+However, if you are for example producing an English language report on a French-language computer,
+you will probably prefer English names for the months. 
+You can change the language settings in R using the `Sys.setlocale` command, 
+which takes a locale identifier consisting (of the language, region, and encoding.
+For example, `Sys.setlocale("LC_TIME", "nl_NL.UTF-8")` will set the date and time handling to Dutch,
+while `Sys.setlocale("LC_TIME", "en_US.UTF-8")` will set it to US English.
+Note that this setting will affect all subsequent R commands in this session,
+and the locale does need to be installed on your system
+(and in the interactive examples it does not do anything). 
+Finally, locale strings are unfortunately different for different operating systems, 
+so on Windows it will be called `Dutch_Netherlands` or `English_United States` instead. 
+
+For parsing dates that use names in a different language from the computer's default,
+it is also possible to use the `parse_date` and `parse_datetime` functions from the `readr` package
+(included in `tidyverse`).
+These functions take a format string with the same `%`-placeholders as discussed above,
+as well as a `locale=` argument:
+
+```{webr}
+parse_date("3 août 2012", format="%d %B %Y", locale=locale('fr'))
+```
+
+`readr` ships with month and day names for almost 200 languages, so should work for most languages, 
+including e.g. French and Swahili but also globally less relevant languages like my beloved Dutch.
+:::

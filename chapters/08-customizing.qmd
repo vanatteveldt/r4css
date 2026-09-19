@@ -1,5 +1,4 @@
 ---
-title: "Advanced Visualization"
 webr:
   resources:
     - ../data/us-president.csv
@@ -11,6 +10,9 @@ editor_options:
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+<!-- TODO: Might want to explain stat='count' and geom_bar vs geom_col in a callout somewhere
+     stat='count' is used in the timezone example in chapter 5 -->
 
 ```{webr}
 #| autorun: true
