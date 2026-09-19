@@ -4,6 +4,7 @@ webr:
   resources:
     - ../data/bechdel.csv
     - ../data/us-counties.csv
+    - ../data/bluesky_brazil_elections_2024.csv
 ---
 
 <!-- TODO: dplyr now allows summarize(..., .by=c(columns)).
@@ -769,9 +770,6 @@ posts |>
   tally()
 ```
 
-Looking at these results, when do people post the most. Does that make sense? 
-What could cause this?
-(Spoiler: see the section on time zones below).
 
 Other extraction functions include `date` (to strip the time part), `year`, `quarter`, `month`, etc. 
 
