@@ -1,13 +1,193 @@
----
-title: "Dealing with Text: stringr (todo)"
----
+
+<!-- TODO: add ../data/bluesky_us_elections_2024.csv to webr.resources in the frontmatter
+     once the file exists (collect with atrrr::search_post, lang="en", see data/README.md) -->
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
+# Dealing with Text: stringr {#sec-stringr}
 
 ::: {.callout-note}
 **Proposed chapter scope:** String manipulation with `stringr` as the foundation for working with text data. Covers pattern matching (regex), string detection, extraction, replacement, and splitting. Focuses on cleaning and preparing raw text before analysis rather than analysis itself.
 :::
 
-## Cleaning text {#sec-stringr}
+<!-- Overall plan:
+  One recurring dataset: English-language Bluesky posts about the 2024 US election.
+  Chapter order: (A/B) text basics and regex as "advanced wildcards" (. and .*) in the main flow;
+  (C) optional deep dive at the end: a useful subset of regex, then the functions that use it
+  (extract, count, split), then a comprehensive reference table.
+  Chapter 5 promises str_remove and str_pad here (see @sec-stringr references), so they must appear.
+  Open: if ch. 10/11 need \\w+ or str_extract_all, they can point at the optional section.
+  Open: if the chapter gets too long, Part C can be split off as its own chapter/appendix.
+-->
+
+## What do people say about the election? 
+
+<!-- Plan:
+  Show-and-tell: load bluesky_us_elections_2024.csv (download.file + read_csv, see CONTRIBUTING 8)
+  and look at the text column.
+  Then filter(str_detect(text, "Trump")). Ask "what about trump?", which leads to str_to_lower().
+  Callout after the chunk: the str_* naming convention and that str_detect returns TRUE/FALSE.
+  Gloss the columns in a collapsible callout (as in ch. 2 / ch. 5).
+-->
+
+## Basic string functions in a data frame
+
+<!-- Plan:
+  Substantive hook: how long are posts, and do longer posts get more likes?
+  Show-and-tell: mutate(chars = str_length(text)) and plot/compare with like_count.
+  Then the same in words: str_count(text, " ") + 1, the poor man's word count.
+    Fumble: run it without str_squish and the counts are too high (newlines, double spaces, trailing whitespace).
+    Fix: str_count(str_squish(text), " ") + 1. This is the reason str_squish exists.
+  Callout after the chunk: str_count counts occurrences of a pattern, so words = spaces + 1.
+    Also: empty string gives 1, NA stays NA. Forward pointer: tidytext tokenization (ch. 11) is the proper version.
+  Small mention of str_pad (e.g. zero-padding) since ch. 5 promises it; pick a natural example,
+    don't force it into the Bluesky data if none fits.
+  Challenge (no checker): which posts have a suspicious word count? Why?
+  Exercise: compute words per post and find the longest / shortest post.
+-->
+
+## Who is being talked about?
+
+<!-- Plan:
+  Show-and-tell: str_detect inside mutate/summarize to get the share of posts mentioning each candidate
+  (Trump, Harris, Biden, Vance, Walz). Use str_to_lower first (or regex(ignore_case) as a later callout).
+  Exercise: count posts mentioning a different name / topic.
+  Challenge (no checker): who is missing from our list, and what would you search for?
+  Substantive question: who gets talked about most, and does that match who is winning the polls?
+  Check on the real data whether counts per name are large enough to be interesting.
+-->
+
+## The joker: `.` and `.*`
+
+<!-- Plan:
+  Curiosity hook: introduce the wildcard through a pattern that surprises.
+    TODO: the Portuguese hook (elei..es matches both eleições and eleicoes) does not carry over.
+    Find a hook on the English data once collected; candidates: "Trump.*Harris" (both, in order),
+    "vot.*" (vote/voter/voting/votes), "Kamala|Harris" is better saved for the optional section.
+  Show-and-tell: str_detect with a pattern containing "." first, then ".*".
+  Callout after the chunk: . means "any character", * means "any number of times", so .* is "anything".
+  Fumble: search for a literal "." or "$" (e.g. a price or "U.S.") and get too many hits.
+    Introduce fixed() as the escape hatch; only mention \\. in passing.
+  Callout: "there is a lot more to regular expressions; see the optional section at the end of this chapter".
+  Exercise: write a pattern that finds posts mentioning two candidates together.
+-->
+
+## Replacing and removing text
+
+<!-- Plan:
+  Show-and-tell: str_remove and str_replace / str_replace_all to clean the text
+  (e.g. remove a mention or trailing hashtags with @.* / #.*).
+  Ch. 5 points here for str_remove(test, "-disagree"): make sure str_remove gets a plain, early example.
+  Deliberate limitation: .* is greedy and eats too much (@.* also removes the rest of the post).
+    Leave this as a cliffhanger; the fix (@\\w+ or lazy .*?) is picked up in the optional section.
+  Callout after the chunk: difference between str_replace (first match) and str_replace_all (every match).
+  Exercise: remove or replace something specific in the text column.
+  Check on the real data: Bluesky truncates displayed URLs, so avoid a URL-removal example
+  (in the Brazilian set only 1 of 704 posts contained http(s)://).
+-->
+
+## Hashtags without regex (optional)
+
+<!-- Plan:
+  OPTIONAL, may move to ch. 11 (tidytext) if the chapter gets too long.
+  separate_longer_delim(text, " ") then filter(str_starts(word, "#")) then count():
+  top hashtags with no regex at all.
+  Cliffhanger: hashtags glued to punctuation (#fla,#mengo) are missed; proper tokenization comes in ch. 11
+  and the regex solution (#\\w+) in the optional section.
+  Note: str_starts is technically regex (implicit ^); fine as a pedagogical shortcut.
+-->
+
+## Putting it together: the campaign in words
+
+<!-- Plan:
+  Challenge or larger exercise combining detect, count, dates and a chart.
+  Question: how does attention to each candidate change over the campaign?
+  Use floor_date (ch. 5) to count mentions per week; plot with ggplot (ch. 6).
+  Anchor events, pick one or two: Biden withdraws (21 July 2024), election day (5 November 2024).
+  Check on the real data that weekly counts per candidate are not too thin.
+  Open-ended, no checker (CONTRIBUTING 2), plus a substantive interpretation question.
+-->
+
+## Regular expressions in depth (optional)
+
+<!-- Plan:
+  Optional deep dive, clearly marked as skippable at the top (callout: "you can stop here;
+  come back when .* is not enough"). Order is deliberate:
+    1. a useful SUBSET of regex, introduced by fixing the fumbles from the main flow;
+    2. NEW FUNCTIONS that make use of that subset (extract, count, split);
+    3. a comprehensive REFERENCE table plus pattern gallery.
+  Still mostly on the English Bluesky data. Extra datasets, only where they fit naturally
+  (each needs a webr.resources entry in the frontmatter):
+    us-president.csv (candidate: 'Bubar, Benjamin ""Ben""'), bechdel.csv (titles with numbers/sequels),
+    us-counties.csv (county suffixes, cf. county_suffix in data/README.md).
+  Exact content of 'A useful subset' is still open; see the list below and decide while writing.
+-->
+
+### A useful subset of regular expressions
+
+<!-- Plan (contents TBD, candidates in the order they are needed):
+  Start from the cliffhanger in 'Replacing and removing text': @.* eats the rest of the post.
+  Introduce each construct by fixing something that went wrong, then a callout AFTER the chunk (CONTRIBUTING 7):
+    - \\w+ and \\S+ ("a word" / "not whitespace"): @.* becomes @\\w+.
+    - character classes [...]: Bluesky handles contain dots and hyphens, so @[\\w.-]+.
+    - \\d, +, ?, {n}: numbers such as poll percentages (\\d+%) or years.
+    - \\b (word boundary): after lowercasing, "vance" also matches "advance"; \\bvance\\b does not.
+      Verify on the real data that such a false positive actually occurs.
+    - ^ and $ (anchors): posts that start with, or end with, something.
+    - | (alternation) and (): Trump|Harris; a group before a quantifier.
+    - lazy quantifiers .*? as the other fix for the greedy .* fumble.
+    - case-insensitive matching with regex(..., ignore_case = TRUE), as alternative to str_to_lower.
+  Escaping: \\. for a literal dot, and raw strings r"(\d+)" vs "\\d+". Check that webR's R version supports raw strings.
+    Callout: R needs a double backslash; online regex tools use a single one.
+  Debugging patterns: str_view if it renders in quarto-live; otherwise show matches with str_extract.
+    TEST str_view in the live-html output before relying on it.
+  Exercises (each with small diff, CONTRIBUTING 2): fix a pattern that is too greedy; fix a pattern that matches too much
+    (a \\b case); write a pattern for a given kind of post.
+  Challenge (no checker): find a false positive / false negative for your own pattern, and say which is worse for a research question.
+-->
+
+### Extracting, counting and splitting with patterns
+
+<!-- Plan (new functions; each one uses the subset above on the Bluesky data):
+  - str_extract: first match per post. Example: the first hashtag or mention in each post.
+  - str_extract_all: every match, which gives a list column. Then unnest_longer / unnest to one row per match.
+    Callout: why a list column, and why this is the tidy way to get 'one row per hashtag'.
+    Payoff: redo 'Hashtags without regex' properly with #\\w+, no punctuation misses.
+  - str_count with a regex: str_count(text, "\\w+") as the real word count; revisit the poor man's count
+    from 'Basic string functions' and compare the two. Also hashtags per post.
+  - str_match and capture groups: pull out parts of a match, e.g. #(\\w+) without the #.
+    Optional second example on us-president.csv: split 'Last, First' names with a group pattern.
+  - str_replace with back-references (\\1): reorder 'Last, First' to 'First Last'. Optional.
+  - Splitting: str_split / separate_longer_delim with a regex delimiter. Decide whether this is needed
+    given the earlier optional section on hashtags without regex.
+  Substantive exercise: which hashtags are used in posts that mention Trump vs posts that mention Harris?
+    (combines the detect from 'Who is being talked about?' with extract_all and count)
+  Exercise: which accounts are mentioned most often (@handles)?
+  Challenge (no checker): what do the most common hashtags tell you about who is posting? Who does this sample miss?
+-->
+
+### Regular expression reference
+
+<!-- Plan:
+  A comprehensive but compact reference, meant for looking things up rather than reading straight through.
+  Tables (adapt from the cssbook chapter and the tidy-stringr handout):
+    - literal characters and the special characters that need escaping
+    - character classes: [abc], [a-z], [^abc], \\d \\w \\s and their negations \\D \\W \\S
+    - anchors and boundaries: ^ $ \\b \\B
+    - quantifiers: * + ? {n} {n,} {n,m}, and the lazy variants
+    - groups, alternation, back-references
+    - Unicode: \\p{L} (letters, relevant for accents), \\p{P} (punctuation), \\p{Emoji} (social media!)
+    - lookahead / lookbehind: one line, "exists, rarely needed, see the stringr documentation"
+    - R specifics: double backslash and raw strings; regex() options (ignore_case, multiline, comments);
+      fixed(), coll(), boundary("word")
+  Pattern gallery (educational, will not cover every edge case; say so):
+    dates (ISO, D.M.Y), US zip code, Dutch postcode \\d{4} ?[A-Za-z]{2}, phone numbers, email, URLs,
+    HTML tags (HTML cleaning itself is for the scraping chapter, so point forward to ch. 10 rather than teach it here).
+  Note on online tools such as regex101: choose the flavour that matches stringr (ICU), not PCRE/JavaScript,
+    or patterns may behave differently.
+  Exercises / challenge: a small 'regex crossword' on an inline tibble (survey open answers with postcodes,
+    emails, dates); write one pattern per kind. Keep hand-made data substantive (CONTRIBUTING 5).
+    No checker for the open-ended version; checkers only where there is one accepted result.
+  Closing pointer: back to the main flow, and forward to ch. 10 (scraping) and ch. 11 (tidytext).
+-->
