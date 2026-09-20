@@ -1018,6 +1018,6 @@ parse_date("3 août 2012", format="%d %B %Y", locale=locale('fr'))
 including e.g. French and Swahili but also globally less relevant languages like my beloved Dutch.
 :::
 
-### Exercise
+### Exercise: Hourly posts on election day
 
 {{< include exercises/_ch05_ex_daily_posts.qmd >}}
