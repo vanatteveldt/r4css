@@ -667,7 +667,7 @@ Now, you could change this default in `read_csv`: try adding `col_types = list(f
 However, you can also change column types in a mutate call. For example, the following will change the character column to a numeric column:
 
 ```{webr}
-#| exercise: ['asnumeric', 'ascharacter', 'ascharacter2', 'format', 'scales']
+#| exercise: ['asnumeric', 'ascharacter', 'ascharacter2', 'formatdigits', 'scales']
 #| setup: true
 library(tidyverse)
 counties <- read_csv("data/us-counties.csv")
@@ -704,7 +704,7 @@ However, this mostly shows that the number is internally stored with way more de
 We could use the format function to set the number of digits:
 
 ```{webr}
-#| exercise: 'format'
+#| exercise: 'formatdigits'
 mutate(counties, nonwhite_pct = format(nonwhite_pct, digits=2))
 ```
 
@@ -741,7 +741,7 @@ head(posts)
 ```
 ```{webr}
 #| setup: true
-#| exercise: ['wday', 'floor_date', 'format', 'dmy', 'mdy_hm', 'ggplotdate', 'with_tz']
+#| exercise: ['wday', 'floor_date', 'formatdate', 'dmy', 'mdy_hm', 'ggplotdate', 'with_tz', 'difftime']
 library(tidyverse)
 posts <- read_csv("data/bluesky_brazil_elections_2024.csv")
 formatted <- posts |> 
@@ -773,6 +773,25 @@ posts |>
 
 Other extraction functions include `date` (to strip the time part), `year`, `quarter`, `month`, etc. 
 
+::: {.challenge title="Subtracting dates"}
+Besides using functions to extract part of a date,
+you can also subtract two dates to calculate the difference.
+As noted, the `posts` data frame has an `indexed_at` column as well as a `created_at` column.
+
+- Can you compute a new column to calculate this difference? What does this number mean substantively?
+- What is the `class()` of this column? What happens if you convert it to numeric?
+- `as.numeric` has a `units=` option for time differences. What changes if you set it to `units="mins"`? 
+  (note, see `?difftime` for more information on this)
+- Finally, can you make a histogram of time differences. Do they make sense?
+
+You can use the empty chunk below to test and run code:
+
+```{webr}
+#| exercise: difftime
+head(posts)
+```
+:::
+
 ### Grouping dates and timestamps with `floor_date`
 
 Besides the extraction functions mentioned above, a very useful function is `floor_date`. 
@@ -794,7 +813,7 @@ while `floor_date(as.Date("2024-04-17"), unit="month")` will return "2024-04-01"
 So, if you want to know if people post more in the evening or in the morning, you want to extract the hour using `hour()`,
 since that will pool all posts at the same hour, regardless of the day.
 If you want to make an hourly timeline of posts over multiple days, you should use `floor_date(unit="hour")`,
-which returns distinct hours for each day. 
+which returns distinct hours for each day.
 
 ::: {.callout-note collapse="true" title="On week numbers"}
 
@@ -851,7 +870,7 @@ and we might want to label graphs with dates that are more readable to a specifi
 To format dates, the best option is the `format` function:
 
 ```{webr}
-#| exercise: format
+#| exercise: formatdate
 formatted <- posts |> 
   mutate(prettydate=format(created_at, format="%A, %d %B %Y")) |>
   select(created_at, prettydate, text)
@@ -938,7 +957,7 @@ placing most posts between 9:00 and 22:00 rather than the less plausible noon to
 
 This example works because the data was explicitly given in the UTC time zone. 
 Often, however, you might read data that implicitly assumes a local time zone.
-In that case, you should tell R what the time zone is by using e.g. `created_at=force_tz(created_at, "America/Sao_Paulo")`.
+In that case, you should tell R what the time zone is by using e.g. `timestamp=force_tz(timestamp, "Europe/Amsterdam")`.
 So, use `with_tz` to change the time zone on a column that already has a correct time zone, 
 and `force_tz` to tell R that the column is actually in a different time zone. 
 
@@ -998,3 +1017,7 @@ parse_date("3 août 2012", format="%d %B %Y", locale=locale('fr'))
 `readr` ships with month and day names for almost 200 languages, so should work for most languages, 
 including e.g. French and Swahili but also globally less relevant languages like my beloved Dutch.
 :::
+
+### Exercise
+
+{{< include exercises/_ch05_ex_daily_posts.qmd >}}

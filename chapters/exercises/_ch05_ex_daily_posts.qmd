@@ -1,0 +1,118 @@
+::: {.exercise}
+The first round of the Brazilian municipal elections was held on Sunday 6 October 2024.
+Compute the number of posts per hour on the election date, making sure to use Brazilian time 
+(`"America/Sao_Paulo"`). 
+Note: To make it easier to check your results, the posts data frame here only contains the 
+created_at and text columns.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ['ex_daily_posts','ex_daily_posts_challenge']
+library(tidyverse)
+posts <- read_csv("data/bluesky_brazil_elections_2024.csv") |>
+  select(created_at, text)
+```
+
+```{webr}
+#| exercise: ex_daily_posts
+head(posts)
+```
+
+::: { .hint exercise="ex_daily_posts"}
+::: { .callout-tip title="Hint:"}
+Convert `created_at` to Brazilian time *before* filtering and extracting the hour.
+Which function changes the time zone of a timestamp without changing the moment it refers to?
+Should you extract the hour, or round down to the hour? Or would either work?
+:::
+:::
+
+::: {.solution exercise="ex_daily_posts"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+Use `with_tz(created_at, "America/Sao_Paulo")` to show the timestamps in Brazilian time,
+and only then filter to election day.
+(if you would filter first, the filter would be based on the date in UTC, which might be different).
+
+Since it's a single day, you can use either `hour()` to extract the hour (0-23),
+or `floor_date(unit='hours')` to round down to the nearest hour (e.g. `2024-10-06 19:00`).
+
+```{webr}
+#| exercise: ex_daily_posts
+#| solution: true  
+posts |>
+  mutate(date_br = with_tz(created_at, "America/Sao_Paulo"),
+         hour = floor_date(date_br, unit="hours")) |>
+  filter(date(date_br) == "2024-10-06") |>
+  count(hour)
+```
+
+Note that there are many ways to skin this cat:
+- You could calculate the hour after the filtering instead of before
+- As noted above, you could use `hour()` instead of `floor_date(unit="hours")` to extract
+  the hour (but this might make it harder to see what goes wrong if the filtering is incorrect 
+  as hours from a different date gets silently included)
+- You could add an explicit `as.Date("2024-10-06")` (and some would probably say you should)
+- You can use `group_by(hour)` followed by either `tally()` or `summarize(n=n())` instead of using the `count` shorthand
+
+All of these are fine choices, this is just how I chose to solve it. 
+
+:::
+:::
+
+```{webr}
+#| exercise: ex_daily_posts
+#| check: true
+
+gradethis::grade_this({
+  # Accept any correct table of counts, whether the hour was extracted (0-23) or rounded down (a timestamp)
+  if (is.data.frame(.result) && "n" %in% names(.result)) {
+    hour_col <- .result[[setdiff(names(.result), "n")[1]]]
+    hours <- if (inherits(hour_col, "POSIXt")) lubridate::hour(hour_col) else as.numeric(hour_col)
+    ord <- order(hours)
+    hours <- hours[ord]
+    n <- .result$n[ord]
+    total <- sum(n)
+
+    gradethis::fail_if(
+      total %in% 161:163,
+      "Your counts are slightly too high: a few posts from a neighbouring day slipped in. If you compared the timestamp directly to a date string, note that R reads that string in your computer's time zone rather than Brazil's, so it is safer to compare on the date (for example with `date()` or `as.Date()`).")
+    gradethis::fail_if(
+      total > 160,
+      "Your counts include posts from other days. Did you filter on the election date (6 October 2024)?")
+    gradethis::fail_if(
+      total < 160,
+      "Some posts are missing. Did you convert `created_at` to Brazilian time *before* filtering on the date? Note that comparing a timestamp directly to a date string uses your computer's time zone rather than Brazil's, so it is safer to compare on the date.")
+    gradethis::fail_if(
+      hours[which.max(n)] != 19,
+      "You have the right posts, but the hours look shifted. Did you extract the hour from the Brazilian time rather than from the original UTC `created_at`?")
+    gradethis::pass_if(
+      identical(as.integer(hours), as.integer(c(6:10, 12:21, 23))) &&
+        identical(as.integer(n), c(2L, 1L, 1L, 2L, 1L, 7L, 3L, 1L, 1L, 3L, 21L, 37L, 46L, 20L, 7L, 7L)),
+      "Correct! Most posts were written between 17:00 and 20:00 Brazilian time.")
+  }
+
+  {{< include exercises/_check.qmd >}}
+
+})
+```
+
+::: {.challenge title="Comparing timestamps"}
+One of the wrong ways to 'solve' this exercise is the code below:
+
+
+```{webr}
+#| exercise: ex_daily_posts_challenge
+posts |>
+  mutate(date_br = with_tz(created_at, "America/Sao_Paulo"),
+         hour = floor_date(date_br, unit="hours")) |>
+  filter(date_br >= "2024-10-06", date_br < "2024-10-07") |>
+  count(hour)
+```
+
+Look at the dates in the `hour` column. Unless you happen to be in the Brazilian time zone (i.e. In Brazil or a neighbour or possibly the easternmost parts of Canada), this should contain the wrong results. 
+
+(If you do happen to be in Brazil or Nova Scotia, or you just want to play around, you can change the system time zone by adding e.g. `Sys.setenv(TZ="Europe/Amsterdam")` at the top of the code. You can also add `Sys.setenv(TZ="America/Sao_Paulo")` to get the results for a reader from that time zone. Note that if you run this on your computer, the setting will persist until you set another time zone or you restart R)
+
+- What could cause this? What do you think happens behind the scenes?
+- How could you fix it within this format of comparing the full timestamp to a lower and upper range?
+:::
