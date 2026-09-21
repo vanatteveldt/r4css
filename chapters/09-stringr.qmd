@@ -11,6 +11,21 @@
 **Proposed chapter scope:** String manipulation with `stringr` as the foundation for working with text data. Covers pattern matching (regex), string detection, extraction, replacement, and splitting. Focuses on cleaning and preparing raw text before analysis rather than analysis itself.
 :::
 
+Many interesting (computational) social science data sets have textual elements.
+This can e.g. the contents of online posts or reviews,
+official documents, reports, or party manifestoes,
+but also open survey questions or question metadata. 
+
+Very often, we need to clean, preprocess and/or analyse this textual data. 
+This chapter will take the first steps in this by introducing the tidyverse `stringr` package,
+which can handle most of the cleaning functions such as normalizing, filtering and extracting parts of textual columns. 
+In the next chapters we will look at other parts of the pipeline: scraping and reading textual data (@sec-scraping),
+analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@sec-llm). 
+
+
+
+
+
 <!-- Overall plan:
   One recurring dataset: English-language Bluesky posts about the 2024 US election.
   Chapter order: (A/B) text basics and regex as "advanced wildcards" (. and .*) in the main flow;

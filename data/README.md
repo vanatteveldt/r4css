@@ -233,3 +233,20 @@ posts |>
   dplyr::select(uri, author_handle:text, created_at, indexed_at, reply_count:quotes) |> 
   readr::write_csv("data/bluesky_brazil_elections_2024.csv")
 ```
+
+
+## US Elections Bluesky posts
+
+- **File**: [bluesky_us_elections_2024.csv](bluesky_us_elections_2024.csv)
+- **Source**: Scraped directly from Bluesky
+- **Description**: All 2024 Q4 bluesky posts in English mentioning the #elections2024 hashtag
+- **License**: (c) individual authors; collected via public API for non-commercial educational use.
+Code:
+```{r}
+atrrr::auth(user = Sys.getenv("BSKY_HANDLE"), password = Sys.getenv("BSKY_APP_PASSWORD"))
+posts <- atrrr::search_post(q = "Election2024", tag = "Election2024", lang = "en", since="2024-10-01T00:00:00Z", until="2025-01-01T00:00:00Z", limit = 10000)
+
+posts |> 
+  dplyr::select(uri, author_handle:text, created_at, indexed_at, reply_count:quotes) |> 
+  readr::write_csv("data/bluesky_us_elections_2024.csv")
+```
