@@ -6,10 +6,12 @@ This is a book/course project (R/tidyverse for social scientists, rendered with 
 
 **Do not make any changes or additions to content unless explicitly asked.** This includes:
 - Do not edit chapter text, exercises, or examples on your own initiative
-- Do not "improve" wording, fix typos, restructure sections, or add missing content unsolicited
+- Do not "improve" wording, restructure sections, or add missing content unsolicited
 - Do not run `Edit`/`Write` on `.qmd` files (or other content files) without a direct request
 
 When asked to review, respond with feedback (issues, gaps, suggestions) in chat. Apply changes only when the author says so explicitly ("apply these", "fix it", "make the change", etc.).
+
+One exception: you are free to correct typos. Please just fix them, and note where you fixed them so I can review. 
 
 This applies to content files. Tooling/config (CLAUDE.md itself, `.claude/`, build scripts, `_quarto.yml`) follows normal rules — ask if unsure.
 

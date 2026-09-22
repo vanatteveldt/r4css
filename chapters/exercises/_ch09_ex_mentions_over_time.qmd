@@ -52,6 +52,7 @@ Note that `str_count()` counts *mentions*, not posts: a post that says "Trump" t
 That's a deliberate choice here (we want the volume of Trump-talk, not the number of posts about him),
 but it does mean a single very repetitive post could inflate a week's count.
 :::
+:::
 
 ```{webr}
 #| exercise: ex_mentions_trump

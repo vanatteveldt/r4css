@@ -44,7 +44,7 @@ head(posts)
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count']
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_hashtag_detect', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall']
 library(tidyverse)
 posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
@@ -144,50 +144,155 @@ None of this makes the `stringr` package any less relevant:
 Functions like `str_detect`, `str_trim` and `str_count` are still very useful for filtering and cleaning texts -- and in fact many of the analyses in @sec-textasdata will use these functions either before or after the tokenization to clean the text and analyse the extracted words. 
 :::
 
-## Replacing, removing, and extracting text: Basic pattern matching
+## Finding, removing and replacing simple patterns
 
-### The joker: `.` and `.*`
+The code above showed how you can detect and count literal substrings.
+The `stringr` functions are much more powerful than that, however,
+as you can also search for *patterns* containing wildcards.
 
-<!-- Plan:
-  Curiosity hook: introduce the wildcard through a pattern that surprises.
-    TODO: the Portuguese hook (elei..es matches both eleições and eleicoes) does not carry over.
-    Find a hook on the English data once collected; candidates: "Trump.*Harris" (both, in order),
-    "vot.*" (vote/voter/voting/votes), "Kamala|Harris" is better saved for the optional section.
-  Show-and-tell: str_detect with a pattern containing "." first, then ".*".
-  Callout after the chunk: . means "any character", * means "any number of times", so .* is "anything".
-  Fumble: search for a literal "." or "$" (e.g. a price or "U.S.") and get too many hits.
-    Introduce fixed() as the escape hatch; only mention \\. in passing.
-  Callout: "there is a lot more to regular expressions; see the optional section at the end of this chapter".
-  Exercise: write a pattern that finds posts mentioning two candidates together.
--->
+For now, we will just introduce some very basic patterns, that are however already quite powerful. For example, the code below will use the pattern `"#\\w+"` to filter on posts containing at least one hashtag:
 
-### Replacing and removing text
+```{webr}
+#| exercise: demo_hashtag_detect
+posts_with_tags <- posts |> filter(str_detect(text, "#\\w+"))
+head(posts_with_tags)
+str_glue("{nrow(posts_with_tags)} out of {nrow(posts)} posts contained a hash tag")
+```
 
-<!-- Plan:
-  Show-and-tell: str_remove and str_replace / str_replace_all to clean the text
-  (e.g. remove a mention or trailing hashtags with @.* / #.*).
-  Ch. 5 points here for str_remove(test, "-disagree"): make sure str_remove gets a plain, early example.
-  Deliberate limitation: .* is greedy and eats too much (@.* also removes the rest of the post).
-    Leave this as a cliffhanger; the fix (@\\w+ or lazy .*?) is picked up in the optional section.
-  Callout after the chunk: difference between str_replace (first match) and str_replace_all (every match).
-  Exercise: remove or replace something specific in the text column.
-  Check on the real data: Bluesky truncates displayed URLs, so avoid a URL-removal example
-  (in the Brazilian set only 1 of 704 posts contained http(s)://).
--->
+So it looks like all posts contain at least one hash tag. This is actually not a coincidence -- why do you think this could be the case?
 
+::: {.callout-note title="Regular expressions?"}
+The pattern introduced above (`#\\w+`) may look weird, overly complex, or suspiciously like a cartoon curseword. But it's actually a very standardized and useful way to express character patterns called **regular expressions** (or *regex*, for friends)
 
-### Putting it together: the campaign in words
+Although this will be explained in much more detail in @sec-regex,
+it is useful to explain at least a little bit of what is going on. 
+In a regex, most characters simply match that character, which is why we could use `"trump"` above to simply search for the word "trump", or actually the sequence of characters `t-r-u-m-p`. 
 
-<!-- Plan:
-  Challenge or larger exercise combining detect, count, dates and a chart.
-  Question: how does attention to each candidate change over the campaign?
-  Use floor_date (ch. 5) to count mentions per week; plot with ggplot (ch. 6).
-  Anchor events, pick one or two: Biden withdraws (21 July 2024), election day (5 November 2024).
-  Check on the real data that weekly counts per candidate are not too thin.
-  Open-ended, no checker (CONTRIBUTING 2), plus a substantive interpretation question.
--->
+The `\\w`, however, is a kind of wildcard called a *character class* rather than a literal sequence of `\` and `w` characters. 
+This specific class matches 'word characters' defined as letters and numbers (and curiously the underscore `_`). So, `#\\w` would match a literal hash sign (`#`), followed by a letter, number, or underscore. 
 
-## Regular expressions in depth (optional)
+The last part, `+`, is a quantifier which reads "one or more": it means that the preceding character (in this case, the `\\w` word character class) is required but may be repeated as often as desired. So, the total pattern `#\\w+` matches a literal hash sign, followed by one or more word characters, which is a fair approximation of a hash tag.
+
+By using combinations of character classes and quantifiers, you can make patterns for many useful things such as hashtags, zip codes, phone numbers, email addresses, etc. 
+:::
+
+### Extracting a pattern with `str_extract`
+
+More usefully, we can use `str_extract` to extract the (first) hashtag in each post, and store it as a new column. This allows us to get an overview of hashtags in the posts:
+
+```{webr}
+#| exercise: demo_hashtag_extract
+posts |>
+  mutate(tag=str_extract(text, "#\\w+")) |>
+  count(tag) |>
+  arrange(desc(n))
+```
+
+So, the corpus is dominated by the hashtag `#Election2024` --
+as you might have guessed above this was used to select relevant posts, so each post will contain this tag. 
+
+Note that the reason why the total is lower than the total number of posts is that the code above only extracts the *first* occurrence of a pattern, so in the other posts another tag was used before that tag (and see @sec-extractall for `str_extract_all` to extract all tags)
+
+### Removing parts of a text with `str_remove_all`
+
+Since the occurrence of this particular hashtag is not informative, let's clean the data first by lowercasing it, and then removing that hashtag using `str_remove_all`, followed by the same code as above:
+
+```{webr}
+#| exercise: demo_hashtag_remove
+posts |>
+  mutate(text=str_to_lower(text),
+         text=str_remove_all(text, "#election2024"),
+         tag=str_extract(text, "#\\w+")) |>
+  count(tag) |>
+  arrange(desc(n))
+```
+
+This is more informative: a number of posts had no other hashtags (giving a `NA` for the extraction), and after the somewhat generic `#politics` and `#vote` tags we see hashtags for the two main candidates, mostly balanced. 
+
+### Replacing text with `str_replace_all`
+
+Next to removing text, we can replace parts of a text with `str_replace_all(text, pattern, replacement)`. For example, we can 'anonymize' the at-mentions by replacing all word characters after an at sign by an `ANONYMIZED` placeholder 
+(using `str_squish` to make it easier to read the results):
+
+```{webr}
+#| exercise: demo_mention_anonymize
+posts |>
+  filter(str_detect(text, "@\\w+")) |>
+  mutate(
+    text = str_squish(text),
+    anonymized=str_replace_all(text, "@\\w+", "@ANONYMIZED")) |>
+  select(anonymized)
+```
+
+Note that this only replaces the at-mention until a non-word character appears. Since bluesky names often contain domain names (e.g. `@example.bsky.social`) this will only replace the first part and leave the domain intact,
+which might or might not be a desired effect.
+For more powerful ways of specifying patterns, see @sec-regex below. 
+
+:::{.callout-note title="Matching periods: escaping and fixed()"}
+As noted above, the `\\w` pattern matches letters, numbers, and underscore, but not the dots in a domain name. 
+Confusingly, the period character (`.`) also does not (just) match a literal dot:
+it is a character class itself, and matches every possible character (apart from line breaks). So,
+`@\\w+.bsky.social` matches all at-mentions in this domain, but would also match `@\\w+_bsky_social` and even `@\\w+ bsky social`.
+
+For this case it's probably not a big deal, as those patterns are unlikely to appear. But let's try searching for `U.S.`:
+
+```{webr}
+#| exercise: demo_dotall
+us_posts <- posts |> filter(str_detect(text, 'U.S.'))
+str_glue("Total number of matches: {nrow(us_posts)}")
+print("Text of the 23rd match:")
+us_posts$text[23]
+```
+
+As you can see, this gives 130 matches. But not all of them actually contain the string `U.S.`, for example the 23rd match printed here. Why did that post match?
+
+The answer, of course, is that `.` is a wildcard, so the pattern `U.S.` matched the word `RUSSIAN`!
+
+To remedy this, you have two options. The easiest is to enclose the whole pattern in a `fixed()` function: `str_detect(text, fixed('U.S.'))` tells R to actually not use a regular expression pattern, but a fixed substring. The alternative is to place a double backslash before each period: `U\\.S\\.`, a practice known as *escaping* (again, see @sec-regex below for more detail). Try either pattern yourself in the code above - it should return 102 rows instead of the original 130. 
+:::
+
+### Finding multiple occurrences with `str_extract_all` {#sec-extractall}
+
+Earlier, we tried to analyse hashtag usage in the US Election posts,
+noting the limitation that `str_extract` only extracts the first occurrence of a pattern.
+
+After seeing the examples with `str_remove_all` and `str_replace_all`, 
+you may have guesses that there is also a function called `str_extract_all` -- and you would be right. 
+
+The complication is that this of course can return multiple results per row, which does not really fit with the idea of a column in a data frame: a cell normally contains only a single value. This can be solved by using `unnest_longer`, for example to do a complete count of all hashtags:
+
+```{webr}
+#| exercise: demo_hashtag_extract_all
+posts |>
+  mutate(tag=str_extract_all(text, "#\\w+")) |>
+  unnest_longer(tag) |>
+  count(tag) |>
+  arrange(desc(n))
+```
+
+Technically, `str_extract_all` produces a 'list column', i.e. a column with a data type list. Since that is not very useful for analysis, we *unnest* the list column into a long format: every value becomes a row, so if two hashtags were found the row will be repeated for each hashtag, with only the `tag` column being different and containing a single tag. 
+
+To make this more explicit, the following toy example shows the results for each step:
+
+```{webr}
+#| exercise: demo_hashtag_toy
+toy <- tibble(text="Three hashtags: #trump #harris #biden")
+toy <- toy |> mutate(tag=str_extract_all(text, "#\\w+"))
+print("Result after extract_all:")
+print(toy)
+
+toy <- toy |> unnest_longer(tag)
+print("Result after unnest_longer:")
+print(toy)
+```
+
+### Exercise: Extracting urls from posts 
+
+{{< include exercises/_ch09_ex_url_domains.qmd >}}
+
+## Regular expressions in depth (todo) {#sec-regex}
+
+See [Chapter 9 of my previous book](https://cssbook.net/content/chapter09.html#sec-regular) for a more in-depth discussion of regular expressions until I finish the chapter, especially the [section on regex syntax](https://cssbook.net/content/chapter09.html#sec-regex) and the [example patterns](https://cssbook.net/content/chapter09.html#sec-regexamples). Do note that all backslashes in these patterns need to be doubled for use in standard R strings, so when it says `\w` you need to use `\\w` as above.  
 
 <!-- Plan:
   Optional deep dive, clearly marked as skippable at the top (callout: "you can stop here;

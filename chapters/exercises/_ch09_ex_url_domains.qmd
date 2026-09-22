@@ -1,0 +1,91 @@
+An essential role of social media in political communication is sharing links to news and other websites. 
+Let's see if we can track which `.com` domains get shared most.
+
+::: {.exercise}
+The code below extracts a pattern and shows the most frequent occurrences. Your job is to fill in the pattern. 
+For this exercise, we will only find .com domains. Can you make a pattern for urls that start with `https://` and end with `.com/`?
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ['ex_extract_domains', 'ex_extract_domains_challenge']
+library(tidyverse)
+posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
+  select(date = created_at, text)
+```
+
+```{webr}
+#| exercise: ex_extract_domains
+posts |>
+  mutate(url = str_extract(text, "your pattern goes here")) |>
+  count(url) |>
+  arrange(-n)
+```
+
+::: { .hint exercise="ex_extract_domains"}
+::: { .callout-tip title="Hint:"}
+- `str_extract(text, pattern)` pulls out the (first) match of `pattern` in each post -- posts without a link will get an `NA`, which is fine, we'll just see it as one of the rows.
+- The pattern itself: a literal `https://`, then "anything" (`.*`), then a literal `.com/`.
+:::
+:::
+
+::: {.solution exercise="ex_extract_domains"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+```{webr}
+#| exercise: ex_extract_domains
+#| solution: true
+posts |>
+  mutate(url = str_extract(text, 'https://.*.com/')) |>
+  count(url) |>
+  arrange(-n)
+```
+
+`youtube.com` comes out on top, with `x.com` and `theguardian.com` next.
+:::
+:::
+
+```{webr}
+#| exercise: ex_extract_domains
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(!"url" %in% names(.result), "We can't find a `url` column -- did you name your extracted column `url`?")
+    gradethis::fail_if(!"n" %in% names(.result), "We can't find a count column -- did you use `count()`?")
+
+    if (all(c("url", "n") %in% names(.result))) {
+      total <- sum(.result$n[!is.na(.result$url)])
+      gradethis::fail_if(
+        isTRUE(all.equal(total, 7971)),
+        "Your total matches the number of *all* posts -- it looks like `url` isn't actually restricted to posts with a matching link. Did the pattern make it into `str_extract()`?"
+      )
+      gradethis::fail_if(
+        !isTRUE(all.equal(total, 59)),
+        "We count 59 posts with a `.com` link in total -- double check your pattern against the one in the instructions."
+      )
+      top <- .result$n[!is.na(.result$url) & .result$url == "https://www.youtube.com/"]
+      gradethis::fail_if(
+        length(top) == 0 || top != 15,
+        "`youtube.com` should come out on top with 15 matches -- check your pattern and that you're counting matches, not posts."
+      )
+    }
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+::: {.challenge title="Two things this pattern gets wrong"}
+Look at the table you just made. Two things about it should bother you:
+
+- The code above only finds the first url in each post. Can you modify it to find all urls? Does it change the results?
+- Try `str_detect(text, "https://")` to count how many posts really have a link, and compare to the domains found above. What causes many links to be missed? How could we solve this? 
+- The pattern contains `.com`, but you've already seen that `.` doesn't actually mean "a literal dot" -- it means "any character at all." So strictly speaking, this pattern doesn't require a dot before "com" either. Why doesn't that cause a visible problem in this dataset? Can you think of a (hypothetical, or real) link where it would?
+
+Both are fixable, but not with the patterns we discussed so far. @sec-regex will explain this in more detail, but try the pattern `https://.*\\.(com|net|org|be|social)/`. Can you understand how this regex works?
+
+```{webr}
+#| exercise: ex_extract_domains_challenge
+posts |> filter(str_detect(text, "https://")) |> nrow()
+```
+:::
