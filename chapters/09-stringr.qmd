@@ -1,3 +1,8 @@
+---
+webr:
+  resources:
+    - ../data/bluesky_us_elections_2024.csv
+---
 
 <!-- TODO: add ../data/bluesky_us_elections_2024.csv to webr.resources in the frontmatter
      once the file exists (collect with atrrr::search_post, lang="en", see data/README.md) -->
@@ -22,58 +27,126 @@ which can handle most of the cleaning functions such as normalizing, filtering a
 In the next chapters we will look at other parts of the pipeline: scraping and reading textual data (@sec-scraping),
 analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@sec-llm). 
 
+## Data for this chapter: US Elections on Bluesky
+
+As an example data set for this chapter, 
+we will use a collection of Bluesky posts about the 2024 US elections (see [the book's github repository](https://github.com/vanatteveldt/r4css/blob/main/data/README.md#us-elections-bluesky-posts) for the R code used to scrape these posts).
+To make things easier, we will only keep the date, author and text columns:
+
+```{webr}
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/bluesky_us_elections_2024.csv", "bluesky_us_elections_2024.csv")
+posts <- read_csv("bluesky_us_elections_2024.csv")|>
+  select(author=author_name, date=created_at, likes=like_count, text)
+head(posts)
+```
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count']
+library(tidyverse)
+posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
+  select(author=author_name, date=created_at, likes=like_count, text)
+```
+
+## Using `stringr` for basic text cleaning and processing
+
+As a first step, we will look at a number of functions from the `stringr`
+package for detecting and counting whether a text contains a specific word or substring. This is very useful for cleaning and exploring data. 
+
+### Who do people post about? Using `str_detect` in `filter`
+
+A first question we might ask is how much people post about a candidate, for example Donald Trump. We can use `str_detect` to check whether a text contains a specific substring, and use that to filter the posts:
+
+```{webr}
+#| exercise: demo_detect_trump
+trump_posts <- posts |> filter(str_detect(text, "Trump"))
+head(trump_posts)
+str_glue("Total number of posts: {nrow(posts)}")
+str_glue("Number of posts about trump: {nrow(trump_posts)}")
+```
 
 
+:::{.callout-note title="str_glue"}
+In the example above, we used `str_glue` to display the number of posts in a nice way. You've actually already seen this in @sec-vis-why, where we used it to create a nice label in a graph.
+
+`str_glue` is a very useful function for building a text by 'glueing' calculated values (such as `{nrow(posts)}`) into a text. Technically, all R code within curly braces (`{}`) will be evaluated and inserted into the text. 
+
+A small caveat: if the code produces multiple values, this will result in multiple texts being produced. This is useful if you use `str_glue` within a `mutate` call, as it will produce a value for each row, but might be surprising if you use it to quickly print something like above.
+You can use `str_glue("Count to three: {str_c(1:3, collapse=',')}")` if you want to include multiple values in a single string: this 'collapses' multiple values (1, 2 and 3 in this case) into a single string `"1,2,3"`.
+:::
 
 
-<!-- Overall plan:
-  One recurring dataset: English-language Bluesky posts about the 2024 US election.
-  Chapter order: (A/B) text basics and regex as "advanced wildcards" (. and .*) in the main flow;
-  (C) optional deep dive at the end: a useful subset of regex, then the functions that use it
-  (extract, count, split), then a comprehensive reference table.
-  Chapter 5 promises str_remove and str_pad here (see @sec-stringr references), so they must appear.
-  Open: if ch. 10/11 need \\w+ or str_extract_all, they can point at the optional section.
-  Open: if the chapter gets too long, Part C can be split off as its own chapter/appendix.
--->
+As you can see, about 25% of the posts mention Trump -- or rather, contain the specific sequence of characters `T-r-u-m-p`. This will not find `trump`, but will find `#Trump`, `DonaldTrump`. To also find matches of `trump`, an easy trick is to call `str_to_lower(text)` to lowercase the whole text column:
 
-## What do people say about the election? 
+```{webr}
+#| exercise: demo_detect_lower
+posts |> filter(str_detect(str_to_lower(text), "trump"))
+```
 
-<!-- Plan:
-  Show-and-tell: load bluesky_us_elections_2024.csv (download.file + read_csv, see CONTRIBUTING 8)
-  and look at the text column.
-  Then filter(str_detect(text, "Trump")). Ask "what about trump?", which leads to str_to_lower().
-  Callout after the chunk: the str_* naming convention and that str_detect returns TRUE/FALSE.
-  Gloss the columns in a collapsible callout (as in ch. 2 / ch. 5).
--->
+Which finds about 300 extra mentions (which could of course also include false positives, e.g. trump used a verb or trumpet as a musical instrument)
 
-## Basic string functions in a data frame
+::: {.callout-note title="All the str_ functions"}
+As you might have noticed, all functions introduced above started with `str_`:
+`str_detect`, `str_glue`, and `str_to_lower`. 
+This naming convention holds for (almost) all functions in `stringr`. 
+This makes it easy to find them in Rstudio: 
+just type `str_` and press tab or control_space, and you get an overview of all 
+the functions for dealing with text. 
+See the table near the end of this chapter for an overview of useful stringr functions. 
+:::
 
-<!-- Plan:
-  Substantive hook: how long are posts, and do longer posts get more likes?
-  Show-and-tell: mutate(chars = str_length(text)) and plot/compare with like_count.
-  Then the same in words: str_count(text, " ") + 1, the poor man's word count.
-    Fumble: run it without str_squish and the counts are too high (newlines, double spaces, trailing whitespace).
-    Fix: str_count(str_squish(text), " ") + 1. This is the reason str_squish exists.
-  Callout after the chunk: str_count counts occurrences of a pattern, so words = spaces + 1.
-    Also: empty string gives 1, NA stays NA. Forward pointer: tidytext tokenization (ch. 11) is the proper version.
-  Small mention of str_pad (e.g. zero-padding) since ch. 5 promises it; pick a natural example,
-    don't force it into the Bluesky data if none fits.
-  Challenge (no checker): which posts have a suspicious word count? Why?
-  Exercise: compute words per post and find the longest / shortest post.
--->
+### Basic string functions in a data frame
 
-## Who is being talked about?
+Next to filtering, it can be useful to use `stringr` within a `mutate` call
+to calculate properties of the data. For example, we could count the length of all posts, and check if longer posts get more likes:
 
-<!-- Plan:
-  Show-and-tell: str_detect inside mutate/summarize to get the share of posts mentioning each candidate
-  (Trump, Harris, Biden, Vance, Walz). Use str_to_lower first (or regex(ignore_case) as a later callout).
-  Exercise: count posts mentioning a different name / topic.
-  Challenge (no checker): who is missing from our list, and what would you search for?
-  Substantive question: who gets talked about most, and does that match who is winning the polls?
-  Check on the real data whether counts per name are large enough to be interesting.
--->
+```{webr}
+#| exercise: demo_length_likes
+posts <- posts |>
+  mutate(length=str_length(text))
+cor.test(posts$length, posts$likes)
+```
 
-## The joker: `.` and `.*`
+We can also use `str_count` to count how often a fragment occurs within a text.
+If we count the number of spaces, we get a decent approximation of the number of words in each post (but see the callout below on characters vs words).
+
+Before we do this, we should probably normalize the whitespace in the posts.
+The function `str_trim` can be used to remove ('trim') all whitespace at the start and end of a text. 
+We will go a step further and use `str_squish`, which trims the text but also replaces all consecutive whitespaces by a single space, i.e. it replaces newlines, tabs, multiple spaces or any combination of these by a single space. 
+
+```{webr}
+#| exercise: demo_squish_count
+posts <- posts |>
+  mutate(text_normalized=str_squish(text),
+         length=str_length(text_normalized),
+         nwords=str_count(text_normalized, " "))
+head(posts)
+```
+
+### Exercise: Talk of the town?
+
+{{< include exercises/_ch09_ex_mentions_over_time.qmd >}}
+
+::: {.callout-note title="Analysis of texts: characters or words?"}
+
+In the examples and exercise above, we use the `str_` functions 
+to perform simple text analyses by counting mentions of candidates. 
+
+This works, but has very clear limits because `stringr` fundamentally works on **characters**, while a lot of our analyses talk about words. 
+As mentioned, `str_detect(str_to_lower(text), "trump")` will match trumpet
+(as well as `"#trump"`, `"STRUMP"` and `"Strumpfhose"`). The reason is that `stringr` sees `Strumpfhose` as a sequence of characters `S-t-r-u-m-p-f...`, and these characters contain the sequence `t-r-u-m-p`, so it matches. `stringr` doesn't really know what a word is, and doesn't really care either. 
+
+This can be solved to a degree by using more sophisticated matching rules, as explained below, but these solutions are relatively brittle and address the sympton rather than the cause: often, we would like to analyse words rather than characters. @sec-textasdata will address this problem head-on by first **tokenizing** a text into words, and then using analyses on the words.
+
+None of this makes the `stringr` package any less relevant:
+Functions like `str_detect`, `str_trim` and `str_count` are still very useful for filtering and cleaning texts -- and in fact many of the analyses in @sec-textasdata will use these functions either before or after the tokenization to clean the text and analyse the extracted words. 
+:::
+
+## Replacing, removing, and extracting text: Basic pattern matching
+
+### The joker: `.` and `.*`
 
 <!-- Plan:
   Curiosity hook: introduce the wildcard through a pattern that surprises.
@@ -88,7 +161,7 @@ analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@s
   Exercise: write a pattern that finds posts mentioning two candidates together.
 -->
 
-## Replacing and removing text
+### Replacing and removing text
 
 <!-- Plan:
   Show-and-tell: str_remove and str_replace / str_replace_all to clean the text
@@ -102,18 +175,8 @@ analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@s
   (in the Brazilian set only 1 of 704 posts contained http(s)://).
 -->
 
-## Hashtags without regex (optional)
 
-<!-- Plan:
-  OPTIONAL, may move to ch. 11 (tidytext) if the chapter gets too long.
-  separate_longer_delim(text, " ") then filter(str_starts(word, "#")) then count():
-  top hashtags with no regex at all.
-  Cliffhanger: hashtags glued to punctuation (#fla,#mengo) are missed; proper tokenization comes in ch. 11
-  and the regex solution (#\\w+) in the optional section.
-  Note: str_starts is technically regex (implicit ^); fine as a pedagogical shortcut.
--->
-
-## Putting it together: the campaign in words
+### Putting it together: the campaign in words
 
 <!-- Plan:
   Challenge or larger exercise combining detect, count, dates and a chart.
@@ -176,6 +239,12 @@ analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@s
   - str_replace with back-references (\\1): reorder 'Last, First' to 'First Last'. Optional.
   - Splitting: str_split / separate_longer_delim with a regex delimiter. Decide whether this is needed
     given the earlier optional section on hashtags without regex.
+  - str_c(..., collapse=): the reverse of str_extract_all/unnest -- after unnesting hashtags to
+    one row per hashtag, group_by(post) |> summarize(hashtags = str_c(hashtag, collapse=", "))
+    rejoins them into one display string per post. Contrast with str_glue (introduced earlier in
+    the chapter): str_glue is one string per row from known values; str_c(collapse=) is many rows
+    -> one string. Mirrors the cssbook chapter's own "aggregation" step (str_c/join after
+    extract_all/explode).
   Substantive exercise: which hashtags are used in posts that mention Trump vs posts that mention Harris?
     (combines the detect from 'Who is being talked about?' with extract_all and count)
   Exercise: which accounts are mentioned most often (@handles)?

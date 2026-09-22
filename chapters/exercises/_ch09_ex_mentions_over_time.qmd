@@ -1,0 +1,121 @@
+A single count over the whole three months hides a lot: does attention to a candidate change
+as the campaign goes on? We already have all the tools we need to find out --
+`str_count` from the previous section, and `floor_date`, `group_by`/`summarize` and `ggplot`
+from earlier chapters.
+
+::: {.exercise}
+The US election took place on November 5, 2024 -- right in the middle of our three months of data.
+Count how often Trump is mentioned per week,
+to see whether attention to him changes over the course of the campaign.
+Ignore the difference between lowercase and uppercase, i.e. 
+count `trump` or `TRUMP` as well as `Trump`.
+:::
+
+```{webr}
+#| setup: true
+#| exercise: ['ex_mentions_trump', 'ex_mentions_trump_challenge']
+library(tidyverse)
+posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
+  select(date = created_at, text)
+```
+
+```{webr}
+#| exercise: ex_mentions_trump
+counts_per_week <- ...
+print(counts_per_week, n=15)
+```
+
+::: { .hint exercise="ex_mentions_trump"}
+::: { .callout-tip title="Hint:"}
+- Which function did we use earlier in this chapter to make matching case-insensitive?
+- `floor_date()` rounds a timestamp down to a chosen unit -- which unit do you need to get one value per week?
+- `str_count()` tells you how often a pattern occurs *within* a single text. To get the total per week, you still need to add those numbers up per group, e.g. with `group_by(week) |> summarize(n = sum(...))`.
+:::
+:::
+
+::: {.solution exercise="ex_mentions_trump"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+First lowercase the text so that case doesn't matter, then round each timestamp down to the week with `floor_date()`, and finally add up the mentions per week:
+
+```{webr}
+#| exercise: ex_mentions_trump
+#| solution: true
+counts_per_week <- posts |>
+  mutate(week = floor_date(date, unit = "week"),
+         mentions = str_count(str_to_lower(text), "trump")) |>
+  group_by(week) |>
+  summarize(n = sum(mentions))
+print(counts_per_week, n=15)
+```
+
+Note that `str_count()` counts *mentions*, not posts: a post that says "Trump" twice adds 2 to the total.
+That's a deliberate choice here (we want the volume of Trump-talk, not the number of posts about him),
+but it does mean a single very repetitive post could inflate a week's count.
+:::
+
+```{webr}
+#| exercise: ex_mentions_trump
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    is_time <- sapply(.result, function(x) inherits(x, "Date") || inherits(x, "POSIXt"))
+    num_cols <- names(.result)[sapply(.result, is.numeric) & !is_time]
+
+    gradethis::fail_if(
+      nrow(.result) == 1,
+      "All your data ended up in a single row -- did you group by week (e.g. with `.by = week` or `count(week, ...)`) before summing?"
+    )
+    gradethis::fail_if(
+      nrow(.result) > 20,
+      "You have a lot more than 14 rows (there are 14 weeks in the data) -- are you grouping by the exact timestamp instead of the week? Try `floor_date(date, unit = \"week\")`."
+    )
+    gradethis::fail_if(
+      length(num_cols) == 0,
+      "We can't find a count column in your result -- did you sum the mentions per week?"
+    )
+
+    if (length(num_cols) >= 1) {
+      total <- sum(.result[[num_cols[1]]], na.rm = TRUE)
+      gradethis::fail_if(
+        isTRUE(all.equal(total, 7971)),
+        "Your total matches the number of *all* posts in the data -- it looks like you counted every post rather than mentions of Trump."
+      )
+      gradethis::fail_if(
+        total %in% c(2102, 2541),
+        "Your total looks like the number of *posts* that mention Trump, not the number of *mentions*. Did you use `str_detect()` (or plain `count()`) instead of `str_count()`?"
+      )
+      gradethis::fail_if(
+        isTRUE(all.equal(total, 3283)),
+        "Your total only counts posts with a capital 'Trump'. Did you lowercase the text before counting?"
+      )
+      gradethis::fail_if(
+        !isTRUE(all.equal(total, 3973)),
+        "Your total doesn't match what we'd expect (we count 3973 mentions of 'trump' across all posts) -- double check your counting and grouping."
+      )
+    }
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+::: {.challenge title="Trump vs. Harris: a battle of attention"}
+Extend the analysis to compare Trump and Harris:
+
+- Add a second column counting mentions of "Harris" per week (again, case-insensitive).
+- Reshape the result so you have one row per week *per candidate* -- see `pivot_longer` in @sec-co2 if you need a refresher.
+- Plot both lines in a single graph, using colour to distinguish the two candidates.
+
+As an additional challenge, compute the number of posts (instead of total mentions) for each candidate, and/or the share of posts that mention each candidate.
+
+Some questions to think about:
+
+- Do the two candidates get similar amounts of attention throughout the campaign, or does one dominate? What could cause this?
+- Bluesky's userbase leans strongly to the left compared to the wider US population. How might that affect how well this pattern would generalize to, say, X/Twitter data from the same period?
+
+```{webr}
+#| exercise: ex_mentions_trump_challenge
+head(posts)
+```
+:::

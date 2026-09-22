@@ -1,5 +1,4 @@
 ---
-title: "Transforming data"
 webr:
   resources:
     - ../data/bechdel.csv
@@ -17,6 +16,7 @@ webr:
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
+# Transforming Data {#sec-transforming}
 
 Where the previous chapter dealt with selecting columns, filtering rows,
 and rearranging the resulting data set,

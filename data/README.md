@@ -235,7 +235,7 @@ posts |>
 ```
 
 
-## US Elections Bluesky posts
+## US Elections Bluesky posts 
 
 - **File**: [bluesky_us_elections_2024.csv](bluesky_us_elections_2024.csv)
 - **Source**: Scraped directly from Bluesky

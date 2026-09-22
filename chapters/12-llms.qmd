@@ -2,7 +2,7 @@
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-# Using LLMs: tidyllm (todo) {@sec-llm}
+# Using LLMs: tidyllm (todo) {#sec-llm}
 
 
 ::: {.callout-note}
