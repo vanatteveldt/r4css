@@ -41,7 +41,6 @@ book:
         - chapters/19-datastructures.qmd
         - chapters/20-software.qmd
     - chapters/references.qmd
-    - chapters/99-demo-quiz.qmd
 
 bibliography: references.bib
 
