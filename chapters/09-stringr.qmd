@@ -50,7 +50,7 @@ posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
 ```
 
-## Using `stringr` for basic text cleaning and processing
+## Using `stringr` for basic text cleaning and processing {#sec-basicstringr}
 
 As a first step, we will look at a number of functions from the `stringr`
 package for detecting and counting whether a text contains a specific word or substring. This is very useful for cleaning and exploring data. 
@@ -144,7 +144,7 @@ None of this makes the `stringr` package any less relevant:
 Functions like `str_detect`, `str_trim` and `str_count` are still very useful for filtering and cleaning texts -- and in fact many of the analyses in @sec-textasdata will use these functions either before or after the tokenization to clean the text and analyse the extracted words. 
 :::
 
-## Finding, removing and replacing simple patterns
+## Finding, removing and replacing simple patterns {#sec-findreplace}
 
 The code above showed how you can detect and count literal substrings.
 The `stringr` functions are much more powerful than that, however,
@@ -380,3 +380,18 @@ See [Chapter 9 of my previous book](https://cssbook.net/content/chapter09.html#s
     No checker for the open-ended version; checkers only where there is one accepted result.
   Closing pointer: back to the main flow, and forward to ch. 10 (scraping) and ch. 11 (tidytext).
 -->
+
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-basicstringr quiz: using `stringr` for basic text cleaning and processing
+
+
+{{< include quizzes/_ch09_quiz_basicstringr.qmd >}}
+
+### @sec-findreplace quiz: finding, removing and replacing simple patterns
+
+{{< include quizzes/_ch09_quiz_findreplace.qmd >}}
+

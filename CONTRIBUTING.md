@@ -192,6 +192,31 @@ Concrete examples:
 
 **Open question:** should we add a callout, probably in chapter 2, that mentions `read_csv(url)` as the pattern students will encounter in the wild and recommends RStudio Projects for local work? `download.file()` is portable on its own, but `read_csv(url)` is more idiomatic outside the webR sandbox and worth flagging once.
 
+### 9. Quizzes: a fourth check, separate from the three code-block kinds
+
+Chapters can include short multiple-choice quizzes, gathered at the end of the chapter. A quiz question is not a code block at all — it's a small self-checking HTML/JS widget with no R or webR involved — so it sits alongside show-and-tell/exercise/challenge rather than replacing or relabeling any of them.
+
+**Why:** an exercise tests whether a student can write code that produces a specific result, which they can sometimes do by pattern-matching the example above it without having understood *why* it works. A quiz tests that understanding directly and cheaply. A student who answers all of a chapter's quiz questions correctly should come away confident they grasped the important parts of the chapter — the goal is confidence-building, not difficulty, in the same spirit as principle 4.
+
+**How to apply:**
+
+- **Placement:** quizzes go at the end of the chapter, under a `## Quiz questions` heading, not inline with the prose — they shouldn't interrupt the narrative the way exercises/challenges do.
+- **Section headers, not string labels.** Give every section its own real heading and id (`## Some section {#sec-something}`) if it doesn't have one already, and tag each quiz sub-section with a genuine markdown heading plus a crossref back to it (e.g. `### Quiz: some section` followed by "Covers @sec-something."). This isn't just cosmetic: content inside a raw HTML block (the `<div class="quiz">` widgets) is opaque to Quarto — no markdown, no shortcodes, no `@sec-` crossrefs get processed inside it. Keeping the section reference as real chapter-level markdown, and confining raw HTML to just the quiz mechanics, is what makes the crossref actually resolve. Code spans inside the raw HTML need literal `<code>` tags for the same reason — backtick-style `` `code` `` inside a `<li>` renders as literal backticks, not `<code>`.
+- **File location:** one quiz file *per section*, `chapters/quizzes/_chNN_quiz_slug.qmd`, included right after that section's heading in the `## Quiz questions` block. The shared CSS/JS for the widget lives once in `chapters/quizzes/_quiz_widget.qmd`, included once per chapter (before the first per-section include) rather than duplicated in every quiz file. See ch. 9's `## Quiz questions` section for the pattern.
+- **HTML attribute quoting.** Choice metadata (`data-correct`, `data-explain`) is double-quoted; a literal `"` inside that text breaks the attribute silently and corrupts everything after it in the tag. Use `'single quotes'` for any quoted term inside `data-explain`. Also keep `data-explain` as plain text — it's inserted via `textContent` in the JS, so HTML tags inside it (including `<code>`) show up as literal angle brackets rather than rendering.
+- **Density:** aim for 2–5 questions per section, depending on how much ground the section covers.
+- **Format:** plain single-answer multiple choice only, for now. No "select all that apply" — it needs an explicit submit step and a different interaction model than a single click, and isn't worth that inconsistency without a clear need.
+- **Question types.** Aim for a mix across a chapter:
+    1. Which function/verb does what (e.g. `select()` vs. `filter()` vs. `mutate()`).
+    2. Which call achieves a specific, stated result on concrete data.
+    3. What a given call's result will be, on concrete data shown in the question.
+    4. Why a specific function or argument is needed.
+    5. What's wrong with a call, or why it errors.
+    6. Which statement about a family of similar functions is false (e.g. `if_else()` / `case_when()` / `case_match()`) — useful in chapters that introduce several functions doing adjacent things.
+- **Show concrete data, always.** Every question shows the actual data frame (or a representative excerpt) it's asking about, never "imagine a data frame with columns X and Y." This matches principle 5 and keeps the question testable rather than abstract.
+- **Distractors are real misconceptions, not filler.** Each wrong answer should represent something a student could plausibly believe — forgetting to reassign (`d <- filter(d, ...)` vs. `filter(d, ...)`), confusing two similarly-named functions, swapping argument order — not an obviously-silly option nobody would pick.
+- **Not a grading mechanism.** Nothing is recorded; a student can retry immediately. This is lower-stakes even than the "permission to fumble" tone of exercises (principle 4), since there's no code to get wrong, just an answer to reconsider.
+
 ## Style conventions
 
 These are downstream of the principles above and should mostly be invisible:
@@ -204,4 +229,5 @@ These are downstream of the principles above and should mostly be invisible:
 
 - **Chapter prose and visible code** → `chapters/NN-name.qmd`.
 - **Exercises with hint/solution/checker** → `chapters/exercises/_chNN_ex_name.qmd`, included from the chapter via `{{< include exercises/_chNN_ex_name.qmd >}}`. Filenames are prefixed with `_` so Quarto does not render them as standalone pages.
+- **End-of-chapter quiz questions** → one file per section, `chapters/quizzes/_chNN_quiz_slug.qmd`, included from the chapter's `## Quiz questions` block. The shared widget CSS/JS lives once in `chapters/quizzes/_quiz_widget.qmd`.
 - **Datasets** → `data/`, referenced from the chapter's `webr.resources` frontmatter and from raw-GitHub URLs in `download.file()`.

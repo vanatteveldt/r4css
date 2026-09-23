@@ -1,0 +1,51 @@
+<div class="quiz">
+<p class="quiz-question"><strong>Q1.</strong> You have this small data frame of posts:</p>
+
+| id | text |
+|---:|---|
+| 1 | "I love Trump's rally today" |
+| 2 | "trump supporters gathered downtown" |
+| 3 | "TRUMP announced a new policy" |
+
+<p>You want to use <code>filter()</code> to keep only the rows where <code>text</code> contains the word "Trump". Which <code>stringr</code> function do you put inside <code>filter()</code> to do that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_detect() checks whether a pattern occurs in a string and returns TRUE/FALSE for each row, which is exactly what filter() needs to decide which rows to keep."><code>str_detect()</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() returns the matching text itself (or NA), not a TRUE/FALSE, so filter() can't use it directly to decide which rows to keep."><code>str_extract()</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_count() returns how many times the pattern occurs (0, 1, 2, ...), not a TRUE/FALSE."><code>str_count()</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_length() has nothing to do with matching a pattern; it just gives you the number of characters in a string."><code>str_length()</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<p class="quiz-question"><strong>Q2.</strong> Using the same posts data frame as Q1, what does <code>posts |> filter(str_detect(text, "Trump"))</code> return?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_detect() matches the literal sequence of characters T-r-u-m-p by default, so it's case-sensitive: only the row with id 1 matches exactly 'Trump'. Rows 2 ('trump') and 3 ('TRUMP') are skipped.">Only the row with id 1.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() is case-sensitive by default, so lowercase 'trump' (id 2) and uppercase 'TRUMP' (id 3) do not match the pattern 'Trump'.">All three rows (id 1, 2 and 3).</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the row with id 1 does match: it contains the exact substring 'Trump'.">No rows.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — case matters here. Only the row with the exact capitalization 'Trump' (id 1) matches; to catch all three you'd need str_to_lower(text) first.">The rows with id 1 and 2, but not id 3.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<p class="quiz-question"><strong>Q3.</strong> You want to count words per post by counting spaces with <code>str_count(text, " ")</code>. Why does the chapter first apply <code>str_squish()</code> rather than <code>str_trim()</code> before counting?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_trim() only removes whitespace at the very start and end of the string. Text with a double space or a stray newline in the middle would still inflate the space count. str_squish() also collapses every internal run of whitespace to a single space, so the count is a much better approximation of word count."><code>str_trim()</code> only removes whitespace at the start and end of the text, so extra spaces or line breaks in the middle of a post would still be counted; <code>str_squish()</code> collapses those too.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_trim() does not touch punctuation at all, it only deals with whitespace."><code>str_trim()</code> removes punctuation as well as whitespace, which would throw off the count.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both functions work on character/string columns; str_squish() isn't required for the data type to work."><code>str_count()</code> only works on columns produced by <code>str_squish()</code>, not by <code>str_trim()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_trim() is a real, commonly used stringr function; it's just not sufficient here because it doesn't touch internal whitespace."><code>str_trim()</code> doesn't exist in stringr - only <code>str_squish()</code> does.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<p class="quiz-question"><strong>Q4.</strong> A student runs <code>posts |> filter(str_detect(str_to_lower(text), "trump"))</code> hoping to find posts about Donald Trump, but one result turns out to be a post about a school's trumpet section. What's the best explanation?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — stringr works on sequences of characters, not words. 'trumpet' contains the exact character sequence t-r-u-m-p, so it matches the pattern just as much as 'trump' does. stringr has no concept of word boundaries unless you explicitly ask for one."><code>str_detect()</code> matches sequences of characters, not whole words - "trumpet" contains the letters t-r-u-m-p, so it matches too.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the student did lowercase the text with str_to_lower() first, so casing isn't the issue here.">The student forgot to lowercase the text, so casing differences caused the false match.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() checks for a substring match anywhere in the text; it doesn't require the pattern to be the entire string."><code>str_detect()</code> requires an exact full-string match, so this must be a bug in stringr.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_to_lower() only changes the case of letters, it doesn't add or remove any characters that would explain this match."><code>str_to_lower()</code> altered the spelling of "trumpet" so that it accidentally matched.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
