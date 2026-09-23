@@ -1,10 +1,10 @@
 <div class="quiz">
 <p class="quiz-question"><strong>Q1.</strong> You want to replace every hashtag in a post's text with the literal placeholder <code>"[TAG]"</code>, keeping the rest of the post unchanged. Which function should you use?</p>
 <ul class="quiz-choices">
-<li class="quiz-choice" data-correct="true" data-explain="Right — str_replace_all() finds every match of a pattern and swaps it for a replacement string, which is exactly 'replace with [TAG]'."><code>str_replace_all(text, "#\\w+", "[TAG]")</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_remove_all() deletes the matched text entirely; it doesn't put anything in its place, so you'd lose the hashtags rather than replace them with '[TAG]'."><code>str_remove_all(text, "#\\w+")</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() pulls the matching text out into a new value; it doesn't change the original text at all."><code>str_extract(text, "#\\w+")</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() only tells you TRUE/FALSE for whether a hashtag is present; it can't change the text."><code>str_detect(text, "#\\w+")</code></li>
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_replace_all() finds every match of a pattern and swaps it for a replacement string, which is exactly 'replace with [TAG]'."><code>str_replace_all(text, "#\\\\w+", "[TAG]")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_remove_all() deletes the matched text entirely; it doesn't put anything in its place, so you'd lose the hashtags rather than replace them with '[TAG]'."><code>str_remove_all(text, "#\\\\w+")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() pulls the matching text out into a new value; it doesn't change the original text at all."><code>str_extract(text, "#\\\\w+")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() only tells you TRUE/FALSE for whether a hashtag is present; it can't change the text."><code>str_detect(text, "#\\\\w+")</code></li>
 </ul>
 <p class="quiz-feedback" hidden></p>
 </div>
@@ -34,10 +34,10 @@
 <div class="quiz">
 <p class="quiz-question"><strong>Q4.</strong> You want a data frame with <em>one row per hashtag</em> — so a post with three hashtags should contribute three rows. Which of these achieves that?</p>
 <ul class="quiz-choices">
-<li class="quiz-choice" data-correct="true" data-explain="Right — str_extract_all() finds every match per post and stores them as a list column (one list of hashtags per post); unnest_longer() then expands each list into its own row, giving one row per hashtag."><code>posts |> mutate(tag = str_extract_all(text, "#\\w+")) |> unnest_longer(tag)</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() (without '_all') only keeps the first hashtag per post, so you'd still have exactly one row per post, not per hashtag."><code>posts |> mutate(tag = str_extract(text, "#\\w+"))</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — this gets you all the hashtags per post, but as a list stored in a single cell. Without unnest_longer(), you still have one row per post, just with a list-type column instead of multiple rows."><code>posts |> mutate(tag = str_extract_all(text, "#\\w+"))</code></li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — filter() only keeps or drops whole rows based on a TRUE/FALSE condition; it can't split one row into several."><code>posts |> filter(str_detect(text, "#\\w+"))</code></li>
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_extract_all() finds every match per post and stores them as a list column (one list of hashtags per post); unnest_longer() then expands each list into its own row, giving one row per hashtag."><code>posts |> mutate(tag = str_extract_all(text, "#\\\\w+")) |> unnest_longer(tag)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() (without '_all') only keeps the first hashtag per post, so you'd still have exactly one row per post, not per hashtag."><code>posts |> mutate(tag = str_extract(text, "#\\\\w+"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this gets you all the hashtags per post, but as a list stored in a single cell. Without unnest_longer(), you still have one row per post, just with a list-type column instead of multiple rows."><code>posts |> mutate(tag = str_extract_all(text, "#\\\\w+"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — filter() only keeps or drops whole rows based on a TRUE/FALSE condition; it can't split one row into several."><code>posts |> filter(str_detect(text, "#\\\\w+"))</code></li>
 </ul>
 <p class="quiz-feedback" hidden></p>
 </div>
