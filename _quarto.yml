@@ -3,6 +3,7 @@ project:
   output-dir: _book
   resources:
     - data/
+    - favicon/
 
 book:
   title: "R for Computational Social Science"
@@ -11,6 +12,7 @@ book:
   date-format: "YYYY"
   repo-url: https://github.com/vanatteveldt/r4css
   repo-actions: [edit, issue]
+  favicon: favicon/favicon.ico
   chapters:
     - index.qmd
     - part: "Data Analysis with Tidyverse"
