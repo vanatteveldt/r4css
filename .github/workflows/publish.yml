@@ -26,24 +26,16 @@ jobs:
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: renv         # read R version from renv.lock
+          r-version: release
           use-public-rspm: true   # binary packages from Posit PPM — much faster than source
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends \
-            libgsl-dev \
-            libxml2-dev \
-            libcurl4-openssl-dev \
-            libssl-dev \
-            libicu-dev
-
-      - name: Restore renv packages
-        uses: r-lib/actions/setup-renv@v2
+      # Chapter code runs in the browser via webR, so rendering only needs knitr
+      - name: Install R packages
+        uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # cache-version can be bumped to force a clean cache
-          cache-version: 1
+          packages: |
+            any::knitr
+            any::rmarkdown
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
@@ -52,7 +44,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: _freeze
-          key: freeze-${{ hashFiles('**/*.qmd', '**/*.R', 'renv.lock') }}
+          key: freeze-${{ hashFiles('**/*.qmd', '**/*.R') }}
           restore-keys: |
             freeze-
 

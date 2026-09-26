@@ -1,9 +1,6 @@
 /.quarto/
 /_book/
 /_freeze/
-/renv/library/
-/renv/staging/
-/renv/python/
 *.Rhistory
 .Rdata
 .httr-oauth

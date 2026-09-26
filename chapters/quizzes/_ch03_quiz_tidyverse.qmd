@@ -1,0 +1,97 @@
+<div class="quiz">
+<div class="quiz-title">Q1: A fresh start</div>
+<p class="quiz-question">Yesterday, you installed tidyverse and everything worked. Today, you restart RStudio and run the first lines of your script:</p>
+
+<pre><code>gss &lt;- read_csv("gss.csv")
+Error in read_csv("gss.csv") : could not find function "read_csv"</code></pre>
+<p>What is the most likely fix?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a package only needs to be installed once, but it needs to be activated with library() in every new R session. Since read_csv is part of tidyverse, R can't find it until you run library(tidyverse). That's why library() calls go at the top of your script.">Add <code>library(tidyverse)</code> at the top of the script and run it.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — tidyverse is still installed from yesterday; installing only needs to be done once per computer. The problem is that it's not activated in this new session: you need library(tidyverse) for that.">Run <code>install.packages("tidyverse")</code> again.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — if the file didn't exist, you'd get a different error, saying the file does not exist. 'could not find function' means R doesn't know read_csv at all, which usually means the package it belongs to is not activated.">The file <code>gss.csv</code> is missing: check that it is in the right folder.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — function names in R are case-sensitive, and the tidyverse function really is called read_csv, in lowercase. The error means the function is not available, because tidyverse hasn't been activated with library().">Function names should be capitalized: use <code>Read_csv</code> instead.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: A missing package</div>
+<p class="quiz-question">A student runs the following code and gets an error:</p>
+
+<pre><code>library(tidyvese)
+Error in library(tidyvese) : there is no package called ‘tidyvese’</code></pre>
+<p>What should they do?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — 'there is no package called ...' means R can't find an installed package with that name. That can mean it's not installed, but always check for typos first: here, an r is missing from tidyverse.">Fix the typo: it should be <code>library(tidyverse)</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this error can mean the package isn't installed, but here the name is misspelled. There is no package called 'tidyvese' to install, so this won't help: always check for typos first.">Run <code>install.packages("tidyvese")</code> to install the missing package.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — library() is exactly the right function to activate a package. The problem is the name of the package, which is misspelled.">Use <code>install.packages</code> instead of <code>library</code>, since <code>library</code> is only for built-in packages.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — restarting R doesn't change which packages exist or are installed. The error message tells you what's wrong: R can't find a package with the name you typed, which is misspelled.">Restart R: this error means something went wrong in the current session.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: What's in the data?</div>
+<p class="quiz-question">These are the first rows of <code>gss_cat</code>, showing only some of its columns:</p>
+
+| year | age | race | relig | tvhours |
+|---:|---:|---|---|---:|
+| 2000 | 26 | White | Protestant | 12 |
+| 2000 | 48 | White | Protestant | NA |
+| 2000 | 67 | White | Protestant | 2 |
+
+<p>Before you start your analysis, you want to know how many respondents there are, and what all the columns and their types are. Which function gives you that overview?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — glimpse lists every column with its name, type, and the first few values, and tells you the total number of rows (21,483 respondents) and columns (9)."><code>glimpse(gss_cat)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — head shows only the first six rows, and only the columns that fit on your screen. It doesn't tell you how many respondents there are in total."><code>head(gss_cat)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — filter selects the rows that meet a condition, like relig == 'Protestant'. It gives you a subset of the data, not an overview of it."><code>filter(gss_cat)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — library activates a package, like library(tidyverse). It doesn't work on data frames."><code>library(gss_cat)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Keeping both versions</div>
+<p class="quiz-question">Given this excerpt of <code>gss_cat</code>:</p>
+
+| age | race | relig |
+|---:|---|---|
+| 26 | White | Protestant |
+| 25 | White | None |
+| 40 | Black | Protestant |
+| 39 | White | Orthodox-christian |
+
+<p>You want to do some analyses on only the Protestant respondents, but later in your script you also want to compare them to the full sample. Which code should you use?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — filter returns a changed copy of the data, and assigning it to a new name keeps both versions: gss_protestants for the Protestants, and the unchanged gss_cat for the full sample."><code>gss_protestants &lt;- filter(gss_cat, relig == "Protestant")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this replaces gss_cat with the filtered version, so the full sample is no longer available later in your script. Re-assigning to the same name is fine if you only need the new version, but here you need both."><code>gss_cat &lt;- filter(gss_cat, relig == "Protestant")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — without an assignment, the result is printed on the screen but not remembered. That's fine for a quick inspection, but you can't use it for further analyses."><code>filter(gss_cat, relig == "Protestant")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the first line makes a copy of the full data, but the second line doesn't store its result: filter returns a changed copy rather than changing gss_protestants itself. So gss_protestants still contains all respondents."><code>gss_protestants &lt;- gss_cat</code><br/><code>filter(gss_protestants, relig == "Protestant")</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: What's left?</div>
+<p class="quiz-question">Given this excerpt of <code>gss_cat</code>:</p>
+
+| age | race | relig |
+|---:|---|---|
+| 26 | White | Protestant |
+| 25 | White | None |
+| 40 | Black | Protestant |
+| 29 | Other | Protestant |
+
+<p>What does the last line of this code show?</p>
+
+<pre><code>gss_protestants &lt;- filter(gss_cat, relig == "Protestant")
+filter(gss_protestants, race != "White")
+head(gss_protestants)</code></pre>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the first line stores the Protestants in gss_protestants. The second line only prints the non-White Protestants: its result is not assigned, so gss_protestants itself doesn't change. The last line therefore shows the Protestants of all races.">The Protestant respondents of all races: the rows with age 26, 40, and 29.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the second filter does compute the non-White Protestants, but its result is only printed, not assigned. To keep it, you'd need gss_protestants &lt;- filter(gss_protestants, race != 'White').">Only the non-White Protestant respondents: the rows with age 40 and 29.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the first line did assign its result: gss_protestants contains only the respondents where relig is Protestant, so the respondent with no religion is not included.">All respondents, including the one with no religion, since <code>filter</code> doesn't change the data.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — it's perfectly fine to call a function without assigning the result: R just prints it and moves on. There is no error here.">An error, because the result of the second line is not assigned to anything.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

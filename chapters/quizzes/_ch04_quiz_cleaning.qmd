@@ -1,0 +1,133 @@
+<div class="quiz">
+<div class="quiz-title">Q1: A name with a space</div>
+<p class="quiz-question">These are some rows from <code>gap_dirty</code>, where the life expectancy column has a space in its name:</p>
+
+| country | year | Life Expectancy | region |
+|---|---:|---:|---|
+| Japan | 2016 | 83.3 | Eastern Asia |
+| Nepal | 2016 | 69.2 | Southern Asia |
+
+<p>You want a data frame with only the columns <code>country</code>, <code>year</code>, and <code>life_expectancy</code> (without the space). Which code does that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — in select you can rename a column with new_name = old_name, and because the old name contains a space you put quotes around it. All columns you don't mention are dropped, so only country, year, and life_expectancy remain."><code>select(gap_dirty, country, year, life_expectancy = "Life Expectancy")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this renames the column correctly, but rename keeps all the other columns as they are. So region (and any other columns) is still there. To rename and drop the rest in one go, use select."><code>rename(gap_dirty, life_expectancy = "Life Expectancy")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the new name goes on the left of the = and the old name on the right. This code looks for an existing column called life_expectancy, which doesn't exist, so R gives an error."><code>select(gap_dirty, country, year, "Life Expectancy" = life_expectancy)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — without quotes or backticks, R reads Life and Expectancy as two separate things, and gives an error. And even if it worked, the column would still have its old name with a space."><code>select(gap_dirty, country, year, Life Expectancy)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Only Asia, please</div>
+<p class="quiz-question">These are some rows from <code>gap</code>:</p>
+
+| country | year | continent |
+|---|---:|---|
+| Albania | 1960 | Europe |
+| Algeria | 1960 | Africa |
+| Afghanistan | 1960 | Asia |
+
+<p>A student wants to keep only the Asian countries, and runs:</p>
+
+<pre><code>gap_asia &lt;- filter(gap, continent = "Asia")
+Error in filter(gap, continent = "Asia") : We detected a named input.</code></pre>
+<p>What should they change?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — continent == 'Asia' asks a question (is the continent equal to Asia?), which is what filter needs. A single = means assignment, like new_name = old_name in rename, which is why R complains about a 'named input'.">Use a double equals sign: <code>continent == "Asia"</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — Asia is literal text, so it does need quotes: without them, R would look for an object or column called Asia. The problem is the single =, which should be ==.">Remove the quotes: <code>continent = Asia</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — column names are written without quotes inside filter. The problem is the single =, which means assignment rather than asking whether two things are equal.">Put quotes around the column name: <code>"continent" = "Asia"</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — select picks columns, while filter picks rows. Keeping only the Asian countries means keeping some rows, so filter is the right function; it just needs == instead of =.">Use <code>select</code> instead of <code>filter</code>, since <code>continent</code> is a text column.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Where the parentheses go</div>
+<p class="quiz-question">Given these rows from <code>gap_asia</code>:</p>
+
+| country | year | region |
+|---|---:|---|
+| India | 2014 | Southern Asia |
+| China | 2015 | Eastern Asia |
+| India | 2015 | Southern Asia |
+| Japan | 2016 | Eastern Asia |
+| Nepal | 2016 | Southern Asia |
+
+<p>Which rows are kept by the following code?</p>
+
+<pre><code>filter(gap_asia, year == 2015 &#124; (year == 2016 &amp; region == "Southern Asia"))</code></pre>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a row is kept if it is from 2015 (any region), or if it is from 2016 and from Southern Asia. So both 2015 rows are kept, but of the 2016 rows only Nepal.">China 2015, India 2015, and Nepal 2016</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that would be the result of (year == 2015 or year == 2016) and region == 'Southern Asia'. Here, the parentheses group the 2016 condition with the region, so the region only matters for 2016: all 2015 rows are kept.">India 2015 and Nepal 2016</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the region condition is not ignored: for 2016, a row is only kept if the region is also Southern Asia. So Japan 2016 is dropped.">China 2015, India 2015, Japan 2016, and Nepal 2016</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the | means or: a row is kept if either side is true. The 2015 rows meet the first condition, so they are kept too, whatever their region.">Only Nepal 2016</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Missing GDP</div>
+<p class="quiz-question">These are some rows from <code>gap_2011</code>, with GDP shown in billions of dollars:</p>
+
+| country | year | infant_mortality | gdp |
+|---|---:|---:|---:|
+| Hong Kong, China | 2011 | NA | 264 |
+| India | 2011 | 44.4 | 1040 |
+| Iran | 2011 | 15.7 | NA |
+| Japan | 2011 | 2.3 | 5059 |
+
+<p>You want to analyze GDP, so you want to keep every country for which the GDP is known. Which code does that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — is.na(gdp) is TRUE for the rows where gdp is missing, and ! turns that around. So this keeps Hong Kong, India, and Japan, and drops only Iran. drop_na(gap_2011, gdp) would give the same result."><code>filter(gap_2011, !is.na(gdp))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — any comparison with NA gives NA, because R can't know whether a missing value is equal to something else. filter drops rows where the condition is NA, so this keeps no rows at all. Use !is.na(gdp) instead."><code>filter(gap_2011, gdp != NA)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — without any columns, drop_na drops every row that has a missing value in any column. So Hong Kong is dropped as well, because its infant mortality is missing, even though its GDP is known. Use drop_na(gap_2011, gdp) to only look at gdp."><code>drop_na(gap_2011)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this does the opposite: is.na(gdp) is TRUE where gdp is missing, so this keeps only Iran. That is useful to inspect the missing values, but to keep the known values you need !is.na(gdp)."><code>filter(gap_2011, is.na(gdp))</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: Newest first</div>
+<p class="quiz-question">Given this data frame <code>d</code>:</p>
+
+| country | year | life_expectancy |
+|---|---:|---:|
+| Japan | 2015 | 83.2 |
+| Nepal | 2015 | 69.7 |
+| Yemen | 2015 | 66.0 |
+| Japan | 2016 | 83.3 |
+| Nepal | 2016 | 69.2 |
+| Yemen | 2016 | 64.9 |
+
+<p>You want to show the most recent year first, and within each year the country with the <em>lowest</em> life expectancy first. So the first rows should be Yemen 2016, Nepal 2016, and Japan 2016. Which code does that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — arrange sorts by the first column you give it, and only uses the next column for rows that have the same value in the first. desc(year) puts 2016 first, and within each year life_expectancy sorts from low to high."><code>arrange(d, desc(year), life_expectancy)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the order of the columns matters: arrange sorts by the first column, and only uses the second to break ties. This sorts by life expectancy first, so Yemen 2016 (64.9) is followed by Yemen 2015 (66.0)."><code>arrange(d, life_expectancy, desc(year))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — desc only applies to the column inside it. Here both columns are sorted from high to low, so within each year Japan (the highest life expectancy) comes first."><code>arrange(d, desc(year), desc(life_expectancy))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — by default, arrange sorts from low to high, so this puts 2015 before 2016. To get the most recent year first, use desc(year)."><code>arrange(d, year, life_expectancy)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q6: The richest countries in 2010</div>
+<p class="quiz-question">These are some rows from <code>gap_asia</code>, with GDP shown in billions of dollars:</p>
+
+| country | year | gdp |
+|---|---:|---:|
+| China | 2010 | 3246 |
+| India | 2010 | 973 |
+| Japan | 2010 | 5094 |
+| China | 2011 | 3548 |
+| India | 2011 | 1040 |
+| Japan | 2011 | 5059 |
+
+<p>You want to see only the rows from 2010, with the country with the highest GDP at the top. Which code does that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — first filter keeps the 2010 rows and stores them in gap_2010, and then arrange sorts that subset from high to low GDP: Japan, China, India."><code>gap_2010 &lt;- filter(gap_asia, year == 2010)</code><br/><code>arrange(gap_2010, desc(gdp))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the result of filter is printed but not stored, so gap_asia still contains all years. The arrange then sorts all rows, so Japan 2011 shows up right below Japan 2010. Store the filtered rows under a name, and arrange those."><code>filter(gap_asia, year == 2010)</code><br/><code>arrange(gap_asia, desc(gdp))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — filter only chooses which rows to keep; it doesn't change their order. Everything you give filter must be a TRUE/FALSE question like year == 2010, so desc(gdp) gives an error. Sorting is done with arrange."><code>filter(gap_asia, year == 2010, desc(gdp))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this keeps the right rows, but arrange sorts from low to high by default, so India is at the top. Use desc(gdp) to put the highest GDP first."><code>gap_2010 &lt;- filter(gap_asia, year == 2010)</code><br/><code>arrange(gap_2010, gdp)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

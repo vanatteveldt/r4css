@@ -197,3 +197,9 @@ This chapter looked at the `gss_cat` data frame.
 Pick an interesting social science question that could be answered with this data.
 What data cleaning, analysis, and/or visualization would be needed to get to this answer?
 :::
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+{{< include quizzes/_ch03_quiz_tidyverse.qmd >}}

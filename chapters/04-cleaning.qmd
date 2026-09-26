@@ -324,7 +324,7 @@ To view missing values, you need to do a (temporary) filter to select the missin
 
 {{< include exercises/_ch04_ex_arrange.qmd >}}
 
-## GDP and life expectancy
+### GDP and life expectancy
 
 In the exercise above, you prepared the dataset for determining the relation between GDP and life expectancy.
 
@@ -368,3 +368,9 @@ that's no reason to not play around with it:
 - Try adding `color=region` or `size=population` to the `aes` function
 - What happens to the plot when you replace `gdp_per_capita` by `log10(gdp_per_capita)`? Does it change the substantive interpretation? Why would you do this?
 :::
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+{{< include quizzes/_ch04_quiz_cleaning.qmd >}}
