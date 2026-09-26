@@ -224,7 +224,7 @@ Finally, What happens if you use `geom_smooth(method="lm", formula=y ~ poly(x,2)
 ## Aesthetic mappings {#sec-vis-aes}
 
 The section above introduced the basics of `ggplot`:
-a **data source**, a **geometric layer**, and a **aesthetic mapping**
+a **data source**, a **geometric layer**, and an **aesthetic mapping**
 between columns in the data and visual elements of the geometric layer.
 
 Before we introduce different geoms or other elements that can be added to a plot,
@@ -442,7 +442,7 @@ Looking at the code above, three things were changed apart from adding a theme:
    removing the (redundant) label. Good labels are one of the most important things in data visualization:
    a reader should be able to instantly understand the visualization, making it essential to label
    the variables, values, source, and anything else.
-2. The `x` and `y` axes where flipped, changing it into a horizontal bar chart. 
+2. The `x` and `y` axes were flipped, changing it into a horizontal bar chart. 
    This is often a good solution to make a bar chart more readable, especially if category labels are long.
 3. `fct_reorder` was used to reorder the countries by life expectancy. By default, R orders alphabetically,
    which very often is not the most logical ordering to tell a story. 
@@ -553,7 +553,7 @@ Of course, the world didn't suddenly get much poorer.
 
 Finally, can you think of a better way to deal with the imbalanced NAs that we noted above?
 
-These questions showcases an important skill in data analysis:
+These questions showcase an important skill in data analysis:
 noticing that something is odd, investigating why this is the case, 
 and then dealing with it. 
 
@@ -859,7 +859,7 @@ fig2 <- ggplot(anscombe, aes(x=x2, y=y2)) + geom_point()
 ggsave("figure2.pdf", fig2, width = 20, height = 10, units = "cm", dpi=300)
 ```
 
-When saving plots to a file like this, it's important to check the actual outputhe file:
+When saving plots to a file like this, it's important to check the actual output file:
 especially fonts can scale differently than you might expect, so the best way to create quality 
 plots is to first settle on a format and size and then tweak font size, margins etc until you are satisfied,
 checking the rendered file after each change. 
@@ -889,4 +889,10 @@ the [R Graph Gallery](https://r-graph-gallery.com) and [Data-to-Viz](https://www
 Note that this chapter explicitly does not teach pie charts.
 Pie charts make it very hard to compare groups and in almost all cases a bar chart is
 the better choice. However, if you must make a pie chart [you certainly can](https://r-graph-gallery.com/piechart-ggplot2.html): 
-in fact, it's just a bar chart with `coord_polar()` added to create a circular plot. 
+in fact, it's just a bar chart with `coord_polar()` added to create a circular plot.
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+{{< include quizzes/_ch06_quiz_visualizing.qmd >}}

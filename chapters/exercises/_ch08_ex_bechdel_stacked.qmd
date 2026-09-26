@@ -43,7 +43,7 @@ Note that this code uses some interesting 'tricks':
 - We compute the `lustrum` (5 year period) by dividing, flooring, and multiplying again. 
 - We create a `period` variable using `str_glue`, 'glueing' together the start year, a literal dash, newline and apostrophe,
   and the last two digits of the end year of that period
-  (see @sec_str for more details on the `str_*` functions)
+  (see @sec-stringr for more details on the `str_*` functions)
 - We extract the unique periods with `pull(column) |> unique() |> sort()`, and then select all odd labels by 
   indexing with a `seq`uence from 1 to the number of periods, incrementing by 2 every step. 
 
@@ -378,7 +378,7 @@ Some explanation:
    For the last bar this will give `NA` (since there is no next bar), so no vertical bar is drawn at the end. 
 7. The pass/fail annotations are simple text annotations. 
    For the outcome labels and segments, however, we can now use the `labels` dataset we created in the step (3),
-   and use a `geom_segment` and `geom_segment` line based on this dataset rather than having to specify 5 separate annotations
+   and use a `geom_text` and `geom_segment` line based on this dataset rather than having to specify 5 separate annotations
    for the text and lines.  
    We draw the line from 9.48 to 9.6 and start the text at 9.7 (left-justified),
    which draws them to the right of the last bar, again using the fact that the last (9th) bar is drawn to 9.48.

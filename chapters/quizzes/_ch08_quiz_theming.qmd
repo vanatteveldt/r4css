@@ -1,0 +1,28 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Think pink</div>
+<p class="quiz-question">Using the <code>votes_per_year</code> data from the previous questions, you made this plot:</p>
+
+<pre><code>ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_line() +
+  theme_classic()</code></pre>
+<p>Now you want to give the whole plot a pink background. What should you add?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the background isn't linked to any data, so it is set in the theme. element_rect is the helper for rectangular elements like the plot background, and fill sets its color."><code>theme(plot.background = element_rect(fill="pink"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — scales define how data values are turned into aesthetics, like which party gets which color. The background isn't linked to any data, so it is set in the theme."><code>scale_fill_manual(values="pink")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — arguments to a geom only change what that geom draws, in this case the lines (which don't even have a fill). The background of the plot is set in the theme."><code>geom_line(fill="pink")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — labs sets the texts of the plot, such as the title and the axis and legend titles. The background is set in the theme."><code>labs(background="pink")</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Many roads to the same plot</div>
+<p class="quiz-question">For the same plot, <code>labs</code>, the <code>scale_*</code> functions, the guides, and <code>theme</code> can partly do the same things. Which of these statements is <em>false</em>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right, this one is false — which color each party gets depends on the values in the data, so it is set in the scale, e.g. with scale_color_manual. The theme only controls the elements that are not linked to data, like fonts, backgrounds, and grid lines.">The colors for Democrats and Republicans can be set either in the scale or in the theme.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — you can set the title of the color legend with labs(color='Party'), or with the name= argument of the color scale. Either works, so put it where it's most convenient.">The legend title can be set either in <code>labs()</code> or with the <code>name=</code> argument of the scale.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — the theme has legend.position (e.g. legend.position='bottom'), and a guide such as guide_colorbar has a position= argument as well.">The position of a legend can be set either in the theme or in the guide.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — you can remove the x axis title with labs(x=''), with name='' in scale_x_continuous, or with axis.title.x = element_blank() in the theme.">The x axis title can be removed in <code>labs()</code>, in the scale, or in the theme.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

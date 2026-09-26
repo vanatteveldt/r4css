@@ -25,9 +25,19 @@ So, be curious, ask questions, but never worry if something is not immediately c
 The book is very much not a programming manual.
 We will of course teach programming fundamentals such as operators or functions,
 but only where it is useful to know these concepts for a (computational) social scientist.
+This approach also sets the book apart from other resources,
+such as the fantastic [R for Data Science](https://r4ds.hadley.nz/) book by Hadley Wickham and colleagues. 
+My intention is for this book is to be geared towards (aspiring) social scientists and curiosity-driven learning through interactive application.
+The goal is also to extend beyond data processing and cover basic computational social science methods such as text analysis, LLMs, and multimodal analysis. 
+Of course, which book works best for you depends on your learning style as well as your background, but I hope that at least for some students (and professors!)
+this will be a useful resource. 
 
 ::: {.callout-note title="Status of this book"}
-Note that this book is very much work in progress. The chapters that are published should be good, but it's obviously very incomplete. The intended scope is to include at least a thorough introduction to tidyverse, including visualization (`ggplot`) and functions/mapping (`purrr`); an overview of text analysis (`textr`, `tidytext`, and perhaps something like AmCAT and/or boolydict); and working with local and proprietary LLMS (probably with `tidyllm`). I'm not sure how much classical machine learning to include as R support is still not fantastic.
+Note that this book is a work in progress. 
+The first part is mostly done, with all chapters finished and currently being battle tested by my students (thanks, all!).
+
+All finished chapters have examples, most have exercises per section, and all chapters from chapter 3 end in a small multiple-choice quiz to test understanding.
+So, even in its current state this book should be a good resource for teaching an introduction to data processing and visualization using tidyverse to social science students.  
 :::
 
 <!-- missing: Why R; how to install R & Packages; relation between book and courses with instructors -->
@@ -47,3 +57,6 @@ Most sections end with an exercise - look for blue frames marked `✏️ Exercis
 There are also frames marked `🧩 Challenge`. These will challenge you to either think about the outcomes a bit more deeply, or make some additional changes to the code. Generally there will be no single 'right' solution. Don't feel stressed if you don't immediately see the solution, very often the tools you need will be introduced in later sections.
 
 Finally, there are frames marked with an `💡`. These give more in-depth explanation about the code or concepts that were just introduced, and will explain many 'gotchas' that we've seen students struggle with before.
+
+Every chapter (from chapter 3) ends with a multiple-choice quiz, often organized per section. 
+These quizzes are intended to test your understanding of the main concepts, functions, and syntax introduced in the chapter. 

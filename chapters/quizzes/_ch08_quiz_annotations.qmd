@@ -1,0 +1,31 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Behind the lines</div>
+<p class="quiz-question">Using the <code>votes_per_year</code> data (vote share per party per election), the chapter adds a dashed line at 50%:</p>
+
+<pre><code>ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) +
+  geom_hline(yintercept=.5, color="gold", linetype=2) +
+  geom_line()</code></pre>
+<p>Why is the <code>geom_hline</code> placed <em>before</em> the <code>geom_line</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — ggplot draws the layers in the order you add them, so later layers are drawn on top of earlier ones. Placing the 50% line first puts it in the background, where it doesn't cover the party lines that are the actual data.">ggplot draws layers in order, so the party lines are drawn on top of the 50% line.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — you can add a geom_hline anywhere in the plot without an error. The order only decides which layer is drawn on top: here, the party lines on top of the 50% line.">Otherwise you get an error, because <code>geom_hline</code> must come before other geoms.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the gold color is set as a constant inside geom_hline, so it doesn't affect other layers, whatever the order. The order only decides which layer is drawn on top.">Otherwise, the gold color would also be used for the party lines.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the y axis is based on the values of all layers together, whatever their order. The order only decides which layer is drawn on top: here, the party lines on top of the 50% line.">The first geom determines the range of the y axis, which should include 50%.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Cut off at the edge</div>
+<p class="quiz-question">Continuing the plot above, which runs from 1976 to 2024, a student wants to explain the gold line with a text just to the <em>right</em> of the graph, and adds:</p>
+
+<pre><code>annotate("text", x=2024, y=.5, label="50% Vote Share", color="gold", hjust=0)</code></pre>
+<p>The text starts at 2024, but is cut off at the edge of the plotting area. What is needed to show the whole text?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — by default, anything drawn outside the plotting area is clipped (cut off). coord_cartesian(clip='off') turns that off, and a larger right margin in the theme makes room for the text next to the graph.">A larger right margin with <code>theme(plot.margin = ...)</code>, and <code>coord_cartesian(clip = "off")</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — vjust controls the vertical alignment (e.g. vjust=0 puts the bottom of the text at the y value). The text is cut off horizontally, because it is drawn outside the plotting area, which is clipped by default.">Use <code>vjust=0</code> instead of <code>hjust=0</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a label annotation is a text with a box around it, which is clipped at the edge in the same way. To draw outside the plotting area, turn off clipping with coord_cartesian(clip='off'), and make room with a larger margin.">Use <code>annotate("label", ...)</code> instead of <code>annotate("text", ...)</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the order of the layers only decides what is drawn on top of what. The text is cut off because it is drawn outside the plotting area, which is clipped by default.">Move the <code>annotate</code> to the start of the plot, before the <code>geom_line</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

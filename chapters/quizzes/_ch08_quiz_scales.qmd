@@ -1,0 +1,69 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Red for Republicans</div>
+<p class="quiz-question">These are the 2024 rows from <code>votes_per_year</code>:</p>
+
+| year | party | votes | voteshare |
+|---:|---|---:|---:|
+| 2024 | Democrat | 75017613 | 0.483 |
+| 2024 | Other | 3091672 | 0.020 |
+| 2024 | Republican | 77302580 | 0.497 |
+
+<p>You plot the vote share over time with <code>ggplot(votes_per_year, aes(x=year, y=voteshare, color=party)) + geom_line()</code>, and want Republicans in red, Democrats in blue, and other parties in dark green. What should you add?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — scale_color_manual sets the colors for the color aesthetic by hand, and naming each value makes sure every party gets the color you intended, whatever order the parties are in."><code>scale_color_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — without names, the colors are assigned in the order of the categories, which is alphabetical: Democrat gets red, Other gets blue, and Republican gets dark green. Name the values to link each color to a specific party."><code>scale_color_manual(values=c("red", "blue", "darkgreen"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the scale function needs to match the aesthetic you mapped. Party is mapped to color (the lines), so you need scale_color_manual; a fill scale does nothing here, since nothing is mapped to fill."><code>scale_fill_manual(values=c(Republican="red", Democrat="blue", Other="darkgreen"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — color outside aes() sets a single constant for the whole layer, so giving it three colors results in an error (Aesthetics must be either length 1 or the same as the data). How values of a mapped column are turned into colors is set with a scale function, in this case scale_color_manual."><code>geom_line(color=c(Republican="red", Democrat="blue", Other="darkgreen"))</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Percentages on the axis</div>
+<p class="quiz-question">These are some rows of <code>states_2024</code>, with the 2024 Democrat vote share combined with demographic data about each state:</p>
+
+| state | voteshare | college_pct | white_pct | population |
+|---|---:|---:|---:|---:|
+| California | 0.585 | 31.6 | 38.4 | 38654206 |
+| Texas | 0.425 | 28.0 | 43.4 | 26956435 |
+| Vermont | 0.632 | 36.5 | 93.4 | 626249 |
+| Wyoming | 0.256 | 26.1 | 84.4 | 583029 |
+
+<p>You plot <code>college_pct</code> on the x axis. By default, the axis labels are plain numbers such as <code>30</code>, but you want them shown as percentages, such as <code>30%</code>. What should you add?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the labels= argument of the x scale decides how the tick marks are written, and label_percent writes them as percentages. Because college_pct is already a percentage from 0 to 100 (rather than a proportion from 0 to 1), you add scale = 1, so the numbers are not multiplied by 100."><code>scale_x_continuous(labels = label_percent(scale = 1))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — by default, label_percent assumes a proportion between 0 and 1, like voteshare, and multiplies it by 100. For college_pct, which is already a percentage, 30 would become 3 000%. Use label_percent(scale = 1) instead."><code>scale_x_continuous(labels = label_percent())</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — name= sets the title of the axis, not the labels at the tick marks. The tick marks would still show 30 rather than 30%. For those, use the labels= argument."><code>scale_x_continuous(name = "College educated (%)")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — scale functions are named scale_{aesthetic}_{type}, and percent is not a type of scale: it is a way of writing the labels. So there is no scale_x_percent; instead, use the labels= argument of scale_x_continuous."><code>scale_x_percent()</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: The colors won't change</div>
+<p class="quiz-question">Using the same state data, a student runs:</p>
+
+<pre><code>ggplot(states_2024, aes(x=college_pct, y=white_pct, color=voteshare)) +
+  geom_point() +
+  scale_fill_gradient2(low="red", mid="white", high="blue", midpoint=.5)</code></pre>
+<p>The points are still in the default blue gradient. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — scale functions are named scale_{aesthetic}_{type}, and they only affect that aesthetic. The vote share is mapped to color, so you need scale_color_gradient2; the fill scale has nothing to work on, since nothing is mapped to fill.">The vote share is mapped to <code>color</code>, so the scale should be <code>scale_color_gradient2</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the order of scale functions doesn't matter: ggplot collects all parts of the plot before drawing it. The problem is that the scale is for fill, while the vote share is mapped to color.">The scale has to be added before <code>geom_point()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — midpoint=.5 is correct here, since the vote share runs from 0 to 1 and 50% is the natural midpoint. The problem is that the scale is for fill, while the vote share is mapped to color.">The midpoint should be <code>50</code>, since the vote share is a percentage.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the gradient scales are part of ggplot2 itself; only helpers like label_percent come from the scales package. And a missing function would give an error, not an unchanged plot.">They forgot <code>library(scales)</code>, which is needed for the gradient scales.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: California and Wyoming</div>
+<p class="quiz-question">In the same state data, California has a population of almost 39 million, and Wyoming of less than 600 thousand. With <code>size=population</code>, the chapter adds <code>scale_size_continuous(transform = "sqrt")</code>. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — with a linear size scale, the few very large states dominate, and all smaller states end up as similarly tiny dots. Taking the square root (or even the log) compresses the large values, so you can also see differences between the smaller states.">So the few very large states don't dominate the scale, and differences between the smaller states remain visible.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — how the numbers in the legend are written is set with labels=, e.g. labels = label_comma(). The transform changes how population is turned into dot sizes.">To show the population in the legend as normal numbers instead of scientific notation like <code>1e+07</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a scale only changes how values are displayed; the population column in the data stays exactly the same. The transform changes how population is turned into dot sizes.">To change the population column in the data to the square root of the population.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — ggplot can map large numbers to size just fine: without a transform, it makes a linear scale from the smallest to the largest value. The transform is a choice to make the smaller states easier to compare.">Because the <code>size</code> aesthetic can't handle numbers in the millions.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

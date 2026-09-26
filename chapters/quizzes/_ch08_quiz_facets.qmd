@@ -1,0 +1,43 @@
+<div class="quiz">
+<div class="quiz-title">Q1: One graph per state</div>
+<p class="quiz-question">These are some rows from <code>key_votes</code>, with the Democrat and Republican vote share in four key states:</p>
+
+| year | state | party | voteshare |
+|---:|---|---|---:|
+| 2024 | Arizona | Democrat | 0.467 |
+| 2024 | Arizona | Republican | 0.522 |
+| 2024 | Michigan | Democrat | 0.483 |
+| 2024 | Michigan | Republican | 0.497 |
+
+<p>Starting from <code>ggplot(key_votes, aes(x=year, y=voteshare, color=party)) + geom_line()</code>, you want a separate small graph for each state, each with a red and a blue line. What should you add?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — facet_wrap makes a separate graph for each value of the column you give it, and arranges them in a grid. The column name goes inside vars(), much like mappings go inside aes()."><code>+ facet_wrap(vars(state))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — facet_wrap needs the column name inside vars(), similar to how you put columns inside aes(). Without it, R looks for an object called state outside the data, and gives the error: object 'state' not found."><code>+ facet_wrap(state)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this does draw a separate line for each state and party, but all in the same graph: eight lines in only two colors, with no way to tell the states apart. For a separate graph per state, use facet_wrap(vars(state))."><code>aes(x=year, y=voteshare, color=party, group=state)</code> instead of the current <code>aes()</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this gives each state its own color, but all lines are still in a single graph, and you lose the red and blue party colors. For a separate graph per state, use facet_wrap(vars(state))."><code>aes(x=year, y=voteshare, color=state)</code> instead of the current <code>aes()</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Where did the methane go?</div>
+<p class="quiz-question">These are some rows from <code>co2</code>, with the emissions of three greenhouse gases in China:</p>
+
+| country | year | ghg_type | value |
+|---|---:|---|---:|
+| China | 2020 | co2 | 10897 |
+| China | 2020 | methane | 1399 |
+| China | 2020 | nitrous_oxide | 455 |
+
+<p>What happens if you leave out <code>scales="free_y"</code> from the following code?</p>
+
+<pre><code>ggplot(co2, aes(x=year, y=value)) + geom_line() +
+  facet_grid(cols=vars(country), rows=vars(ghg_type), scales="free_y")</code></pre>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — by default, all facets share the same axes, which makes it easy to compare values between graphs. But here the CO2 values are much higher, so the methane and nitrous oxide lines are squeezed into the bottom of their graphs. With scales='free_y', each row gets its own vertical scale.">All graphs share the same y axis, so the methane and nitrous oxide lines look almost flat at the bottom.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — shared axes are the default for facets, so that you can easily compare values between graphs. Here that hides the variation in methane and nitrous oxide, which is why scales='free_y' is added.">Nothing changes: each graph always gets its own y axis based on its own data.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — ggplot doesn't know or check the units of your data. It will happily put all gases on the same axis, which squeezes the smaller values into the bottom of their graphs.">An error, because the gases are measured on different scales.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the scales argument only decides whether the facets share their axes. The graphs stay the same; without it, they all get the same y axis, which squeezes the smaller gases into the bottom of their graphs.">All gases are drawn in a single graph per country.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

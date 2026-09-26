@@ -75,7 +75,7 @@ This contains the total population,
 percentage White, percentage young (<30) and old (65), median household income and percentage college educated per state
 (except Alaska, strangely)
 
-## Scales: the link between values and aesthetics
+## Scales: the link between values and aesthetics {#sec-vis-scales}
 
 ```{webr}
 #| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4', 'usdot5', 'ustheme', 'ustheme2', 'ustheme3', 'plot_annotate']
@@ -132,7 +132,7 @@ and also work when printed greyscale: `scale_color_viridis_d()` (d for **d**iscr
 ::: {.callout-tip title="Aesthetics, Geoms and Scales"}
 In @sec-vis we introduced the *aesthetic mapping* created by the `aes()` function,
 and explained how it linked columns in your data (e.g. `year` or `party`) to
-aesthetic elements of the graph (such as the `x` position or `color` or a point or line).
+aesthetic elements of the graph (such as the `x` position or `color` of a point or line).
 In other words, it links values from your data to the geometrical elements that are drawn on the screen. 
 
 Scales can be seen as the bridge between the value and the aesthetic, and define how specific values are displayed.
@@ -147,7 +147,7 @@ All aesthetics can be set with scales; for example, `scale_linewidth_continuous`
 
 The arguments for the scale functions depend on the scale type used.
 For example, the manual scale had the `values=` argument, while a color gradient allows you to set `low=` and `high=` colors
-and a `scale_size_continuous` has a `range=` argument to specify the size of point to represent the smallest and lowest values.
+and a `scale_size_continuous` has a `range=` argument to specify the size of point to represent the smallest and largest values.
 :::
 
 ### Color gradients
@@ -338,11 +338,11 @@ You can see a number of applications in this example (admittedly, not all of the
 - In the y scale, we disable the guide meaning that the percentages are not displayed
 - We add a `guide_axis` to the x scale, setting the text angle to 45 degrees. 
 
-## Theming your plot
+## Theming your plot {#sec-vis-theming}
 
 The customizations in the previous section all changed the way data was visualized in the plot.
 With *theming*, we can control the other visual aspects of the plot such as 
-the backgroun color, font styles, grid lines etc. 
+the background color, font styles, grid lines etc. 
 
 As an example, let's spice up the first plot used above:
 
@@ -383,7 +383,7 @@ Subsequently, the `theme()` function further customizes the theme:
 This only shows a tiny fraction of the available theming options,
 but they all work similarly to these so you can just play around with it.
 The argument names are very systematic, so you can e.g. type `theme(panel.` and press control+space to get a list of available panel options. 
-For a complete list and explanation of available arguments, see the [documention for the theme function](https://www.rdocumentation.org/packages/ggplot2/versions/4.0.2/topics/theme)
+For a complete list and explanation of available arguments, see the [documentation for the theme function](https://www.rdocumentation.org/packages/ggplot2/versions/4.0.2/topics/theme)
 
 Please note that font rendering is highly device specific. 
 The above example used the `monospace` font family, which (probably) works in your browser because 
@@ -516,9 +516,9 @@ co2 |>
 As you can see, this places the four countries in the columns, 
 and places separate graphs in the rows for each of the greenhouse gas types.
 By specifying `scales="free_y"`, it allows the vertical scales to differ between the rows,
-avoiding methane and nitrous oxides being dwarved by the much higher co2 emissions. 
+avoiding methane and nitrous oxides being dwarfed by the much higher co2 emissions. 
 
-## Annotations
+## Annotations {#sec-vis-annotations}
 
 A central goal in making good graphs is to ensure that a graph should be self-explanatory:
 it should be understandable and interpretable without needing to read or understand the surrounding text. 
@@ -567,4 +567,24 @@ in the `scale_x`. This ensures every election receives a label on the x axis, se
 Let's bring together stacking, colors and annotations to recreate a figure from a real published article.
 
 {{< include exercises/_ch08_ex_bechdel_stacked.qmd >}}
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-vis-scales quiz: scales
+
+{{< include quizzes/_ch08_quiz_scales.qmd >}}
+
+### @sec-vis-theming quiz: theming your plot
+
+{{< include quizzes/_ch08_quiz_theming.qmd >}}
+
+### @sec-vis-facets quiz: facets
+
+{{< include quizzes/_ch08_quiz_facets.qmd >}}
+
+### @sec-vis-annotations quiz: annotations
+
+{{< include quizzes/_ch08_quiz_annotations.qmd >}}
 
