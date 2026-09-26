@@ -59,7 +59,7 @@ In particular we will use three data sets:
 We will be using smaller subsets of these data files that are redistributed along with this book.
 If you're curious, you can see the [data sets documentation](https://github.com/vanatteveldt/r4css/blob/main/data/README.md) which contains the R code used to download and preprocess the files. 
 
-## Pivotting data: wide vs long {#sec-pivot}
+## Pivoting data: wide vs long {#sec-pivot}
  
 Let's take a look at the temperature anomaly dataset:
 
@@ -149,7 +149,7 @@ temp_diff |>
 ::: {.challenge title="Why the `select` function?"}
 
 In the code example for `pivot_wider` above, we used a `select` to drop the confidence interval 
-variables before pivotting. Why do you think we do this?
+variables before pivoting. Why do you think we do this?
 
 Remove the `select` line and re-run the example. 
 Does the result make any sense? Why does it happen?
@@ -168,13 +168,14 @@ uniquely identifying the rows (here: `year`) and the names and values columns (`
 ### From wide to long data: `pivot_longer` {#sec-pivot-longers}
 
 As you might expect, `pivot_longer` is the opposite of pivot_wider,
-turning columns into rows. We can use it to 'undo' our earlier pivot_longer:
+turning columns into rows. We can use it to 'undo' our earlier `pivot_wider`:
 
 ```{webr}
 #| exercise: temp_pivot_longer
 pivot_longer(temp_diff, north:diff)
 ```
-As you can see from the result, changed the columns from `north` to `diff` into rows,
+
+As you can see from the result, we changed the columns from `north` to `diff` into rows,
 creating four rows for each year (the original three regions, and a new 'diff' row).
 
 Here is another example that achieves the same goal with different syntax:
@@ -188,7 +189,7 @@ temp_diff |>
 As you can see, rather than specifying the columns you want to pivot, 
 we here specify which columns to leave alone
 by using a *negative selection*: placing a minus before the column name(s). 
-We also explcitly specify the names for the new columns containing the *names* and *values*. 
+We also explicitly specify the names for the new columns containing the *names* and *values*. 
 
 Note that the new column names here need to be quoted (enclosed in `"` or `'`), 
 since they don't refer to an existing column or object. 
@@ -331,7 +332,7 @@ co2 |>
   theme(legend.position = "none")
 ```
 
-- This plot type is called a 'dumbbell' plot. Why? And how are the two geoms used to construct the plot? What do you think the `xend` aethetic is for?
+- This plot type is called a 'dumbbell' plot. Why? And how are the two geoms used to construct the plot? What do you think the `xend` aesthetic is for?
 - What do you think the `left_join` above does?
 - Why do we need to use both the new `change_in_emissions` and the older `co2` data sets?
 - The 1990 and 2020 data are in separate columns, i.e. a wide format. We earlier said that ggplot generally needs a long format. 
@@ -342,7 +343,7 @@ co2 |>
 
 
 
-## Joining multiple data sets using `*_join`
+## Joining multiple data sets using `*_join` {#sec-join}
 
 
 The plot above used `left_join` to combine two data sets: 
@@ -543,7 +544,7 @@ from both data sets.
 One final tip: when running joins in R studio, keep an eye on the number of rows in the original and combined data sets
 in the environment pane. If the combined data has a different row count than expected, 
 this is a good indicator that data is missing or coded differently: perhaps both data sets have a 'country' column,
-but the first data set would writes `United States` while the second uses `USA`. 
+but the first data set writes `United States` while the second uses `USA`. 
 In that case, an `inner_join` would silently drop the US from the result,
 leading to a lower row count than expected. 
 :::
@@ -666,7 +667,7 @@ More commonly, many to many joins happen by mistake: either because the join col
 are not correctly specified (as is arguably the case in the example above),
 or because a dataset had unexpected duplicate key values.
 For this reason, R outputs a warning: `Detected an unexpected many-to-many relationship`,
-which you can supress by explicitly setting `relationship = "many-to-many"` in the join
+which you can suppress by explicitly setting `relationship = "many-to-many"` in the join
 to indicate that the many to many join is intentional. 
 
 
@@ -693,7 +694,7 @@ As you can see, this lists 12 countries for which we don't have income data.
 but Venezuela is harder to understand. It turns out that the World Bank suspended the classification
 of Venezuela between 2020 and 2024 before re-classifying it as a lower middle income country. 
 Such use of `anti_join` can be quite useful to prevent mistakes or understand strange outcomes,
-as ommitting a large emitter like Venezuela because we picked 2020 as the classification year
+as omitting a large emitter like Venezuela because we picked 2020 as the classification year
 is probably not what we intended!
 
 
@@ -751,3 +752,15 @@ temp_and_co2 |>
 
 (Note the use of `pivot_longer` to get both series into one column so they can share a single `color` aesthetic,
 and `mutate` within each `group` to rescale both series to the same starting index, so they're comparable despite having very different units and magnitudes)
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-pivot quiz: pivoting between wide and long data
+
+{{< include quizzes/_ch07_quiz_pivot.qmd >}}
+
+### @sec-join quiz: joining multiple data sets
+
+{{< include quizzes/_ch07_quiz_join.qmd >}}

@@ -15,6 +15,8 @@ One exception: you are free to correct typos. Please just fix them, and note whe
 
 This applies to content files. Tooling/config (CLAUDE.md itself, `.claude/`, build scripts, `_quarto.yml`) follows normal rules — ask if unsure.
 
+When you do edit files, use the `Edit`/`Write` tools, not Bash (`sed -i`, `python3 - <<EOF`, etc.): Edit gives the author a reviewable diff, and complex Bash commands (heredocs, `cd …;` compounds) trigger permission prompts even inside the sandbox. If a script is genuinely easier, write it to `$TMPDIR` and run it as a single plain command.
+
 ## Didactic principles — read CONTRIBUTING.md before reviewing
 
 Before reviewing any chapter or exercise, read [CONTRIBUTING.md](CONTRIBUTING.md). It documents the deliberate didactic choices that shape the book — things that look like style quirks are usually intentional. Highlights:

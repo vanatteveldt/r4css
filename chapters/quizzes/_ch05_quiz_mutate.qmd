@@ -1,0 +1,52 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Where did my column go?</div>
+<p class="quiz-question">A student has this data frame <code>films</code>:</p>
+
+| title | budget | domestic_gross | foreign_gross |
+|---|---:|---:|---:|
+| Frozen | 150000000 | 400738009 | 876300000 |
+| Gravity | 100000000 | 274092705 | 442981000 |
+
+<p>They run <code>mutate(films, gross = domestic_gross + foreign_gross)</code>, see the new <code>gross</code> column printed, and then run <code>head(films)</code>. But there is no <code>gross</code> column in the output. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — mutate never changes the data frame you give it; it returns a new, changed copy. If you don't assign that copy to a name (films &lt;- mutate(films, ...)), it is printed and then forgotten, and films stays as it was.">The result of <code>mutate</code> was printed but not stored: they need <code>films &lt;- mutate(films, ...)</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — mutate can create new columns just as well as change existing ones: if the name you assign to doesn't exist yet, a new column is added. The problem is that the result was never stored.">A <code>mutate</code> can only change existing columns; to add a new column you need a different function.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — inside mutate you write column names without quotes, both for the new column (gross = ...) and for the columns in the calculation. The column was computed fine; it just wasn't stored.">The new column name should be quoted: <code>"gross" = domestic_gross + foreign_gross</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — head() only shows the first six rows, but it shows all columns (as far as they fit on the screen). The gross column is missing because the result of mutate was never stored in films."><code>head()</code> only shows the columns that were in the original data.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Reusing a name</div>
+<p class="quiz-question">Given the same <code>films</code> data as above, what does <code>films &lt;- mutate(films, budget = round(budget / 1000000, 1))</code> do?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — because budget already exists, assigning to that name overwrites the column. Afterwards the budget column contains 150 and 100 (millions of dollars), and the original values in dollars are gone from films.">It replaces the values in the existing <code>budget</code> column with the budget in millions (150 and 100).</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a data frame can't have two columns with the same name. Assigning to an existing name overwrites that column instead of adding a new one.">It adds a second <code>budget</code> column next to the original one, so you can compare them.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — overwriting an existing column is perfectly allowed, and quite common (e.g. to change units or round values). R won't stop you, so it's up to you to decide whether you still need the original values.">It gives an error, because <code>budget</code> already exists.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the name on the left of the = is the column name; the calculation on the right is only used to compute its values. So the result goes into the column called budget.">It adds a new column called <code>round(budget / 1000000, 1)</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Building on a new column</div>
+<p class="quiz-question">Given this data frame <code>films</code> (amounts in millions of dollars):</p>
+
+| title | budget | domestic_gross | foreign_gross |
+|---|---:|---:|---:|
+| Little Women | 40 | 120 | 80 |
+
+<p>What is the value of <code>roi</code> after running this code?</p>
+
+<pre><code>mutate(films,
+  gross = domestic_gross + foreign_gross,
+  roi = gross / budget)</code></pre>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — within a single mutate, each calculation can use the columns created by the lines above it. So gross is first computed as 120 + 80 = 200, and roi then becomes 200 / 40 = 5."><code>5</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — within a single mutate, the calculations are done in order, and each one can use the columns created before it. So gross already exists by the time roi is computed.">An error <code>object 'gross' not found</code>, because <code>gross</code> only exists after the <code>mutate</code> has finished.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that would be domestic_gross / budget (120 / 40). But roi is computed from gross, which is the sum of domestic and foreign gross (200)."><code>3</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — R doesn't silently give NA for a column that is computed earlier in the same mutate: the calculations are done in order, so gross is available when roi is computed."><code>NA</code>, because <code>gross</code> doesn't have a value yet when <code>roi</code> is computed.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

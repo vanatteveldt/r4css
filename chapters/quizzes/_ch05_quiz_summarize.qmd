@@ -1,0 +1,100 @@
+<div class="quiz">
+<div class="quiz-title">Q1: The shape of a summary</div>
+<p class="quiz-question">Given this data frame <code>survey</code> with trust in parliament (0-10):</p>
+
+| respondent | country | trust |
+|---|---|---:|
+| 1 | Netherlands | 6 |
+| 2 | Netherlands | 4 |
+| 3 | Hungary | 3 |
+| 4 | Hungary | 5 |
+| 5 | Hungary | 4 |
+
+<p>What is the result of <code>survey |> group_by(country) |> summarize(mean_trust = mean(trust))</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — summarize creates one row per group, and keeps only the grouping column(s) and the summary columns you ask for. The respondent and trust columns are gone, because they don't have a single value per country.">Two rows, with only the columns <code>country</code> and <code>mean_trust</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this is what group_by |> mutate would give you: it adds the group mean to every row. summarize instead reduces each group to a single row.">Five rows, with a new column <code>mean_trust</code> that repeats the country mean (5 or 4) on every row.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that would be the result without group_by. Because the data is grouped by country, summarize computes a separate mean for each country.">One row, with the overall mean trust (4.4).</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — summarize keeps only the grouping columns and the summary columns. A column like respondent has several values per country, so it can't be kept in a one-row-per-country result.">Two rows, with the columns <code>respondent</code>, <code>country</code>, <code>trust</code>, and <code>mean_trust</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Compared to their compatriots</div>
+<p class="quiz-question">Using the same <code>survey</code> data, you want to know for each respondent how much their trust differs from the average in their own country. So respondent 1 should get <code>1</code> (6 minus the Dutch mean of 5), and respondent 3 should get <code>-1</code> (3 minus the Hungarian mean of 4). Which code does that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — group_by followed by mutate keeps all rows, but computes summary functions like mean() within each group. So each respondent's trust is compared to the mean of their own country."><code>survey |> group_by(country) |></code><br/><code>  mutate(diff = trust - mean(trust))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — without group_by, mean(trust) is computed over the whole data set (4.4), so you compare each respondent to the overall mean rather than to their own country."><code>survey |> mutate(diff = trust - mean(trust))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — after summarize, there is one row per country and the trust column is gone, so there is nothing left to compare to the mean (and you'd get an error that trust is not found)."><code>survey |> group_by(country) |></code><br/><code>  summarize(mean_trust = mean(trust)) |></code><br/><code>  mutate(diff = trust - mean_trust)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — grouping by respondent makes every respondent their own group of one row. The mean of a single value is that value itself, so diff would be 0 for everyone."><code>survey |> group_by(respondent) |></code><br/><code>  mutate(diff = trust - mean(trust))</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: From steps to a pipeline</div>
+<p class="quiz-question">Given the <code>bechdel</code> data with a computed <code>passed</code> column:</p>
+
+| title | year | passed |
+|---|---:|---|
+| 21 & Over | 2013 | not passed |
+| Dredd 3D | 2012 | passed |
+| 12 Years a Slave | 2013 | not passed |
+
+<p>Your classmate used this code to compute the number of films per <code>passed</code> status:</p>
+
+<pre><code>bechdel_grouped &lt;- group_by(bechdel, passed)
+bechdel_counts &lt;- summarize(bechdel_grouped, n = n())</code></pre>
+<p>How can you rewrite this as a single pipeline?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the pipe puts the result of the step on its left into the first argument of the function on its right. So bechdel goes into group_by, and the grouped result goes straight into summarize, without needing the intermediate bechdel_grouped object."><code>bechdel_counts &lt;- bechdel |><br/>  group_by(passed) |><br/>  summarize(n = n())</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the steps are in the wrong order: this first summarizes the whole data set into a single row, and only then groups it. The pipeline runs from top to bottom, so group_by has to come first, just like in your classmate's code."><code>bechdel_counts &lt;- bechdel |><br/>  summarize(n = n()) |><br/>  group_by(passed)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — n() doesn't take any arguments: it simply counts the rows in each group. Writing n(passed) gives an error about an unused argument."><code>bechdel_counts &lt;- bechdel |><br/>  group_by(passed) |><br/>  summarize(n = n(passed))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a pipeline has to start with the data. Here group_by(passed) gets no data frame, so it gives an error: R doesn't know what 'passed' refers to."><code>bechdel_counts &lt;- group_by(passed) |><br/>  summarize(bechdel, n = n())</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Mean or median?</div>
+<p class="quiz-question">Suppose these are the returns on investment (<code>roi</code>) of five films that pass the Bechdel test:</p>
+
+| title | roi |
+|---|---:|
+| Film A | 0.5 |
+| Film B | 1.1 |
+| Film C | 1.3 |
+| Film D | 1.4 |
+| Film E | 40.0 |
+
+<p>The mean ROI is 8.86, and the median is 1.3. Why does the chapter switch from <code>mean</code> to <code>median</code> when comparing films?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a single exceptional success (Film E) pulls the mean far above what any of the other films earned. The median is the middle value when sorted, so it describes a typical film and is hardly affected by such outliers.">A single extreme hit pulls the mean far up; the median (1.3) is much closer to what a typical film earns.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — mean has exactly the same na.rm= option as median. Missing values are a separate issue; the reason to switch is that the mean is very sensitive to outliers like Film E.">The <code>mean</code> function can't deal with missing values, while <code>median</code> can.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both mean and median are summary functions that give one value per group, so both work fine in summarize. The choice between them is substantive, not technical.">Only <code>median</code> can be used inside <code>summarize</code>; <code>mean</code> only works in <code>mutate</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — Film E is not an error in the data: films that earn many times their budget really exist. It is an outlier, though, and the mean is very sensitive to outliers, while the median is not.">Film E must be an error in the data, and <code>median</code> automatically removes such errors.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: The biggest hit per decade</div>
+<p class="quiz-question">Given this data frame <code>films</code> (gross in millions of dollars):</p>
+
+| title | decade | gross |
+|---|---:|---:|
+| Star Wars | 1970 | 775 |
+| Jaws | 1970 | 470 |
+| Titanic | 1990 | 2187 |
+| Jurassic Park | 1990 | 1029 |
+
+<p>A student wants the highest grossing film of each decade, but forgets the <code>group_by</code> and runs <code>films |> slice_max(order_by = gross, n = 1)</code>. What is the result?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — without group_by, the whole data frame is a single group, so slice_max takes the one row with the highest gross overall. With group_by(decade) first, it would take the top row within each decade (Star Wars and Titanic).">Only one row: <em>Titanic</em>, the highest grossing film overall.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — slice_max doesn't know that decade is meant to define groups just because it's a column in the data. Only group_by tells it to take a slice per group; without it, you get the top row overall.">Two rows: <em>Star Wars</em> and <em>Titanic</em>, because the data has a <code>decade</code> column.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — slice_max works fine on ungrouped data: it then treats the whole data frame as a single group.">An error, because <code>slice_max</code> needs grouped data.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that's what arrange(desc(gross)) would do. slice_max keeps only the top n rows (here n = 1), so it removes all other rows.">All four rows, sorted from highest to lowest gross.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

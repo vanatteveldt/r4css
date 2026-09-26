@@ -1,0 +1,56 @@
+<div class="quiz">
+<div class="quiz-title">Q1: There and back again</div>
+<p class="quiz-question">Given this excerpt of the <code>counties</code> data, where <code>fips</code> is a character column:</p>
+
+| fips | state | county |
+|---|---|---|
+| 01001 | Alabama | Autauga |
+| 01003 | Alabama | Baldwin |
+
+<p>What is the value of <code>fips</code> for Autauga after running <code>counties |> mutate(fips = as.numeric(fips)) |> mutate(fips = as.character(fips))</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — as a number, 01001 is simply 1001, so the leading zero is lost as soon as you convert to numeric. Converting back to character gives the text '1001'. To get the zero back, you need str_pad(fips, width=5, pad='0')."><code>"1001"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — R doesn't remember what the text looked like before the conversion. Once fips is a number, 01001 and 1001 are the same value, so the leading zero is gone for good."><code>"01001"</code>, because converting back to character restores the original text.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — as.numeric only gives NA for texts that can't be read as a number, like 'Alabama'. '01001' is a perfectly valid number (1001)."><code>NA</code>, because <code>"01001"</code> can't be converted to a number.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — as.character turns the number 1001 into the text '1001'; it doesn't change the value into scientific notation or anything else."><code>"1.001e3"</code>, because R stores numbers in scientific notation.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Percentages for a table</div>
+<p class="quiz-question">For a report, you want to show the <code>nonwhite_pct</code> of each county as text with exactly two decimals and a percent sign, like <code>"29.38%"</code>:</p>
+
+| county | nonwhite_pct |
+|---|---:|
+| Autauga | 29.377616894923854 |
+| Baldwin | 19.257132908753015 |
+
+<p>Which call gives you that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — number() from the scales package rounds to the given accuracy (.01 means two decimals), always shows that many decimals, and adds the suffix. The result is a text column that is ready for a table."><code>number(nonwhite_pct, accuracy=.01, suffix="%")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the digits argument of format sets the number of significant digits, not the number of decimals. So you'd get something like 29 or 29.4 rather than 29.38, and no percent sign."><code>format(nonwhite_pct, digits=2)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — round gives you two decimals, but the result is still a number: there is no way to add a percent sign, and a value like 19.30 would be shown as 19.3."><code>round(nonwhite_pct, 2)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — as.character turns the number into text as it is stored internally, with all its (way too many) decimals, and without a percent sign."><code>as.character(nonwhite_pct)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Numbers that aren't numbers</div>
+<p class="quiz-question">A student reads a CSV file with election results, and gets this data frame:</p>
+
+| municipality | turnout | votes |
+|---|---:|---:|
+| Amsterdam | 78.3 | "412 345" |
+| Utrecht | 83.1 | "226 981" |
+
+<p>Because of the spaces in the numbers, <code>votes</code> was read as a character column (<code>&lt;chr&gt;</code>). What happens if they run <code>mutate(results, votes_k = votes / 1000)</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — you can only do calculations with numeric columns, and R won't guess that a text should be treated as a number. You first need to turn votes into a proper number (and in this case remove the spaces first, since as.numeric would give NA for '412 345').">An error (<code>non-numeric argument to binary operator</code>), because you can't divide a text by a number.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — R doesn't automatically convert texts to numbers when calculating. Dividing a character column by a number gives an error.">It works: R automatically converts the texts to numbers, giving <code>412.345</code> and <code>226.981</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that is what as.numeric('412 345') would give you, since the space makes it an invalid number. But a calculation directly on a character column doesn't even get that far: it gives an error.">It gives <code>NA</code> for both rows, because the texts contain spaces.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — mutate doesn't skip calculations that fail; the error stops the whole command, and nothing is added.">The calculation is skipped, and <code>votes_k</code> is simply not created.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

@@ -1,0 +1,79 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Morning or evening?</div>
+<p class="quiz-question">Given these Bluesky posts (times in Brazilian time):</p>
+
+| created_at | text |
+|---|---|
+| 2024-10-05 09:12:44 | Amanhã é dia de votar! |
+| 2024-10-06 21:03:10 | Resultados saindo... |
+| 2024-10-07 09:40:02 | Segundo turno em SP |
+
+<p>You want to know whether people post more in the morning or in the evening, pooling all days together. Which column should you group on?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — hour() extracts just the hour (9, 21, 9), regardless of the date. So both posts at nine in the morning end up in the same group, even though they were posted on different days."><code>hour(created_at)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — floor_date keeps the date: it rounds down to the start of the hour on that particular day (2024-10-05 09:00, 2024-10-07 09:00, ...). That's what you want for an hourly timeline, but here the two morning posts would end up in different groups."><code>floor_date(created_at, unit="hour")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — wday() gives the day of the week (Sat, Sun, Mon), so you'd compare days rather than times of day."><code>wday(created_at, label=TRUE)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — date() strips off the time part, which is exactly the information you need here. You'd get the number of posts per day instead."><code>date(created_at)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Rounding down a date</div>
+<p class="quiz-question">The first round of the 2024 Brazilian municipal elections was held on October 6. What does <code>floor_date(as.Date("2024-10-06"), unit="month")</code> return?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — floor_date rounds a date down to the start of the period: the first day of that particular month. Because it still includes the year, October 2024 and October 2025 stay separate groups."><code>2024-10-01</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that's what month() would return: it extracts just the month number. floor_date gives a full date, namely the first day of the month."><code>10</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — floor_date rounds down, to the start of the month, not up to its end."><code>2024-10-31</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — floor_date returns a date, not a name. If you want the month name, use month(x, label=TRUE) or format(x, format='%B')."><code>"October"</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: A Brazilian timestamp</div>
+<p class="quiz-question">You scraped a Brazilian news site that gives the time of each article in the usual Brazilian notation (day/month/year):</p>
+
+| headline | published |
+|---|---|
+| Boulos e Nunes vão ao segundo turno | 06/10/2024 21:15 |
+
+<p>Which function correctly turns <code>published</code> into a timestamp for 6 October 2024, 21:15?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the name of the parsing function gives the order of the fields: d(ay), m(onth), y(ear), and then h(our) and m(inute). The text is day/month/year hour:minute, so dmy_hm is the one to use."><code>dmy_hm(published)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — mdy_hm reads the first number as the month, so it would parse this as June 10 instead of October 6. Since both 06 and 10 are valid months, you wouldn't even get an error — which is what makes this mistake so dangerous."><code>mdy_hm(published)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — ymd_hms expects year-month-day and hours, minutes and seconds, but the text starts with the day and has no seconds. Worse, it doesn't give an error: it squeezes the numbers into the pattern it expects and quietly returns a completely wrong timestamp (21 October 2006)."><code>ymd_hms(published)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — by default, as.Date expects the year to come first (like 2024-10-06), so it won't read this date correctly, and it would drop the time part anyway. The lubridate functions like dmy_hm let you say which order the fields are in."><code>as.Date(published)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: The wrong time zone</div>
+<p class="quiz-question">You have an online survey where the start time of each response was recorded in Dutch local time, but without a time zone. When you read it, R assumes it's UTC:</p>
+
+| respondent | started |
+|---:|---|
+| 1 | 2024-03-01 09:00:00 UTC |
+
+<p>The respondent actually started at 9:00 in the morning, Amsterdam time. How do you fix the <code>started</code> column?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — force_tz keeps the clock time (09:00) but tells R it is in a different time zone than it thought. That's what you need when the time zone of the data was wrong to begin with. The result is 09:00 Amsterdam time, which is 08:00 UTC."><code>force_tz(started, "Europe/Amsterdam")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — with_tz keeps the moment in time and only shows it in a different time zone, so 09:00 UTC becomes 10:00 Amsterdam time. That's the right tool if the time zone was correct (like the UTC timestamps of the Bluesky posts), but here the moment itself is wrong."><code>with_tz(started, "Europe/Amsterdam")</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this would only change how the time is displayed as text; R would still think the respondent started at 09:00 UTC. Calculations like the hour in Dutch time would still be off by one hour."><code>format(started, format="%H:%M")</code>, so the time zone is no longer shown.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — if you only look at the clock time it seems fine, but R thinks this is 09:00 UTC. As soon as you combine it with other data, or convert it to another time zone, you'll be an hour off.">Nothing: it says 09:00, which is the correct time.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: A readable date</div>
+<p class="quiz-question">Given a post with <code>created_at</code> equal to <code>2024-10-06 18:42:03</code>, what does <code>format(created_at, format="%d %B %Y")</code> return (on a computer with English language settings)?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — %d is the day of the month, %B the full month name, and %Y the four-digit year. The spaces between the placeholders are copied literally."><code>"06 October 2024"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — %m would give the month number (10), but %B gives the full month name (October)."><code>"06 10 2024"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the output follows the order of the placeholders in the format string, which starts with %d (the day), not the month."><code>"October 06 2024"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — %d is the day of the month (06); the weekday name would be %A. And %B is the month name, which is missing here."><code>"Sunday 06 2024"</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

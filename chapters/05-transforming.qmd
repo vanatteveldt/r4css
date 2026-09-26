@@ -150,7 +150,7 @@ head(bechdel_recoded)
 Three things to note here. First, we assign the result of the mutate to a new object, `bechdel_recoded`,
 which means that this is a new copy of the data and the original `bechdel` will also still be available.
 Second, we added an extra `digits=1` option to the round function.
-Lastly, note also that the second line computes `gross`, and the third line than
+Lastly, note also that the second line computes `gross`, and the third line then
 modifies this newly computed value.
 In general, you can use the result of previous calculations directly within the same mutate function.
 
@@ -188,7 +188,7 @@ So far we've used mutate to calculate new values from old ones. Its other major 
 
 ### Recoding into two options with `if_else`
 
-The `if_else` function checks a condition for each row, and chooses one value if it's true, or an alternative value if it's false. For example, we can check whether the gross income of a film was higher than it's budget, and designate that it made a *profit* if so, and a *loss* otherwise:
+The `if_else` function checks a condition for each row, and chooses one value if it's true, or an alternative value if it's false. For example, we can check whether the gross income of a film was higher than its budget, and designate that it made a *profit* if so, and a *loss* otherwise:
 
 ```{webr}
 #| setup: true
@@ -415,7 +415,7 @@ For example, what is the average `roi` for films that pass the Bechdel test comp
 
 ### Summarizing data with `group_by` and `summarize`
 
-Using the functions `group_by()` and `summarize()` we can anwer this question quite directly:
+Using the functions `group_by()` and `summarize()` we can answer this question quite directly:
 
 ```{webr}
 #| exercise: ['demo_summarize','demo_summarize_piped']
@@ -722,7 +722,7 @@ library(scales)
 mutate(counties, nonwhite_pct = number(nonwhite_pct, accuracy=.01, suffix="%"))
 ```
 
-## Working with Dates and Times
+## Working with Dates and Times {#sec-datetime}
 
 Many data sets in social science research have a temporal dimension:
 (social) media coverage of a campaign or issue changing over time; 
@@ -857,7 +857,7 @@ Alternatively, there is a related pair of functions, `epiweek` and `epiyear`, wh
 ### Parsing and formatting dates
 
 In the example above, the timestamps were automatically recognized as such and parsed by R,
-either implicly (e.g. when reading data in `read_csv`) or explictly (e.g. in `as.Date("2024-01-01")`)
+either implicitly (e.g. when reading data in `read_csv`) or explicitly (e.g. in `as.Date("2024-01-01")`)
 The reason for this is that they were all given in the unambiguous ISO standard notation:
 `"2024-04-17"` for a simple date, or `"2024-12-16T18:42:03Z"` for a timestamp.
 In general, this is the preferred format for dates and times: 
@@ -995,7 +995,7 @@ R will automatically parse and format dates using the right month or day names.
 However, if you are for example producing an English language report on a French-language computer,
 you will probably prefer English names for the months. 
 You can change the language settings in R using the `Sys.setlocale` command, 
-which takes a locale identifier consisting (of the language, region, and encoding.
+which takes a locale identifier consisting of the language, region, and encoding.
 For example, `Sys.setlocale("LC_TIME", "nl_NL.UTF-8")` will set the date and time handling to Dutch,
 while `Sys.setlocale("LC_TIME", "en_US.UTF-8")` will set it to US English.
 Note that this setting will affect all subsequent R commands in this session,
@@ -1021,3 +1021,27 @@ including e.g. French and Swahili but also globally less relevant languages like
 ### Exercise: Hourly posts on election day
 
 {{< include exercises/_ch05_ex_daily_posts.qmd >}}
+
+## Quiz questions
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-mutate quiz: changing or computing values with `mutate`
+
+{{< include quizzes/_ch05_quiz_mutate.qmd >}}
+
+### @sec-recoding quiz: recoding values
+
+{{< include quizzes/_ch05_quiz_recoding.qmd >}}
+
+### @sec-summarize quiz: grouping and summarizing data
+
+{{< include quizzes/_ch05_quiz_summarize.qmd >}}
+
+### @sec-column-types quiz: column types
+
+{{< include quizzes/_ch05_quiz_columntypes.qmd >}}
+
+### @sec-datetime quiz: working with dates and times
+
+{{< include quizzes/_ch05_quiz_datetime.qmd >}}

@@ -1,5 +1,6 @@
 <div class="quiz">
-<p class="quiz-question"><strong>Q1.</strong> You have this small data frame of posts:</p>
+<div class="quiz-title">Q1: Keeping only matching posts</div>
+<p class="quiz-question">You have this small data frame of posts:</p>
 
 | id | text |
 |---:|---|
@@ -18,7 +19,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q2.</strong> Using the same posts data frame as Q1, what does <code>posts |> filter(str_detect(text, "Trump"))</code> return?</p>
+<div class="quiz-title">Q2: Which posts match?</div>
+<p class="quiz-question">Using the same posts data frame as Q1, what does <code>posts |> filter(str_detect(text, "Trump"))</code> return?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — str_detect() matches the literal sequence of characters T-r-u-m-p by default, so it's case-sensitive: only the row with id 1 matches exactly 'Trump'. Rows 2 ('trump') and 3 ('TRUMP') are skipped.">Only the row with id 1.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() is case-sensitive by default, so lowercase 'trump' (id 2) and uppercase 'TRUMP' (id 3) do not match the pattern 'Trump'.">All three rows (id 1, 2 and 3).</li>
@@ -29,7 +31,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q3.</strong> You want to count words per post by counting spaces with <code>str_count(text, " ")</code>. Why does the chapter first apply <code>str_squish()</code> rather than <code>str_trim()</code> before counting?</p>
+<div class="quiz-title">Q3: Counting words</div>
+<p class="quiz-question">You want to count words per post by counting spaces with <code>str_count(text, " ")</code>. Why does the chapter first apply <code>str_squish()</code> rather than <code>str_trim()</code> before counting?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — str_trim() only removes whitespace at the very start and end of the string. Text with a double space or a stray newline in the middle would still inflate the space count. str_squish() also collapses every internal run of whitespace to a single space, so the count is a much better approximation of word count."><code>str_trim()</code> only removes whitespace at the start and end of the text, so extra spaces or line breaks in the middle of a post would still be counted; <code>str_squish()</code> collapses those too.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — str_trim() does not touch punctuation at all, it only deals with whitespace."><code>str_trim()</code> removes punctuation as well as whitespace, which would throw off the count.</li>
@@ -40,7 +43,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q4.</strong> A student runs <code>posts |> filter(str_detect(str_to_lower(text), "trump"))</code> hoping to find posts about Donald Trump, but one result turns out to be a post about a school's trumpet section. What's the best explanation?</p>
+<div class="quiz-title">Q4: An unexpected match</div>
+<p class="quiz-question">A student runs <code>posts |> filter(str_detect(str_to_lower(text), "trump"))</code> hoping to find posts about Donald Trump, but one result turns out to be a post about a school's trumpet section. What's the best explanation?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — stringr works on sequences of characters, not words. 'trumpet' contains the exact character sequence t-r-u-m-p, so it matches the pattern just as much as 'trump' does. stringr has no concept of word boundaries unless you explicitly ask for one."><code>str_detect()</code> matches sequences of characters, not whole words - "trumpet" contains the letters t-r-u-m-p, so it matches too.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — the student did lowercase the text with str_to_lower() first, so casing isn't the issue here.">The student forgot to lowercase the text, so casing differences caused the false match.</li>

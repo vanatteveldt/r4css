@@ -1,0 +1,92 @@
+<div class="quiz">
+<div class="quiz-title">Q1: <code>pivot_wider</code> or <code>pivot_longer</code>?</div>
+<p class="quiz-question">You have panel survey data on how much respondents trust parliament (0-10), measured in two waves:</p>
+
+| respondent | wave | trust |
+|---:|---:|---:|
+| 1 | 2018 | 6 |
+| 1 | 2022 | 4 |
+| 2 | 2018 | 7 |
+| 2 | 2022 | 7 |
+
+<p>You want to compute how much each respondent's trust changed between the waves, so you need one row per respondent, with a separate column for each wave. Which call gives you that?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the column names of the new data come from the values of 'wave' (names_from=wave), and the cells are filled with the 'trust' values (values_from=trust). The remaining column, respondent, identifies the rows, so you get one row per respondent."><code>pivot_wider(panel, names_from=wave, values_from=trust)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this swaps the two arguments: it would create a new column for every distinct trust score (6, 4, 7), filled with wave years. The new column names should come from the wave, the values from trust."><code>pivot_wider(panel, names_from=trust, values_from=wave)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this would create a column per respondent ('1', '2') with one row per wave. That is also a wide format, but not the one you asked for: you wanted one row per respondent."><code>pivot_wider(panel, names_from=respondent, values_from=trust)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the data is already long (one row per respondent-wave combination), and you want to make it wider, not longer. Also, pivot_longer doesn't have names_from/values_from arguments; it uses names_to/values_to."><code>pivot_longer(panel, names_from=wave, values_from=trust)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Before you pivot</div>
+<p class="quiz-question">This data frame <code>trust</code> gives the average trust in parliament per country in two survey rounds, plus the number of respondents <code>n</code> in each round:</p>
+
+| country | wave | trust | n |
+|---|---:|---:|---:|
+| Netherlands | 2018 | 5.6 | 1673 |
+| Netherlands | 2022 | 5.1 | 1435 |
+| Hungary | 2018 | 4.3 | 1661 |
+| Hungary | 2022 | 3.9 | 2118 |
+
+<p>You want a data frame with one row per country, and the trust scores for 2018 and 2022 in separate columns. What do you need to do before running <code>pivot_wider(names_from=wave, values_from=trust)</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — every column that is not used as names_from or values_from is treated as identifying the rows. If n is still there, and since n differs per wave, the two rows for each country are not merged: you get four rows, each with NA in one of the wave columns. So before pivoting wider, select only the key column(s) and the single value column you want to pivot.">Drop the <code>n</code> column, e.g. with <code>select(country, wave, trust)</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — there is an 'n' column that varies for each row. In pivot_wider, every column that is not used as names_from or values_from is treated as identifying the rows. Since n is different in each wave, the rows for the same country won't be merged, and you get four rows instead of two.">Nothing: you can immediately run <code>pivot_wider</code> </li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — pivot_wider doesn't use grouping to decide what a row is; it uses all columns other than names_from and values_from. With n still in the data, grouping by country doesn't prevent the four-row result.">Group the data by country with <code>group_by(country)</code>, so <code>pivot_wider</code> knows it should create one row per country.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the order of the rows doesn't matter to pivot_wider; it matches rows on the values of the identifying columns, wherever they are. The problem is that n is one of those identifying columns.">Sort the data with <code>arrange(country)</code>, so that the rows for the same country are next to each other.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: One line per gas</div>
+<p class="quiz-question">You have emissions data with one column per greenhouse gas:</p>
+
+| country | year | co2 | methane | nitrous_oxide |
+|---|---:|---:|---:|---:|
+| Brazil | 2019 | 477 | 529 | 175 |
+| Brazil | 2020 | 448 | 536 | 184 |
+| ... | ... | ... | ... | ... |
+
+<p>You want to make a line plot with one colored line per gas, using <code>aes(x=year, y=value, color=gas)</code>. What do you need to do first?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — ggplot can only map a column to color, and the gas type is currently spread over three column names. pivot_longer turns those column names into values of a new 'gas' column, with the numbers in a 'value' column (the default name), so there is one row per country, year and gas."><code>pivot_longer(co2:nitrous_oxide, names_to="gas")</code>, so the gas names become values in a new <code>gas</code> column.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — there is no 'gas' column yet to take the names from; the gas types are currently the column names. And pivot_wider would make the data even wider, while ggplot needs it longer here."><code>pivot_wider(names_from=gas, values_from=value)</code>, so each gas gets its own column.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — group_by doesn't change the shape of the data; it only affects how later summarize or mutate calls are computed. You would still have no 'gas' column to map to color."><code>group_by(co2, methane, nitrous_oxide)</code>, so ggplot knows these are three groups.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — nothing is wrong with the data itself; the problem is its shape. Wide data like this is perfect for calculations between the gases (e.g. co2 / methane), but ggplot needs the gas type in a single column to map it to color.">Nothing: ggplot automatically draws one line per numeric column when you use <code>color=gas</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: An error in <code>pivot_longer</code></div>
+<p class="quiz-question">Given this data frame <code>hemispheres</code> with temperature anomalies:</p>
+
+| year | north | south |
+|---:|---:|---:|
+| 2020 | 1.26 | 0.62 |
+| 2021 | 1.09 | 0.55 |
+
+<p>A student runs <code>pivot_longer(hemispheres, -year, names_to=region, values_to=anomaly)</code> and gets the error <code>object 'region' not found</code>. What is the problem?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — 'region' and 'anomaly' are names for columns that don't exist yet, so R can't look them up. Unquoted, R tries to find an existing column or object called region and fails. Writing names_to='region', values_to='anomaly' (with quotes) fixes it.">The new column names <code>region</code> and <code>anomaly</code> don't exist yet, so they need to be quoted: <code>names_to="region"</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — negative selection is fine in pivot_longer: -year means 'pivot all columns except year', which here is north and south."><code>-year</code> is not allowed: you have to list the columns to pivot, e.g. <code>north:south</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — names_from and values_from belong to pivot_wider, where they refer to existing columns. pivot_longer creates new columns, so it uses names_to and values_to.">It should be <code>names_from</code> and <code>values_from</code> instead of <code>names_to</code> and <code>values_to</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — you can pick any name you want with values_to; 'value' is just the default if you don't specify it. The problem is how the names are written, not which names are chosen.">The values column must always be called <code>value</code>; you can't choose a different name.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: Wide, long, or tidy?</div>
+<p class="quiz-question">Which of these statements about long and wide data is <em>false</em>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right, this one is false — whether data is 'tidy' depends on what you consider the unit of observation, which depends on your question. To compute the north-south difference, a year is the unit and wide data is tidy; to plot a line per region, a year-region combination is the unit and long data is tidy. That's why switching back and forth is so common.">For every data set there is one correct, tidy shape, and once your data has that shape you should never need to pivot it again.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — with the measurements side by side in the same row, you can simply write mutate(diff = north - south). In long data, the two values are in different rows.">To calculate the difference between two measurements of the same case (like north minus south in the same year), it is easiest to have them in separate columns.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — an aesthetic like color or fill is mapped to a single column, so the thing that distinguishes the lines (region, gas type, ...) has to be the values of one column, i.e. long data.">To plot several measurements as differently colored lines, ggplot needs them in long format, with a column that says which measurement each row is.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — pivot_longer and pivot_wider are each other's opposites, and the chapter uses exactly that to 'undo' a pivot_wider.">You can undo a <code>pivot_wider</code> with <code>pivot_longer</code>, and the other way around.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

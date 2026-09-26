@@ -1,5 +1,6 @@
 <div class="quiz">
-<p class="quiz-question"><strong>Q1.</strong> You want to replace every hashtag in a post's text with the literal placeholder <code>"[TAG]"</code>, keeping the rest of the post unchanged. Which function should you use?</p>
+<div class="quiz-title">Q1: Replacing hashtags</div>
+<p class="quiz-question">You want to replace every hashtag in a post's text with the literal placeholder <code>"[TAG]"</code>, keeping the rest of the post unchanged. Which function should you use?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — str_replace_all() finds every match of a pattern and swaps it for a replacement string, which is exactly 'replace with [TAG]'."><code>str_replace_all(text, "#\\\\w+", "[TAG]")</code></li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — str_remove_all() deletes the matched text entirely; it doesn't put anything in its place, so you'd lose the hashtags rather than replace them with '[TAG]'."><code>str_remove_all(text, "#\\\\w+")</code></li>
@@ -10,7 +11,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q2.</strong> Given <code>toy &lt;- tibble(text = "Three hashtags: #trump #harris #biden")</code>, what does <code>str_extract(toy$text, "#\\w+")</code> return?</p>
+<div class="quiz-title">Q2: Extracting hashtags</div>
+<p class="quiz-question">Given <code>toy &lt;- tibble(text = "Three hashtags: #trump #harris #biden")</code>, what does <code>str_extract(toy$text, "#\\w+")</code> return?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — str_extract() (without '_all') only ever returns the first match per string. To get all three hashtags you'd need str_extract_all(), which returns a list column."><code>"#trump"</code> — only the first match.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — that's what str_extract_all() would give you (as a list column). Plain str_extract() stops at the first match."><code>c("#trump", "#harris", "#biden")</code> — all three matches.</li>
@@ -21,7 +23,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q3.</strong> A student runs <code>posts |> filter(str_detect(text, "U.S."))</code> expecting only posts that literally contain "U.S.", but one match is a post that only mentions "RUSSIAN" — no "U.S." anywhere. Why?</p>
+<div class="quiz-title">Q3: Searching for "U.S."</div>
+<p class="quiz-question">A student runs <code>posts |> filter(str_detect(text, "U.S."))</code> expecting only posts that literally contain "U.S.", but one match is a post that only mentions "RUSSIAN" — no "U.S." anywhere. Why?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — in a regex, a plain period (.) matches almost any single character, not just a literal period. So the pattern U.S. also matches any four characters shaped like 'U', anything, 'S', anything — which happens to occur inside 'RUSSIAN' (the letters U-S-S-I). Wrapping the pattern in fixed('U.S.'), or escaping the dots as U\\.S\\., avoids this.">In a regex, <code>.</code> matches almost any character, not just a literal period — so <code>U.S.</code> also matches unrelated four-character sequences like part of "RUSSIAN".</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — str_detect() is case-sensitive by default; that's not what's causing this particular false match."><code>str_detect()</code> is case-insensitive by default, so "U.S." matched lowercase letters hiding inside "RUSSIAN".</li>
@@ -32,7 +35,8 @@
 </div>
 
 <div class="quiz">
-<p class="quiz-question"><strong>Q4.</strong> You want a data frame with <em>one row per hashtag</em> — so a post with three hashtags should contribute three rows. Which of these achieves that?</p>
+<div class="quiz-title">Q4: One row per hashtag</div>
+<p class="quiz-question">You want a data frame with <em>one row per hashtag</em> — so a post with three hashtags should contribute three rows. Which of these achieves that?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — str_extract_all() finds every match per post and stores them as a list column (one list of hashtags per post); unnest_longer() then expands each list into its own row, giving one row per hashtag."><code>posts |> mutate(tag = str_extract_all(text, "#\\\\w+")) |> unnest_longer(tag)</code></li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — str_extract() (without '_all') only keeps the first hashtag per post, so you'd still have exactly one row per post, not per hashtag."><code>posts |> mutate(tag = str_extract(text, "#\\\\w+"))</code></li>

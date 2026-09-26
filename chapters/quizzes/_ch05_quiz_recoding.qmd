@@ -1,0 +1,85 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Age groups</div>
+<p class="quiz-question">You have survey data with the age of each respondent:</p>
+
+| respondent | age | vote |
+|---|---:|---|
+| 1 | 23 | GL-PvdA |
+| 2 | 67 | PVV |
+| 3 | 41 | VVD |
+| 4 | 35 | D66 |
+
+<p>You want to recode <code>age</code> into three groups: <code>"18-34"</code>, <code>"35-54"</code>, and <code>"55+"</code>. Which function is the best fit?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the groups are ranges of a continuous variable, so you need conditions like age &lt; 35 rather than specific values. case_when checks those conditions in order, e.g. case_when(age &lt; 35 ~ '18-34', age &lt; 55 ~ '35-54', .default = '55+')."><code>case_when</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — recode_values maps specific input values to output values, so you would have to list every possible age (18, 19, 20, ...) separately. For ranges, conditions like age &lt; 35 in case_when are much more convenient."><code>recode_values</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — if_else can only choose between two values (one for TRUE, one for FALSE), but you want three groups."><code>if_else</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — replace_values, like recode_values, maps specific values to new values (while keeping the values you didn't mention). For ranges of a continuous variable, you'd have to list every single age."><code>replace_values</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Merging two parties</div>
+<p class="quiz-question">In 2023, the Dutch parties GroenLinks (<code>GL</code>) and <code>PvdA</code> formed a joint list. To compare earlier vote intentions with later ones, you want to treat them as a single party in this data frame <code>d</code>:</p>
+
+| respondent | party |
+|---|---|
+| 1 | VVD |
+| 2 | PvdA |
+| 3 | GL |
+| 4 | D66 |
+
+<p>Which command replaces both <code>"GL"</code> and <code>"PvdA"</code> by <code>"GL/PvdA"</code>, while leaving the other parties unchanged?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — c('GL', 'PvdA') on the left of the ~ means 'either of these values', so both are replaced by 'GL/PvdA'. Because replace_values leaves values without a rule unchanged, VVD and D66 stay as they are."><code>mutate(d, party = replace_values(party, c("GL", "PvdA") ~ "GL/PvdA"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — GL and PvdA are recoded correctly, but recode_values turns every value without a rule into NA (unless you give a default= value). So VVD and D66 would become NA. To keep them unchanged, use replace_values."><code>mutate(d, party = recode_values(party, c("GL", "PvdA") ~ "GL/PvdA"))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this only checks whether the party is GL. Rows with GL become 'GL/PvdA', but all other rows keep their party, including PvdA. So PvdA is not merged into the joint list."><code>mutate(d, party = if_else(party == "GL", "GL/PvdA", party))</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this swaps the old and new values. The rule is always old ~ new: the left side gives the value(s) to look for, and the right side what to replace them with. Here, R would look for 'GL/PvdA' and try to replace it by two values at once, which gives an error."><code>mutate(d, party = replace_values(party, "GL/PvdA" ~ c("GL", "PvdA")))</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: The order of the rules</div>
+<p class="quiz-question">A student wants to recode the release year of films into decades:</p>
+
+| title | year |
+|---|---:|
+| Back to the Future | 1985 |
+| Titanic | 1997 |
+| Avatar | 2009 |
+
+<pre><code>mutate(films, decade = case_when(
+  year &lt; 2000 ~ "1990s",
+  year &lt; 1990 ~ "1980s",
+  .default = "2000s"))</code></pre>
+<p>What will <code>decade</code> be for <em>Back to the Future</em> (1985)?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — case_when evaluates the rules from top to bottom, and uses the first one that matches. Since 1985 &lt; 2000, the first rule already matches, and the second rule is never considered. Putting the year &lt; 1990 rule first fixes this."><code>"1990s"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — case_when doesn't look for the most specific or best rule, it uses the first rule that matches. Since 1985 &lt; 2000, the first rule already matches, so the film gets '1990s'."><code>"1980s"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the .default value is only used if none of the rules match. Here, the first rule (year &lt; 2000) matches, so the default is not used."><code>"2000s"</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — it's fine (and very common) for a row to match more than one rule; case_when simply uses the first one that matches.">An error, because 1985 matches two different rules.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Three ways to recode</div>
+<p class="quiz-question">Using the <code>bechdel</code> data from this chapter:</p>
+
+| title | test | budget | roi |
+|---|---|---:|---:|
+| 21 & Over | notalk | 13000000 | 3.24 |
+| Dredd 3D | ok-disagree | 45000000 | 0.93 |
+| 12 Years a Slave | notalk-disagree | 20000000 | 8.34 |
+
+<p>Which of these statements about <code>if_else</code>, <code>recode_values</code>, and <code>case_when</code> is <em>false</em>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right, this one is false — recode_values takes the input column as its first argument (recode_values(test, ...)), but case_when doesn't have one: each rule has its own condition that names the column(s), like budget > 50000000 & roi > 1.">Just like <code>recode_values</code>, <code>case_when</code> takes the input column as its first argument, e.g. <code>case_when(test, ...)</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — if_else(condition, yes, no) chooses between exactly two values, like if_else(roi > 1, 'profit', 'loss').">Recoding <code>roi</code> into <code>"profit"</code> and <code>"loss"</code> can be done with <code>if_else</code>, because there are only two outcomes.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — each case_when rule can be any condition, so you can combine several columns, like budget > 50000000 & roi > 1. recode_values only looks at the values of a single column.">A rule that looks at both <code>budget</code> and <code>roi</code> at the same time is possible in <code>case_when</code>, but not in <code>recode_values</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — and a common source of errors: the value for rows without a matching rule is set with default= in recode_values, and .default= (with a dot) in case_when.">The value for rows that match none of the rules is set with <code>default=</code> in <code>recode_values</code>, but with <code>.default=</code> in <code>case_when</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
