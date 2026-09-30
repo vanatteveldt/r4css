@@ -60,3 +60,8 @@ Finally, there are frames marked with an `💡`. These give more in-depth explan
 
 Every chapter (from chapter 3) ends with a multiple-choice quiz, often organized per section. 
 These quizzes are intended to test your understanding of the main concepts, functions, and syntax introduced in the chapter. 
+
+## AI Statement {.unnumbered}
+
+Since we now require students to add AI statements to essays, I figured it was only fair to disclose my usage of AI as well.
+Claude was used extensively in writing this book, but paradoxically was not allowed to write any of it. All chapter text, but also the topics, structure, and bad puns are fully mine down to the last em-dash. Where AI helped was in three ways: (1) Before writing each part, I brainstormed with Claude over the best data that can be used as an example for the things I wanted to demonstrate, and we co-wrote the data gathering and preparation scripts in [data/README.md](data/README.md). (2) After writing each part, I asked Claude to review it critically against the didactic principles laid out in the [contributing guide](CONTRIBUTING.md), but without making any changes except for clear typos (of which there were many!). (3) Finally, it helped me scaffold the graded exercises and multiple choice questions and provide the code checks and feedback. These rules are codified in the instructions in [CLAUDE.md](CLAUDE.md). Claude also approved this statement 🤓
