@@ -2,6 +2,8 @@
 title: "Preface"
 ---
 
+{{< include _extensions/r-wasm/live/_knitr.qmd >}}
+
 # Welcome {.unnumbered}
 
 The goal of this book is to introduce data and text analysis for computational social scientists.
@@ -44,7 +46,12 @@ So, even in its current state this book should be a good resource for teaching a
 
 ## How to Use This Book  {.unnumbered}
 
-Each chapter mixes explanations with **interactive code blocks** — you can run and modify R code directly in your browser without installing anything. Look for cells marked with the {{< fa play >}} button.
+Each chapter mixes explanations with **interactive code blocks** — you can run and modify R code directly in your browser without installing anything. Look for cells marked with the [▷ Run Code] button like the one below:
+
+```{webr}
+# Press the [▷ Run Code] above (as soon as it finishes loading)
+print("Hello world!")
+```
 
 We encourage every reader to run all the code blocks, and especially to play around. Do you understand what it does? What happens if you change something? How could the code be useful in a real world scenario?
 
