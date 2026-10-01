@@ -91,3 +91,15 @@ div.exercise {
         background-color: #3B5AAB;
     }
 }
+
+/* str_view() output: the widget has an inline 960px width, and stringr's
+   own grey match style is too faint. `body` outranks stringr's .str_view .match */
+body .str_view {
+    max-width: 100%;
+}
+
+body .str_view .match {
+    font-weight: bold;
+    background-color: #FFF0A8;
+    border-color: #D4A800;
+}

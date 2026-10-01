@@ -9,3 +9,22 @@ div.exercise {
     background-color: #172040;
     border-color: #5B7ACB;
 }
+
+body .str_view .match {
+    background-color: rgba(212, 168, 0, 0.35);
+    border-color: #D4A800;
+    color: inherit;
+}
+
+/* Mermaid's own svg styles give edge labels a light grey box (#mermaid-N .edgeLabel p),
+   ignoring $mermaid-label-bg-color; use the page background so edges don't cross the text */
+.mermaid-js .edgeLabel,
+.mermaid-js .edgeLabel p,
+.mermaid-js .labelBkg {
+    background-color: $body-bg !important;
+}
+
+/*-- scss:defaults --*/
+$mermaid-edge-color: #bbbbbb;
+$mermaid-label-bg-color: #2b2b2b;
+$mermaid-label-fg-color: #e0e0e0;
