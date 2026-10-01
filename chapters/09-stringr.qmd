@@ -44,7 +44,7 @@ head(posts)
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_hashtag_detect', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall']
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_hashtag_detect', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot']
 library(tidyverse)
 posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
@@ -145,6 +145,8 @@ Functions like `str_detect`, `str_trim` and `str_count` are still very useful fo
 :::
 
 ## Finding, removing and replacing simple patterns {#sec-findreplace}
+
+<!-- Todo: explain the | operator to allow dictionaries? -->
 
 The code above showed how you can detect and count literal substrings.
 The `stringr` functions are much more powerful than that, however,
@@ -257,17 +259,18 @@ Earlier, we tried to analyse hashtag usage in the US Election posts,
 noting the limitation that `str_extract` only extracts the first occurrence of a pattern.
 
 After seeing the examples with `str_remove_all` and `str_replace_all`, 
-you may have guesses that there is also a function called `str_extract_all` -- and you would be right. 
+you may have guessed that there is also a function called `str_extract_all` -- and you would be right. 
 
 The complication is that this of course can return multiple results per row, which does not really fit with the idea of a column in a data frame: a cell normally contains only a single value. This can be solved by using `unnest_longer`, for example to do a complete count of all hashtags:
 
 ```{webr}
 #| exercise: demo_hashtag_extract_all
-posts |>
-  mutate(tag=str_extract_all(text, "#\\w+")) |>
+hashtags <- posts |>
+  mutate(tag=str_extract_all(str_to_lower(text), "#\\w+")) |>
   unnest_longer(tag) |>
   count(tag) |>
   arrange(desc(n))
+head(hashtags)
 ```
 
 Technically, `str_extract_all` produces a 'list column', i.e. a column with a data type list. Since that is not very useful for analysis, we *unnest* the list column into a long format: every value becomes a row, so if two hashtags were found the row will be repeated for each hashtag, with only the `tag` column being different and containing a single tag. 
@@ -289,6 +292,116 @@ print(toy)
 ### Exercise: Extracting urls from posts 
 
 {{< include exercises/_ch09_ex_url_domains.qmd >}}
+
+## Word plots with `ggrepel` {#sec-wordplots}
+
+Word clouds are a staple of (bad) text analysis blogs,
+but that doesn't mean we should never make them. 
+
+### A simple word cloud
+
+In `ggplot`, a word cloud is simply a normal plot, with an aesthetic mapping for the dimensions of the data we want to use. 
+The main difference is that we use the `geom_text_repel` from the `ggrepel` package which 'repels' words to try to avoid them overlapping each other. 
+For example, using the `hashtags` data frame created earlier, the following code plots a traditional word cloud:
+
+```{webr}
+#| exercise: wordcloud
+#| setup: true
+
+library(tidyverse)
+posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
+  select(author=author_name, date=created_at, likes=like_count, text)
+hashtags <- posts |>
+  mutate(tag=str_extract_all(str_to_lower(text), "#\\w+")) |>
+  unnest_longer(tag) |>
+  count(tag) |>
+  arrange(desc(n))
+```
+
+```{webr}
+#| exercise: wordcloud
+set.seed(1)
+hashtags |>
+  filter(tag != "#election2024") |>
+  slice_max(order_by=n, n=75, with_ties = FALSE) |> 
+  mutate(x=rnorm(n()) / sqrt(n), y=rnorm(n()) / sqrt(n))  |>
+  ggplot(aes(x=x, y=y, size=n, label=tag)) +
+    ggrepel::geom_text_repel(min.segment.length=Inf) +
+  theme_void() + theme(legend.position="none")
+```
+
+
+Technicalities aside, how informative is the plot we made above?
+Could we have made a bar plot with the same information?
+Would that make it easier to see what's going on, or harder?
+
+::: {.callout-note title="Why are word clouds so complicated?"}
+
+You might have noticed we are doing quite a lot of work to produce a word cloud:
+
+- `set.seed(1)` is used to fix the random seed so the plot comes out (mostly) deterministically.
+- we filter out `#election2024` as this tag was used to collect the data, so every post in the data set will contain that tag.
+- we manually calculate a semi-random x and y coordinate for each word, where we use `rnorm(n())` to create a normal distribution around 0, and then divide by `sqrt(n)` to nudge more frequent words closer to the center of the plot.
+- The `ggplot` is fairly standard apart from the `geom_text_repel`. This geom essentially places each word on its x and y position, checks if it overlaps a previous word, and then starts moving it away from that word until it doesn't overlap anymore (or it gives up).  
+- We set `min.segment.length=Inf` to suppress the use of segments. By default, `ggrepel` will draw a line from the label to the actual x and y position where it started. We don't  want to see those lines so we set the minimum length to infinity.
+
+The main reason for this is that the tool we introduced, `ggrepel`, 
+is meant more for flexible plotting of texts than for pure word clouds. 
+As we will see below, we can use it to encode more meaning in word plots,
+but it is also very useful for annotating e.g. scatter plots by labeling specific points, without creating overlap on the labels. In fact, this is why the 
+default draws a line from the 'repelled' label to its intended position. 
+
+If all you want is a word cloud, `ggwordcloud` can probably do this more easily
+(and perhaps more beautifully). 
+But we hope that after reading this section you won't actually (just) want a word cloud!
+:::
+
+### A more informative word plot
+
+The main criticism of word clouds is that they only use a single dimension of the data (frequency), and the rest of the variation (e.g. on the x and y axes) is just random noise. 
+However, we can also use other dimensions of the data, such as the date a word is used or the topic or cluster it was used in.  For example, the code below creates an over-time usage word plot of the hashtags dataset created above:
+
+```{webr}
+#| exercise: wordplot
+set.seed(1)
+posts |>
+  mutate(tag=str_extract_all(str_to_lower(text), "#\\w+")) |>
+  unnest_longer(tag) |>
+  filter(tag != "#election2024") |>
+  group_by(tag) |>
+  # (1) compute median date and number of authors per tag
+  summarize(n=n_distinct(author), date=median(date)) |>
+  # (2) Select top-5 tags per week
+  mutate(week=floor_date(date, "week")) |>
+  slice_max(order_by=n, n=5, by=week, with_ties=FALSE) |>
+  mutate(y = rnorm(n()) / sqrt(n)) |>
+  arrange(desc(n)) |> 
+  ggplot(aes(x=date, y=y, size=n, label=tag, color=tag)) +
+  # (3) allow for more iterations and time
+  ggrepel::geom_text_repel(max.overlaps=Inf, min.segment.length=Inf, 
+                           max.iter = 100000, max.time=2, direction="y") + 
+  scale_x_datetime(expand=expansion(mult=0.1), name="") +
+  labs(title="Hashtags used in the 2024 US elections",
+       subtitle="Tags displayed on or near their median date of use",
+       caption="Source: Bluesky posts via API") + 
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "none")
+```
+
+What can you see in this plot? Do you see different tags before and after the election? Is this plot more informative than a 'regular' word cloud?
+
+This code looks very complicated, but most of it builds on the code used earlier. Have a good look at the individual steps, which should all look familiar. 
+
+That said, we used some particular tricks to make this graph informative:
+
+1. We calculate the median date for each word. This has a tendency to place words near the middle, so the modal date or the date in which it was most dominant would be good alternatives. We also count distinct authors per tag to avoid having a single author dominate the findings.  
+2. Since most posts occur around election day, plotting the same top-75 most frequent tags will cause most tags to crowd around that day, and leave especially the post-election coverage almost empty. For that reason, we take the top-5 tags per week rather than the top-75 tags in total, assuring an even distribution over the graph.
+3. We tweak the geom to give it more time to converge. Since it functions by moving each individual word until it reaches a place without overlap, it can take quite a number of iterations ('nudges') before each word found a suitable location (and even with these settings, it's quite possible there will still be some overlap). We also set `direction='y'` - this causes the words to be nudged only on the vertical axis, guaranteeing that they are displayed on the correct date. 
+
 
 ## Regular expressions in depth (todo) {#sec-regex}
 
