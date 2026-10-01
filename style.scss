@@ -103,3 +103,39 @@ body .str_view .match {
     background-color: #FFF0A8;
     border-color: #D4A800;
 }
+
+/* Reference tables (::: {.reftable}): callout-like box with the table caption as
+   title bar; the first column (the syntax) is as narrow as its content */
+div.reftable {
+    border: 1px solid #dee2e6;
+    border-left: 5px solid #6c757d;
+    border-radius: 4px;
+    margin: 1em 0;
+
+    overflow: hidden;
+
+    /* Quarto/Bootstrap give the float, caption and table their own margins and centring */
+    figure,
+    .quarto-float,
+    .quarto-figure {
+        margin: 0 !important;
+    }
+
+    figcaption {
+        text-align: left !important;
+        font-weight: 600;
+        background-color: #f1f3f5;
+        padding: 0.5em 1em;
+        margin: 0 !important;
+    }
+
+    table {
+        margin: 0 !important;
+    }
+
+    td:first-child,
+    th:first-child {
+        white-space: nowrap;
+        width: 1%;
+    }
+}

@@ -16,6 +16,15 @@ body .str_view .match {
     color: inherit;
 }
 
+div.reftable {
+    border-color: #444;
+    border-left-color: #888;
+
+    figcaption {
+        background-color: #333;
+    }
+}
+
 /* Mermaid's own svg styles give edge labels a light grey box (#mermaid-N .edgeLabel p),
    ignoring $mermaid-label-bg-color; use the page background so edges don't cross the text */
 .mermaid-js .edgeLabel,
