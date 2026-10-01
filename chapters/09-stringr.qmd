@@ -41,7 +41,7 @@ head(posts)
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_pattern_or', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot']
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_pattern_or', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot', 'demo_shrug']
 library(tidyverse)
 posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
@@ -445,13 +445,13 @@ The remainder of this section will discuss each of those functions in turn, and 
 
 ### Specifiers: Matching (classes of) characters
 
-<!-- Scope:
-  - Reminder of specific character class (., \w, \d, \s)
-  - General character classes [A-Z] and [^A-Z]
-  - Unicode classes, esp \\p{EMOJI} is fun
-  - case sensitivity
-  - when and how to escape characters
--->
+In the earlier sections of this chapter, we've seen that alphanumerical characters match that literal character, so `c` matches "c" and `cat` matches "cat". 
+
+We've also introduced *character classes* such as `.`, which matches everything (except newline), and `\\w` which matches word characters. There are a couple more classes like `\\w`, such as `\\d` for digits and `\\s` for whitespace. They can also be negated by capitalizing them: `\\W` matches everything *except* for word characters. 
+
+A flexible way to make character classes is to use square brackets: `[abc]` matches a, b, or c, and `[A-Z]` matches all capital letters (but not accented letters like Ç or É). You can also negate these patterns: `[^A-Z]` matches everything except capital letters.  
+
+Every specifier can be quantified, so `\\w+` means one or more word characters, and `[A-Z]{2}` means two  upper case Latin letters. We can use this for example to recognize things like at-mentions, email address, and zip codes:
 
 ```{webr}
 #| exercise: str_view
@@ -461,27 +461,46 @@ library(stringr)
 
 ```{webr}
 #| exercise: str_view
-str_view("text", "e")
+texts <- c("An X at-mention:   @vanatteveldt",
+           "A Bsky at-mention: @vanatteveldt.com",
+           "An email address:  wouter.van.atteveldt@vu.nl",
+           "American zip code: 90210",
+           "Extended zip code: 90210-4400",
+           "Dutch postal code: 1015 GK")
+str_view(texts, "@\\w+", html=TRUE, match=NA)
 ```
 
-<!-- 
-Claude: a short subsection under Specifiers would do, e.g. "Special characters and escaping", covering:
+Note: this uses the `str_view` function to show all matches in the specified input texts.
+The option `html=TRUE` creates html output that works well in this interactive website,
+and `match=NA` indicates that we want to see all input texts, even if they didn't match the pattern.
 
-- the list of special characters
-- why R needs \\ (one backslash for the R string, one for the regex)
-- so a literal backslash takes "\\\\"
-- raw strings, r"(\\)", as the way out
-- fixed() as the easiest option for literal text
+::: {.challenge}
+Can you edit the chunk above to make patterns for: 
+- American zip codes (5 digits)
+- Extended American zip codes (5 digits, a dash, 4 digits)
+- Dutch postal codes: 4 digits, a space, two upper case Latin letters
+- Bluesky mentions with domain: An at-sign, one or more word characters, a literal period, one or more word characters
+- Generic mentions: An at sign, and one or more word characters or literal periods. Hint: you can use abbreviations like `\\w` within a `[]`-character class. Make sure to escape the period, even within a `[]`-class.
+- Simplified email: One or more word characters or periods, an at sign, one or more word characters or period, a literal period, and two or more word characters (hint: two or more can be specified as one followed by one or more)
 
-The data has a perfect example for this: the shrug ¯\_(ツ)_/¯ appears in 3 places in the Bluesky data (at least one of them is in an author name, not the post text, so check). It contains a backslash and parentheses, so it shows all the escaping problems at once:
+What would be needed to find at-mentions without also matching the second half of the email address? 
 
+:::
 
-str_view(text, fixed(1))       # literal text, only the R string escape
-str_view(text, "¯\\\\_\\(ツ\\)_/¯")       # regex: backslash-hell
-str_view(text, r"(¯\\_\(ツ\)_/¯)")        # raw string: regex escapes only
+Another powerful way to specify characters is using `\\p{}` for [unicode categories](https://unicode.org/reports/tr18/#General_Category_Property). For example, use `\\p{letter}` for letters (including accented or non-latin letters), `\\p{uppercase_letter}` for upper case letters or `\\p{punctuation}` for punctuation -- but also e.g. `\\p{hangul}` for Korean script and `\\p{extended_pictographic}` for extended pictographic characters (which most folks would call emoji, but confusingly `\\p{emoji}` also matches simple numbers as these can be used in constructing emoji like 1️⃣). Unicode categories can also be negated by capitalizing: `\\P{letter}` matches everything except for letter characters. 
 
-It's recognisable, a bit funny, and it's real data. Raw strings need R ≥ 4.0, so check that it works in webR, but I'd expect it to.
--->
+We saw earlier that you need to escape special characters such as periods: `.` matches all characters, but `\\.` matches a literal period, and the same for `\\*`, `\\[` etc. Confusingly, to produce a literal backslash you need to use `\\\\`: you escape the backslash itself, and then double up all the backslashes. The reason you need to double the backslashes is that R also parses the string before passing it on to the regular expression engine, so R parses `\\\\` as two backslashes, which is then interpreted by the regex engine as a literal backslash. To ease this burden for complex patterns you can also use raw strings: `r"(U\.S\.)"` is read by R without interpreting the escapes, so it results in the string `U\.S\.`. 
+
+As an example of how hard it can become to read heavily escaped text, let's search for 
+shrug emoticons in the Bluesky posts:
+
+```{webr}
+#| exercise: demo_shrug
+posts |> str_filter(str_detect(text, "¯\\\\_\\(ツ\\)_/¯"))
+```
+
+Can you rewrite this to use `fixed()` or `r"(...)"`?
+
 
 ### Anchors: Word and text boundaries  {#sec-anchors}
 
