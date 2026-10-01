@@ -44,7 +44,7 @@ head(posts)
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_hashtag_detect', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot']
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_pattern_or', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot']
 library(tidyverse)
 posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
@@ -146,41 +146,27 @@ Functions like `str_detect`, `str_trim` and `str_count` are still very useful fo
 
 ## Finding, removing and replacing simple patterns {#sec-findreplace}
 
-<!-- Todo: explain the | operator to allow dictionaries? -->
-
 The code above showed how you can detect and count literal substrings.
 The `stringr` functions are much more powerful than that, however,
-as you can also search for *patterns* containing wildcards.
+as you can also search for *patterns* rather than literal strings.
 
-For now, we will just introduce some very basic patterns, that are however already quite powerful. For example, the code below will use the pattern `"#\\w+"` to filter on posts containing at least one hashtag:
+For now, we will just introduce some very basic patterns, that are however already quite powerful. 
+For example, the code below uses the patterns `Trump|Vance`  and `Harris|Walz`, which detect mentions of either of the names:
 
 ```{webr}
-#| exercise: demo_hashtag_detect
-posts_with_tags <- posts |> filter(str_detect(text, "#\\w+"))
-head(posts_with_tags)
-str_glue("{nrow(posts_with_tags)} out of {nrow(posts)} posts contained a hash tag")
+#| exercise: demo_pattern_or
+rep_posts <- posts |> filter(str_detect(text, "Trump|Vance"))
+dem_posts <- posts |> filter(str_detect(text, "Harris|Walz"))
+str_glue("Out of {nrow(posts)} posts, {nrow(rep_posts)} mention Trump or Vance, while {nrow(dem_posts)} mention Harris or Walz")
 ```
 
-So it looks like all posts contain at least one hash tag. This is actually not a coincidence -- why do you think this could be the case?
-
-::: {.callout-note title="Regular expressions?"}
-The pattern introduced above (`#\\w+`) may look weird, overly complex, or suspiciously like a cartoon curseword. But it's actually a very standardized and useful way to express character patterns called **regular expressions** (or *regex*, for friends)
-
-Although this will be explained in much more detail in @sec-regex,
-it is useful to explain at least a little bit of what is going on. 
-In a regex, most characters simply match that character, which is why we could use `"trump"` above to simply search for the word "trump", or actually the sequence of characters `t-r-u-m-p`. 
-
-The `\\w`, however, is a kind of wildcard called a *character class* rather than a literal sequence of `\` and `w` characters. 
-This specific class matches 'word characters' defined as letters and numbers (and curiously the underscore `_`). So, `#\\w` would match a literal hash sign (`#`), followed by a letter, number, or underscore. 
-
-The last part, `+`, is a quantifier which reads "one or more": it means that the preceding character (in this case, the `\\w` word character class) is required but may be repeated as often as desired. So, the total pattern `#\\w+` matches a literal hash sign, followed by one or more word characters, which is a fair approximation of a hash tag.
-
-By using combinations of character classes and quantifiers, you can make patterns for many useful things such as hashtags, zip codes, phone numbers, email addresses, etc. 
-:::
+So, it looks like the republican ticket gets more attention on Bluesky than the democratic ticket - 
+does that necessarily mean that coverage is more favourable for the Trump ticket?
 
 ### Extracting a pattern with `str_extract`
 
-More usefully, we can use `str_extract` to extract the (first) hashtag in each post, and store it as a new column. This allows us to get an overview of hashtags in the posts:
+Another pattern is `#\\w+`, which matches any word starting with a `#`.  
+Using the function `str_extract`, we can use it to extract the (first) hashtag in each post, and store it as a new column:
 
 ```{webr}
 #| exercise: demo_hashtag_extract
@@ -190,10 +176,28 @@ posts |>
   arrange(desc(n))
 ```
 
-So, the corpus is dominated by the hashtag `#Election2024` --
-as you might have guessed above this was used to select relevant posts, so each post will contain this tag. 
+As you can see, the corpus is dominated by the hashtag `#Election2024`.
+This is actually very unsurprising, since that tag was used to select the posts, so each post will contain this tag. 
 
 Note that the reason why the total is lower than the total number of posts is that the code above only extracts the *first* occurrence of a pattern, so in the other posts another tag was used before that tag (and see @sec-extractall for `str_extract_all` to extract all tags)
+
+::: {.callout-note title="Regular expressions?"}
+The pattern introduced above (`#\\w+`) may look weird, overly complex, or suspiciously like a cartoon curseword. But it's actually a very standardized and useful way to express character patterns called **regular expressions** (or *regex*, for friends)
+
+Although this will be explained in much more detail in @sec-regex,
+it is useful to explain at least a little bit of what is going on. 
+In a regex, most characters simply match that character, which is why we could use `"trump"` earlier to simply search for the word "trump", or actually the sequence of characters `t-r-u-m-p`. 
+
+We also saw the special character `|`, which was used to list multiple alternatives. So, `angry|mad|annoyed` would match any of these strings,
+but be aware that they match characters, and not words: This pattern would also match `armada`, since it contains the characters `m-a-d`. See @sec-anchors below for a solution.
+
+The `\\w` used in the last example, functions as a kind of wildcard called a *character class*.
+Rather than matching a literal sequence of `\` and `w` characters, it matches '**w**ord characters' defined as letters and numbers (and curiously the underscore `_`). So, `#\\w` would match a literal hash sign (`#`), followed by a letter, number, or underscore. Similarly, `\\d` matches **d**igits and `\\s` matches white**s**pace.
+
+The last part, `+`, is a quantifier which reads "one or more": it means that the preceding character (in this case, the `\\w` word character class) is required but may be repeated as often as desired. So, the total pattern `#\\w+` matches a literal hash sign, followed by one or more word characters, which is a fair approximation of a hash tag.
+
+By using combinations of character classes and quantifiers, you can make patterns for many useful things such as hashtags, zip codes, phone numbers, email addresses, etc. See @sec-regex below for more detail.
+:::
 
 ### Removing parts of a text with `str_remove_all`
 
@@ -250,7 +254,12 @@ As you can see, this gives 130 matches. But not all of them actually contain the
 
 The answer, of course, is that `.` is a wildcard, so the pattern `U.S.` matched the word `RUSSIAN`!
 
-To remedy this, you have two options. The easiest is to enclose the whole pattern in a `fixed()` function: `str_detect(text, fixed('U.S.'))` tells R to actually not use a regular expression pattern, but a fixed substring. The alternative is to place a double backslash before each period: `U\\.S\\.`, a practice known as *escaping* (again, see @sec-regex below for more detail). Try either pattern yourself in the code above - it should return 102 rows instead of the original 130. 
+To remedy this, you have two options. The easiest is to enclose the whole pattern in a `fixed()` function: `str_detect(text, fixed('U.S.'))` tells R to actually not use a regular expression pattern, but a fixed substring. 
+Note that within a `fixed()` everyhing matches literal characters, including `|` and `+`. 
+To match literal periods within a more complex pattern, you will have to to place a double backslash before each period: `U\\.S\\.|U\\.\\K\\.`, a practice known as *escaping* (again, see @sec-regex below for more detail). Try either `fixed('U.S.')` or `U\\.S\\.` in the code above - it should return 102 rows instead of the original 130. 
+
+Note that the same logic holds for other 'special' characters, such as brackets (both `()` and `[]`) and the quantifiers `+` and `*`,
+so you also need to either wrap the whole pattern in `fixed()` or escape each of those characters if you want to match literal brackets or plus-signs.
 :::
 
 ### Finding multiple occurrences with `str_extract_all` {#sec-extractall}
@@ -441,6 +450,13 @@ See [Chapter 9 of my previous book](https://cssbook.net/content/chapter09.html#s
   Exercises (each with small diff, CONTRIBUTING 2): fix a pattern that is too greedy; fix a pattern that matches too much
     (a \\b case); write a pattern for a given kind of post.
   Challenge (no checker): find a false positive / false negative for your own pattern, and say which is worse for a research question.
+-->
+
+### Words, newlines and anchors {#sec-anchors}
+
+<!-- 
+Explain \\b, \\n, and $ ^.
+What is the status of DOTALL in R?
 -->
 
 ### Extracting, counting and splitting with patterns
