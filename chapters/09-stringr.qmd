@@ -505,25 +505,6 @@ posts |> filter(str_detect(text, "¯\\\\_\\(ツ\\)_/¯"))
 
 Can you rewrite this to use `fixed()` or `r"(...)"`?
 
-::: {.reftable}
-
-| Specifier | Matches | Example |
-|:----------|:--------|:--------|
-| `a` | the literal character a | `cat` matches "cat" |
-| `\\.` | a literal special character (also `\\*`, `\\(`, `\\\\`, ...) | `U\\.S\\.` matches "U.S." |
-| `.` | any character except a newline | `c.t` matches "cat", "cot", "c t" |
-| `\\w` | a word character: letter, digit or underscore | `#\\w` matches "#e" in "#election" |
-| `\\d` | a digit | `\\d\\d` matches "12" or "99" |
-| `\\s` | whitespace: space, tab, newline | `a\\sb` matches "a b" |
-| `\\W`, `\\D`, `\\S` | anything *except* a word character, digit or whitespace | `\\W` matches the period in "U.S" |
-| `[...]` | any one of the listed characters or ranges | `[aeiou]` matches a vowel, `[A-Z0-9]` a capital or digit |
-| `[^...]` | any character *except* the listed ones | `[^aeiou]` matches anything but a vowel |
-| `\\p{...}` | a character from a [Unicode category](https://www.unicode.org/reports/tr44/#General_Category_Values) | `\\p{letter}` matches "a", but also "É" and "조" |
-| `\\P{...}` | any character *not* in a Unicode category | `\\P{letter}` matches "1" and "!" |
-
-: Reference table: Regular expression specifiers {#tbl-specifiers}
-
-:::
 
 ### Anchors: Word and text boundaries  {#sec-anchors}
 
@@ -573,7 +554,7 @@ and then `summarize` to compute the mean.
 :::
 
 Next to the word boundary anchor, there are two special anchors that match only the start of a text
-(`^`) or the end of a text (`$`). So, if you want to know which posts start with 'RT', you can use `^RT` to match those two characters at the start of a post only.
+(`^`) or the end of a text (`$`). So, if you want to know which posts start with 'RT', you can use `^RT` to match those two characters at the start of a post only (an older Twitter convention to mark a retweet).
 
 Note that it may seem that anchors are very similar to character classes.
 However, what sets them apart is that anchors don't actually match (or *consume*) a character.
@@ -596,7 +577,73 @@ and/or `str_to_lower` achieves the same aims while re-using a general part of yo
 So practically, the `regex` flags are not actually used that much. 
 :::
 
+
+::: {.reftable}
+
+| Pattern | Matches | Example |
+|:----------|:--------|:--------|
+| `a` | the literal character a | `cat` matches "cat" |
+| `\\.` | a literal special character (also `\\*`, `\\(`, `\\\\`, ...) | `U\\.S\\.` matches "U.S." |
+| `.` | any character except a newline | `c.t` matches "cat", "cot", "c t" |
+| `\\w` | a word character: letter, digit or underscore | `#\\w` matches "#e" in "#election" |
+| `\\d` | a digit | `\\d\\d` matches "12" or "99" |
+| `\\s` | whitespace: space, tab, newline | `a\\sb` matches "a b" |
+| `\\W`, `\\D`, `\\S` | anything *except* a word character, digit or whitespace | `\\W` matches the period in "U.S" |
+| `[...]` | any one of the listed characters or ranges | `[aeiou]` matches a vowel, `[A-Z0-9]` a capital or digit |
+| `[^...]` | any character *except* the listed ones | `[^aeiou]` matches anything but a vowel |
+| `\\p{...}` | a character from a [Unicode category](https://www.unicode.org/reports/tr44/#General_Category_Values) | `\\p{letter}` matches "a", but also "É" and "조" |
+| `\\P{...}` | any character *not* in a Unicode category | `\\P{letter}` matches "1" and "!" |
+| `\\b` | word boundary anchor | `\\bcat\\b` matches "cat" as a word, but not in "cats" or "muscat"  |
+| `^` | start of text anchor | `^RT` matches RT at the start of a text |
+| `$` | end of text anchor | `!$` matches an exclamation mark at the end of a text |
+
+
+: What to match: character classes and anchors {#tbl-specifiers}
+:::
+
 ### Quantifiers: How many cats do we need?
+
+We earlier used `#\\w+` to match hashtags, reading the `+` as "one or more (word characters)". 
+`+` is an example of a quantifier, which indicates how many of the preceding part of the pattern should be matched. Next to `+`, you can also use `*`, meaning "zero or more": `#trump\\d*` would match `#trump24`, `#trump2020` but also plain `#trump` as the digits are optional. 
+
+In addition, `?` means "zero or one", making the preceding element optional. So, if we are afraid that people might misspell Tim Walz' last name, we could use `walt?z`, meaning `w-a-l`, followed optionally by a `t`, followed by a `z`.  
+
+Finally, you can specify exactly how many matches you expect using curly braces: `\\d{2}` means exactly two digits, `\\d{2,4}` means two to four digits, and `\\d{2,}` means two of more digits. 
+Note that you can also apply quantifiers to character classes, so e.g. `[A-Z]{2}` means exactly two upper case (Latin) letters.
+
+<!-- TODO: Greedy vs non-greedy -->
+
+:::{.challenge title="British postal codes"}
+
+<!-- todo: turn into checked exercise, because there is a valid outcome -->
+
+As a challenge, try to make a pattern for matching British postal codes. 
+Valid British postal codes consist of three parts:
+
+1. First, one or two upper case letters specify the name of a city or area (e.g. `M` for Manchester or `EH` for Edinburgh) 
+2. Next, the district in or near the city is specified with either one digit, two digits, or (in London) a digit plus a letter. This is appended directly to the city code, so `EH8` is an area in or around Edinburgh, and `EC1A` is a district in east central London. 
+3. Finally, a second part separated by a space marks a specific unit tailored to the mail routes. This consists of a digit (the sector), followed by two upper case letters. 
+
+So, `EH8 9YL`, `M13 9QS` and `WC2A 2AE` are all valid postal codes (corresponding to the addresses of British universities - can you guess which?), but `8EH 9YL`, `M13A 9PL` and `WC2A AE2` are not.
+
+Can you change the `pattern` below so it matches all valid codes, without matching any invalid codes?
+Note the use of anchors (`^` and `$`) to ensure the pattern must match the whole example text. 
+
+<!-- TODO: add some more invalid examples -->
+
+```{webr}
+#| exercise: postalcodes
+valid <- c("EH8 9YL", "M13 9PL", "WC2A 2AE")
+invalid <- c("8EH 9YL", "M13A 9PL", "WC2A AE2")
+examples <- c("Valid codes (should be matched):", valid, 
+             "Invalid codes (should not be matched):", invalid)
+pattern <- "^\\w{3} \\w{3}$"
+str_view(examples, pattern, html=TRUE, match=NA)
+```
+
+:::
+
+
 
 <!-- Scope:
   - Reminder of * and +, introduce ?. 
