@@ -686,7 +686,7 @@ Two final things to note:
 - You can also use so-called *non-capturing groups* by using `(?: )` instead of `()`. For example, try changing start to  `\\b(?:www\\.|https?://)` in the code above, and do the same for subdomains, and then change the group into `group=1` -- it should give the same result. The benefit is that the number of the group we care about (domain) no longer shifts around depending on the rest of the pattern, but perhaps at the cost of further complicating the pattern. 
 - Capturing groups can also be used in `str_replace` and `str_detect` by using `\\1` to refer back to group 1. For example, `str_replace_all(text, pattern, "[\\3]")` would use the pattern above to replace all hyperlinks to their domain contained in square brackets, so "Watch https://www.youtube.com now!" becomes "Watch [youtube.com] now!", which could be useful for e.g. anonymizing or normalizing posts or open ended survey responses.
 
-:::{.callout-note title="What is 'regular' about these expressions?" collapse="true"}
+:::{.callout-note title="What is 'regular' about these expressions?"}
 
 As a complete aside: Why are 'regular expressions' called 'regular'? 
 
