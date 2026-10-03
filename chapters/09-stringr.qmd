@@ -4,9 +4,6 @@ webr:
     - ../data/bluesky_us_elections_2024.csv
 ---
 
-<!-- TODO: add ../data/bluesky_us_elections_2024.csv to webr.resources in the frontmatter
-     once the file exists (collect with atrrr::search_post, lang="en", see data/README.md) -->
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
@@ -28,9 +25,16 @@ analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@s
 
 ## Chapter objectives {.unnumbered}
 
-In this chapter, you will learn blablabla
+In this chapter, you will learn how to use various `stringr` functions for dealing with textual data:
 
-<!-- Trial: function overview as alternative table of contents -->
++ Basic text cleaning operations (@sec-basicstringr)
++ Filter data based on the occurrence of specific text (@sec-strdetect)
++ Using basic 'regular expression' patterns to fine, replace or remove parts of a text (@sec-findreplace)
++ Making simple word plots (@sec-wordplots)
++ Optinally, learn regular expression syntax in more detail to make powerful patterns (@sec-regex)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
+
 
 ::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
 
@@ -812,3 +816,4 @@ Below are some examples of regular expressions for common patterns like dates or
 
 {{< include quizzes/_ch09_quiz_findreplace.qmd >}}
 
+<!-- TODO: add questions for sec-regex, and maybe sec-ggrepel? -->
