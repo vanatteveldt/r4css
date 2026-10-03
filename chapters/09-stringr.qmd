@@ -459,7 +459,10 @@ but although we used some patterns (such as `#\\w+` for hashtags), we did not re
 This section will remedy this, and by the end of this section you should have a very good idea of how regular expressions work.
 You will also get a fairly complete overview of all the various character classes and other options.
 
-This also means that this section will be a bit more of a reference work and explainer than an interactive tutorial.
+This section uses `str_view` as an important visualization and debugging tool: it simply shows all matches of a pattern in a specified input, making it easy to check and debug regular expressions. 
+There are also many useful online tools for analysing regular expressions, such as [regex101.com](https://regex101.com/r/iFqxCV/1), which explains the components of a pattern and lets you test your own patterns, and visualizers such as [regex-vis.com](https://regex-vis.com/?r=%23%28kam%5Bae%5Dla%7Cwalt%3Fz%29%5Cd*%5Cb), which show a visualization of a pattern. Note that for such tools you should use single backslashes rather than double backslashes, so `#\w` instead of `#\\w`.
+
+Note that this section will be a bit more of a reference work and explainer than an interactive tutorial.
 So, you might wish to skip the section now, and simply return to it when you need to use more complicated patterns. 
 But if you were getting curious about questions like "how do we match words instead of characters",
 "what other things are there except for \\w and \\d", or "can we make a perfect pattern for matching emails", read on!
