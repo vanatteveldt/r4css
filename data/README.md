@@ -25,6 +25,21 @@ as_tibble(fivethirtyeight::bechdel) |>
 - **Description**: Demographic and socioeconomic indicators per Dutch municipality (population, density, share with Dutch nationality, disposable income, wealth, pensions, distances to hospitals and schools, restaurant density, and share aged 65+). Column names prefixed with `v` use CBS variable codes.
 - **License**: CC-BY 4.0
 
+## Dutch economic news sentiment
+
+- **File**: [dutch_sentiment.csv](dutch_sentiment.csv)
+- **Source**: [ecosent](https://github.com/vanatteveldt/ecosent), from [Van Atteveldt, Van der Velden & Boukes (2021). The validity of sentiment analysis](https://doi.org/10.1080/19312458.2020.1869198)
+- **Description**: 284 Dutch economic news headlines (2015) with English translations and a gold standard sentiment code (`negative`, `neutral`, `positive`), coded by the three authors. The original codes (-1, 0, 1) were recoded to labels.
+- **License**: MIT
+
+Code:
+```{r}
+readr::read_csv("https://raw.githubusercontent.com/vanatteveldt/ecosent/refs/heads/master/data/intermediate/gold_en.csv") |>
+  dplyr::mutate(sentiment = dplyr::case_when(value == -1 ~ "negative", value == 0 ~ "neutral", value == 1 ~ "positive")) |>
+  dplyr::select(id, headline, translation, sentiment) |>
+  readr::write_csv(here::here("data/dutch_sentiment.csv"))
+```
+
 ## Dutch elections data
 
 - **File**: [dutch_elections_2023.csv](dutch_elections_2023.csv)
