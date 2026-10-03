@@ -8,3 +8,13 @@
 ::: {.callout-note}
 **Proposed chapter scope:** Practical LLM use via API with `tidyllm`. Covers sending prompts and handling responses, using both proprietary APIs and local models via Ollama. Deliberately treats the LLM as a black box — what's actually happening under the hood (embeddings, transformers) is covered in Part III.
 :::
+
+
+```{webr}
+library(tidyllm)
+address_schema <- tidyllm_schema(
+  name = "AddressSchema",
+  Street = field_chr("A common street name")
+)
+address_schema
+```

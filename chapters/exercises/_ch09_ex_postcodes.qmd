@@ -1,0 +1,110 @@
+::: {.exercise}
+Let's put quantifiers to work by making a pattern for British postal codes.
+Valid British postal codes consist of three parts:
+
+1. First, one or two upper case letters specify the name of a city or area (e.g. `M` for Manchester or `EH` for Edinburgh)
+2. Next, the district in or near the city is specified with either one digit, two digits, or (in London) a digit plus a letter. This is appended directly to the city code, so `EH8` is an area in or around Edinburgh, and `EC1A` is a district in east central London.
+3. Finally, a second part separated by a space marks a specific unit tailored to the mail routes. This consists of a digit (the sector), followed by two upper case letters.
+
+So, `EH8 9YL`, `M13 9PL` and `WC2A 2AE` are all valid postal codes (corresponding to the addresses of British universities - can you guess which?), but `8EH 9YL`, `M13A 9PL` and `WC2A AE2` are not.
+
+Can you change the `pattern` below so it matches all valid codes, without matching any invalid codes?
+Note the use of anchors (`^` and `$`) to ensure the pattern must match the whole example text.
+When you submit, we will also test your pattern on a number of other valid and invalid codes.
+
+
+```{webr}
+#| setup: true
+#| exercise: ex_postcodes
+library(stringr)
+```
+
+```{webr}
+#| exercise: ex_postcodes
+valid <- c("EH8 9YL", "M13 9PL", "WC2A 2AE")
+invalid <- c("8EH 9YL", "M13A 9PL", "WC2A AE2", "eh8 9yl", "EH8 9YLX")
+examples <- c("Valid codes (should be matched):", valid,
+              "Invalid codes (should not be matched):", invalid)
+pattern <- "^\\w{3} \\w{3}$"
+str_view(examples, pattern, html=TRUE, match=NA)
+```
+
+::: { .hint exercise="ex_postcodes"}
+::: { .callout-tip title="Hint:"}
+- Build the pattern one part at a time, and keep the `^` at the start and the `$` at the end.
+- One or two upper case letters: `[A-Z]` with a quantifier that allows one to two repetitions.
+- The district always starts with a digit, which can be followed by *one optional* digit or letter. A character class can combine both: `[A-Z\\d]`. Which quantifier makes something optional?
+- The second part is simply a digit followed by exactly two upper case letters.
+:::
+:::
+
+::: {.solution exercise="ex_postcodes"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+The pattern consists of the three parts described above, separated by a space before the last part:
+
+- `[A-Z]{1,2}`: one or two upper case letters for the city or area
+- `\\d[A-Z\\d]?`: a digit, optionally followed by a second digit or a letter
+- ` \\d[A-Z]{2}`: a space, a digit, and two upper case letters
+
+The anchors `^` and `$` make sure the pattern has to match the whole text, so that e.g. `EH8 9YLX` is not accepted just because it *contains* a valid code.
+
+```{webr}
+#| exercise: ex_postcodes
+#| solution: true
+valid <- c("EH8 9YL", "M13 9PL", "WC2A 2AE")
+invalid <- c("8EH 9YL", "M13A 9PL", "WC2A AE2", "eh8 9yl", "EH8 9YLX")
+examples <- c("Valid codes (should be matched):", valid,
+              "Invalid codes (should not be matched):", invalid)
+pattern <- "^[A-Z]{1,2}\\d[A-Z\\d]? \\d[A-Z]{2}$"
+str_view(examples, pattern, html=TRUE, match=NA)
+```
+
+Note that this pattern checks the *format* of a postal code, not whether the code actually exists.
+:::
+:::
+
+```{webr}
+#| exercise: ex_postcodes
+#| check: true
+gradethis::grade_this({
+  # Graded on the `pattern` object rather than .result: the str_view widget can't be
+  # compared, and any pattern that classifies all test codes correctly is a good answer.
+  # Messages avoid curly braces, as gradethis passes them through glue.
+  valid_test <- c("EH8 9YL", "M13 9PL", "WC2A 2AE", "M1 1AE", "B33 8TH",
+                  "CR2 6XH", "DN55 1PT", "W1A 0AX", "EC1A 1BB")
+  invalid_test <- c("8EH 9YL", "M13A 9PL", "WC2A AE2", "EH8 9Y", "EH89YL",
+                    "EH8  9YL", "eh8 9yl", "EHX8 9YL", "EH8 9YLX", "EH8 99L")
+
+  pattern <- .envir_result$pattern
+  if (!is.character(pattern) || length(pattern) != 1) {
+    gradethis::fail("We can't find your pattern -- make sure you store it as a single text in the `pattern` variable.")
+  }
+
+  matches <- tryCatch(stringr::str_detect(c(valid_test, invalid_test), pattern),
+                      error = function(e) NULL)
+  if (is.null(matches)) {
+    gradethis::fail("Your pattern gives an error -- check that all brackets are closed and that backslashes are doubled.")
+  }
+
+  missed <- valid_test[!matches[seq_along(valid_test)]]
+  wrong <- invalid_test[matches[-seq_along(valid_test)]]
+
+  if (length(missed) > 0) {
+    gradethis::fail(paste0("Your pattern doesn't match some valid codes: ",
+                           paste(missed, collapse = ", "),
+                           ". Check each part of these codes against the rules above."))
+  }
+  if (any(c("EHX8 9YL", "EH8 9YLX") %in% wrong)) {
+    gradethis::fail(paste0("Your pattern also matches codes with extra characters around a valid code: ",
+                           paste(wrong, collapse = ", "),
+                           ". Did you keep the `^` and `$` anchors?"))
+  }
+  if (length(wrong) > 0) {
+    gradethis::fail(paste0("Your pattern also matches some invalid codes: ",
+                           paste(wrong, collapse = ", "),
+                           ". Can you make it stricter?"))
+  }
+  gradethis::pass("Excellent! Your pattern accepts all valid codes and rejects all invalid ones -- including some extra codes we tested behind the scenes.")
+})
+```
+:::

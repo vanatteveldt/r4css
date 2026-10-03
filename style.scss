@@ -138,4 +138,9 @@ div.reftable {
         white-space: nowrap;
         width: 1%;
     }
+
+    /* Quarto/Bootstrap let inline code wrap, which overrides the nowrap above */
+    td:first-child code {
+        white-space: nowrap;
+    }
 }

@@ -12,9 +12,11 @@ webr:
 
 # Dealing with Text: stringr {#sec-stringr}
 
+<!-- TODO: Teach separate - here or in chapter 7? -->
+<!-- TODO: Should we mention str_c(collapse) in summarize()? -->
 
 Many interesting (computational) social science data sets have textual elements.
-This can e.g. the contents of online posts or reviews,
+This can e.g. be the contents of online posts or reviews,
 official documents, reports, or party manifestoes,
 but also open survey questions or question metadata. 
 
@@ -22,9 +24,39 @@ Very often, we need to clean, preprocess and/or analyse this textual data.
 This chapter will take the first steps in this by introducing the tidyverse `stringr` package,
 which can handle most of the cleaning functions such as normalizing, filtering and extracting parts of textual columns. 
 In the next chapters we will look at other parts of the pipeline: scraping and reading textual data (@sec-scraping),
-analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@sec-llm). 
+analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@sec-llm).
 
-## Data for this chapter: US Elections on Bluesky
+## Chapter objectives {.unnumbered}
+
+In this chapter, you will learn blablabla
+
+<!-- Trial: function overview as alternative table of contents -->
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `str_detect()` | does the text contain the pattern? | @sec-strdetect |
+| `str_glue()` | build a text, filling in R code between curly braces | @sec-strdetect |
+| `str_c(collapse=)` | collapse all values of a vector into a single string | @sec-strdetect |
+| `str_to_lower()` | convert text to lower case | @sec-strdetect |
+| `str_length()` | the number of characters | @sec-basicfunctions |
+| `str_count()` | count how often the pattern occurs in each text | @sec-basicfunctions |
+| `str_trim()` | remove whitespace at the start and end | @sec-basicfunctions |
+| `str_squish()` | trim and normalize all whitespace in the text | @sec-basicfunctions |
+| `str_extract()` | extract the first match in each text | @sec-strextract |
+| `str_remove_all()` | remove all matches | @sec-strremove |
+| `str_replace_all()` | find and replace | @sec-strreplace |
+| `fixed()` | treat the whole pattern as literal text | @sec-strreplace |
+| `str_extract_all()` | extract all matches in each text | @sec-extractall |
+| `str_view()` | show the matches of a pattern | @sec-specifiers |
+| `str_c()` | combine texts into one | @sec-anchors |
+| `str_subset()` | only the texts that contain the pattern (for a vector, not a data frame) | @sec-anchors |
+| `regex()` | wrap a regular expression to specify options | @sec-anchors |
+
+:::
+
+## Data for this chapter: US Elections on Bluesky {.unnumbered}
 
 As an example data set for this chapter, 
 we will use a collection of Bluesky posts about the 2024 US elections (see [the book's github repository](https://github.com/vanatteveldt/r4css/blob/main/data/README.md#us-elections-bluesky-posts) for the R code used to scrape these posts).
@@ -41,7 +73,7 @@ head(posts)
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_pattern_or', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot', 'demo_shrug', 'demo_sentiment', 'demo_sentiment2']
+#| exercise: ['demo_detect_trump', 'demo_detect_lower', 'demo_length_likes', 'demo_squish_count', 'demo_pattern_or', 'demo_hashtag_extract', 'demo_hashtag_remove', 'demo_mention_anonymize', 'demo_hashtag_extract_all', 'demo_hashtag_toy', 'demo_dotall', 'wordplot', 'demo_shrug', 'demo_sentiment', 'demo_sentiment2', 'demo_groups']
 library(tidyverse)
 posts <- read_csv("data/bluesky_us_elections_2024.csv") |>
   select(author=author_name, date=created_at, likes=like_count, text)
@@ -55,7 +87,7 @@ sad_pattern <- str_c("\\b(", str_c(sad_words, collapse="|"), ")\\b")
 As a first step, we will look at a number of functions from the `stringr`
 package for detecting and counting whether a text contains a specific word or substring. This is very useful for cleaning and exploring data. 
 
-### Who do people post about? Using `str_detect` in `filter`
+### Who do people post about? Using `str_detect` in `filter` {#sec-strdetect}
 
 A first question we might ask is how much people post about a candidate, for example Donald Trump. We can use `str_detect` to check whether a text contains a specific substring, and use that to filter the posts:
 
@@ -97,7 +129,7 @@ the functions for dealing with text.
 See the table near the end of this chapter for an overview of useful stringr functions. 
 :::
 
-### Basic string functions in a data frame
+### Basic string functions in a data frame {#sec-basicfunctions}
 
 Next to filtering, it can be useful to use `stringr` within a `mutate` call
 to calculate properties of the data. For example, we could count the length of all posts, and check if longer posts get more likes:
@@ -163,7 +195,7 @@ str_glue("Out of {nrow(posts)} posts, {nrow(rep_posts)} mention Trump or Vance, 
 So, it looks like the republican ticket gets more attention on Bluesky than the democratic ticket - 
 does that necessarily mean that coverage is more favourable for the Trump ticket?
 
-### Extracting a pattern with `str_extract`
+### Extracting a pattern with `str_extract` {#sec-strextract}
 
 Another pattern is `#\\w+`, which matches any word starting with a `#`.  
 Using the function `str_extract`, we can use it to extract the (first) hashtag in each post, and store it as a new column:
@@ -199,7 +231,7 @@ The last part, `+`, is a quantifier which reads "one or more": it means that the
 By using combinations of character classes and quantifiers, you can make patterns for many useful things such as hashtags, zip codes, phone numbers, email addresses, etc. See @sec-regex below for more detail.
 :::
 
-### Removing parts of a text with `str_remove_all`
+### Removing parts of a text with `str_remove_all` {#sec-strremove}
 
 Since the occurrence of this particular hashtag is not informative, let's clean the data first by lowercasing it, and then removing that hashtag using `str_remove_all`, followed by the same code as above:
 
@@ -215,7 +247,7 @@ posts |>
 
 This is more informative: a number of posts had no other hashtags (giving a `NA` for the extraction), and after the somewhat generic `#politics` and `#vote` tags we see hashtags for the two main candidates, mostly balanced. 
 
-### Replacing text with `str_replace_all`
+### Replacing text with `str_replace_all` {#sec-strreplace}
 
 Next to removing text, we can replace parts of a text with `str_replace_all(text, pattern, replacement)`. For example, we can 'anonymize' the at-mentions by replacing all word characters after an at sign by an `ANONYMIZED` placeholder 
 (using `str_squish` to make it easier to read the results):
@@ -412,11 +444,8 @@ That said, we used some particular tricks to make this graph informative:
 3. We tweak the geom to give it more time to converge. Since it functions by moving each individual word until it reaches a place without overlap, it can take quite a number of iterations ('nudges') before each word found a suitable location (and even with these settings, it's quite possible there will still be some overlap). We also set `direction='y'` - this causes the words to be nudged only on the vertical axis, guaranteeing that they are displayed on the correct date. 
 
 
-## Regular expressions in depth {#sec-regex}
+## A deep dive into regular expressions {#sec-regex}
 
-<!-- 
-See [Chapter 9 of my previous book](https://cssbook.net/content/chapter09.html#sec-regular) for a more in-depth discussion of regular expressions until I finish the chapter, especially the [section on regex syntax](https://cssbook.net/content/chapter09.html#sec-regex) and the [example patterns](https://cssbook.net/content/chapter09.html#sec-regexamples). Do note that all backslashes in these patterns need to be doubled for use in standard R strings, so when it says `\w` you need to use `\\w` as above.  
---> 
 
 In the sections above we have seen a number of `stringr` functions to deal with textual data in R. 
 For example, we've used `str_detect` to filter data on whether a term occurs in it, `str_replace_all` and `str_remove_all` to replace or remove specific words or patterns, and `str_extract` to extract patterns such as hashtags. 
@@ -446,7 +475,7 @@ These can be combined in various ways. For example, you can read `#(trump|vance)
 The remainder of this section will discuss each of those functions in turn, and end with a reference list of `stringr` functions and regular expression syntax. 
 :::
 
-### Specifiers: Matching literals and character classes
+### Specifiers: Matching literals and character classes {#sec-specifiers}
 
 In the earlier sections of this chapter, we've seen that alphanumerical characters match that literal character, so `c` matches "c" and `cat` matches "cat". 
 
@@ -457,7 +486,7 @@ A flexible way to make character classes is to use square brackets: `[abc]` matc
 Every specifier can be quantified, so `\\w+` means one or more word characters, and `[A-Z]{2}` means two  upper case Latin letters. We can use this for example to recognize things like at-mentions, email address, and zip codes:
 
 ```{webr}
-#| exercise: str_view
+#| exercise: ['str_view', 'demo_greedy']
 #| setup: true
 library(stringr)
 ```
@@ -577,6 +606,154 @@ and/or `str_to_lower` achieves the same aims while re-using a general part of yo
 So practically, the `regex` flags are not actually used that much. 
 :::
 
+### Quantifiers: How many cats do we need?
+
+We earlier used `#\\w+` to match hashtags, reading the `+` as "one or more (word characters)". 
+`+` is an example of a quantifier, which indicates how many of the preceding part of the pattern should be matched. Next to `+`, you can also use `*`, meaning "zero or more": `#trump\\d*` would match `#trump24`, `#trump2020` but also plain `#trump` as the digits are optional. 
+
+In addition, `?` means "zero or one", making the preceding element optional. So, if we are afraid that people might misspell Tim Walz' last name, we could use `walt?z`, meaning `w-a-l`, followed optionally by a `t`, followed by a `z`.  
+
+Finally, you can specify exactly how many matches you expect using curly braces: `\\d{2}` means exactly two digits, `\\d{2,4}` means two to four digits, and `\\d{2,}` means two of more digits. 
+Note that you can also apply quantifiers to character classes, so e.g. `[A-Z]{2}` means exactly two upper case (Latin) letters.
+
+
+#### Exercise: British postal codes
+
+{{< include exercises/_ch09_ex_postcodes.qmd >}}
+
+Suppose we would look for a .com website domain using a pattern like `https://.*\\.com`. 
+This may look reasonable, but in practice this can lead to unexpected results:
+
+```{webr}
+#| exercise: demo_greedy
+text <- "See https://r4css.vanatteveldt.com or https://example.com"
+str_view(text, "https://.*\\.com", html=TRUE)
+```
+
+As you can see, this matches from the first `https://` to the second `.com`,
+rather than matching each URL separately. 
+The reason for this is that quantifiers are by default *greedy*. This means that, given the choice,
+they try to match as much as possible. Since it can validly match `.*` all the way to (just before)
+the second `.com`, this is what it will do. 
+
+The remedy is to add a question mark next to the quantifier: `.*?` is a non-greedy version of `.*`.
+Try changing it in the code above!
+
+Note that `https://.*?\\.com` is still a pretty bad pattern (try changing `vanatteveldt.com` to `vanatteveldt.nl` above to see what happens). A better pattern would probably be adding a word boundary anchor next to it and/or restricting the character class to e.g. only words and periods: (`https://[\\w.]+\\.com\\b`). Note that the `.` within a `[]`-class does not need to be escaped, and that the `?` is no longer needed as the restricted character class already prevents a 'runaway' greedy match. 
+
+
+### Groups and alternatives {#sec-groups}
+
+Earlier, we've seen that `#(trump|harris)\\b` would match either `#trump` or `#harris`. 
+This is a combination of two mechanisms: `|` is used to indicate two or more alternative patterns that can be matched, and `()` *groups* these alternatives so the parts outside the brackets (`#` and `\\b`)
+are not included in the scope of the `|`. 
+
+Another use of groups is that they can be quantified. So, `#(lol)+\\b` would match "#lol" as well as "#lollollol" (but not "#lolll"), and `#trump(2024)?\\b` would match either "#trump" or "#trump2024".
+
+Finally, groups can be used in `str_extract` to specify what should be extracted. 
+For example, let's construct a (somewhat complicated) pattern to extract the domains that are linked to in the Bluesky posts:
+
+```{webr}
+#| exercise: demo_groups
+start <- "\\b(www\\.|https?://)"
+subdomains <- "([\\w.-]+\\.)?"
+domain <- "([\\w-]+\\.\\w{2,})"
+pattern <- str_c(start, subdomains, domain)
+
+print(str_glue("Domains found by `{pattern}`:"))
+posts |> mutate(domain = str_extract(text, pattern, group=3)) |>
+  count(domain) |> 
+  arrange(desc(n))
+```
+
+This pattern looks complicated, but as always if you read it step by step from the left, it starts making sense:
+
+- First, the start of the match needs to be a 'word' starting with either "www.", "https://", "http://" (with `?` making the "s" optional). 
+- Next, we allow one or more subdomains to be specified with `[\\w.-]+`, i.e. one or more word characters, dots, or hyphens, and the whole subdomain string has to be followed by a dot. This whole part is made optional: the `?` quantifier applies to the whole parenthesized group.
+- The next part is the actual domain, which we define here as one or more word characters or hyphens, followed by a dot, followed by two or more word characters.
+
+This is then merged into a single pattern with `str_c`. Note that this is equivalent
+to writing the whole expression as a single pattern directly, but by splitting it up it remains at least somewhat readable. 
+
+As you can see, the actual result of `str_extract` in this case is not the whole hyperlink, but only the domain part. The reason for this is that we wrapped the domain part in parentheses, turning it into a group; and then we specified `group=3` in `str_extract`, which points to this group. It is the third group because both start and subdomains also use groups (to scope the `|` and `?`), so these are groups 1 and 2. 
+
+Two final things to note:
+
+- You can also use so-called *non-capturing groups* by using `(?: )` instead of `()`. For example, try changing start to  `\\b(?:www\\.|https?://)` in the code above, and do the same for subdomains, and then change the group into `group=1` -- it should give the same result. The benefit is that the number of the group we care about (domain) no longer shifts around depending on the rest of the pattern, but perhaps at the cost of further complicating the pattern. 
+- Capturing groups can also be used in `str_replace` and `str_detect` by using `\\1` to refer back to group 1. For example, `str_replace_all(text, pattern, "[\\3]")` would use the pattern above to replace all hyperlinks to their domain contained in square brackets, so "Watch https://www.youtube.com now!" becomes "Watch [youtube.com] now!", which could be useful for e.g. anonymizing or normalizing posts or open ended survey responses.
+
+:::{.callout-note title="What is 'regular' about these expressions?" collapse="true"}
+
+As a complete aside: Why are 'regular expressions' called 'regular'? 
+
+The answer goes all the way back to the early days of computers and computer science in the 1950s. A mathematician named Stephen Kleene proposed 'regular languages' and proved that they can be identified by what is called a 'finite state machine': a simple program that has a finite number of states, and can go from one state to another by consuming an input.
+
+What this means for regular expressions is that we can visualize a regex as a finite state machine, 
+which provides a nice visual idea of what a pattern does. 
+For example, the pattern `#(kam[ae]la|walt?z)\\d*` can be visualised as follows:
+
+```{mermaid}
+%%| echo: false
+flowchart LR
+  S(( )) -->|"#35;"| H(( ))
+  H -->|k| K1(( ))
+  K1 -->|a| K2(( ))
+  K2 -->|m| K3(( ))
+  K3 -->|a| K4(( ))
+  K3 -->|e| K4(( ))
+  K4 -->|l| K5(( ))
+  K5 -->|a| F((( )))
+  H -->|w| W1(( ))
+  W1 -->|a| W2(( ))
+  W2 -->|l| W3(( ))
+  W3 -->|t| W4(( ))
+  W4 -->|z| F
+  W3 -->|z| F
+  F -->|"\d"| F
+```
+
+So, you start from the left by matching a '#'. Then, the pattern diverges: you match either a 'k' or a 'w', and then you have to continue in that branch. Options or alternatives (`[ae]` or `t?`) are depicted as small subbranches, and the final zero or more digits (`\\d*`) is visualized by optionally going into an infinite loop of `\\d`s, with the double circle indicating valid end nodes. 
+
+Because regular expressions can be matched in a single forward pass through the text, 
+regular expression matching is generally quite efficient 
+(with the small note that later additions such as the `\\1` backreferences briefly mentioned in  @sec-groups actually mean that modern regular expression engines work a bit differently, 
+so some patterns can actually cause matches to be somewhat slow)
+
+:::
+
+## Regular expression reference and example patterns
+
+Below are tables with an overview of the most commonly used functions and regular expression syntax.
+See also the [stringr cheat sheet](https://rstudio.github.io/cheatsheets/strings.pdf).
+
+### Example patterns
+
+Below are some examples of regular expressions for common patterns like dates or HTML tags.
+
+::: {.reftable}
+
+| Goal | Pattern | Example |
+|:-----|:--------|:--------|
+| US zip code | `\\d{5}` | "90210" |
+| US phone number | `(\\d{3}-)?\\d{3}-\\d{4}` | "202-456-1111", "456-1111" |
+| Dutch postal code | `\\d{4} ?[A-Za-z]{2}` | "1015 GK" |
+| ISO date | `\\d{4}-\\d{2}-\\d{2}` | "2020-07-20" |
+| German date | `\\d{1,2}\\.\\d{1,2}\\.\\d{4}` | "25.6.1988" |
+| Year (1900--2099) | `\\b(19|20)\\d{2}\\b` | "2024" |
+| Percentage | `\\d+(\\.\\d+)?%` | "48.3%" |
+| Amount in dollars | `\\$\\d+(,\\d{3})*(\\.\\d{2})?` | `"$1,250.00"` |
+| International phone number | `\\+(\\d[- ]?){7,}\\d` | "+1 555-1234567" |
+| URL | `https?://\\S+` | "https://example.com?a=b" |
+| E-mail address | `[\\w.-]+@[\\w.-]+\\.\\w+` | "jane.doe@example.com" |
+| Hashtag | `#\\w+` | "#election2024" |
+| At-mention (including Bluesky domains) | `@[\\w.-]+` | "@vanatteveldt.com" |
+| Emoji | `\\p{Extended_Pictographic}` | "😀" |
+| HTML tags | `</?\\w[^>]*>` | `"</html>"` |
+| HTML character escapes | `&[^;]+;` | `"&nbsp;"` |
+
+: Example patterns {#tbl-regexamples}
+
+:::
 
 ::: {.reftable}
 
@@ -601,115 +778,24 @@ So practically, the `regex` flags are not actually used that much.
 : What to match: character classes and anchors {#tbl-specifiers}
 :::
 
-### Quantifiers: How many cats do we need?
 
-We earlier used `#\\w+` to match hashtags, reading the `+` as "one or more (word characters)". 
-`+` is an example of a quantifier, which indicates how many of the preceding part of the pattern should be matched. Next to `+`, you can also use `*`, meaning "zero or more": `#trump\\d*` would match `#trump24`, `#trump2020` but also plain `#trump` as the digits are optional. 
+::: {.reftable}
 
-In addition, `?` means "zero or one", making the preceding element optional. So, if we are afraid that people might misspell Tim Walz' last name, we could use `walt?z`, meaning `w-a-l`, followed optionally by a `t`, followed by a `z`.  
+| Pattern | Matches | Example |
+|:----------|:--------|:--------|
+| `*` | zero or more of the preceding part | `#trump\\d*` matches "#trump" and "#trump2024" |
+| `+` | one or more of the preceding part | `#\\w+` matches "#election2024" |
+| `?` | zero or one of the preceding part (i.e. optional) | `walt?z` matches "walz" and "waltz" |
+| `{n}` | exactly *n* of the preceding part | `\\d{4}` matches "2024" |
+| `{n,m}` | between *n* and *m* of the preceding part | `[A-Z]{1,2}` matches "M" and "EH" |
+| `{n,}` | *n* or more of the preceding part | `\\w{2,}` matches words of at least two characters |
+| `*?`, `+?`, `??` | a lazy quantifier: match as *little* as possible | `https://.*?\\.com` stops at the first ".com" |
+| `a|b` | either the pattern on the left or the one on the right | `trump|vance` matches "trump" and "vance" |
+| `(...)` | a group, to scope `|`, apply a quantifier, or extract a part | `#(trump|harris)\\b`, `#(lol)+`, `str_extract(text, pattern, group=1)` |
+| `(?:...)` | a non-capturing group: grouping without a group number | `\\b(?:www\\.|https?://)` |
 
-Finally, you can specify exactly how many matches you expect using curly braces: `\\d{2}` means exactly two digits, `\\d{2,4}` means two to four digits, and `\\d{2,}` means two of more digits. 
-Note that you can also apply quantifiers to character classes, so e.g. `[A-Z]{2}` means exactly two upper case (Latin) letters.
-
-<!-- TODO: Greedy vs non-greedy -->
-
-:::{.challenge title="British postal codes"}
-
-<!-- todo: turn into checked exercise, because there is a valid outcome -->
-
-As a challenge, try to make a pattern for matching British postal codes. 
-Valid British postal codes consist of three parts:
-
-1. First, one or two upper case letters specify the name of a city or area (e.g. `M` for Manchester or `EH` for Edinburgh) 
-2. Next, the district in or near the city is specified with either one digit, two digits, or (in London) a digit plus a letter. This is appended directly to the city code, so `EH8` is an area in or around Edinburgh, and `EC1A` is a district in east central London. 
-3. Finally, a second part separated by a space marks a specific unit tailored to the mail routes. This consists of a digit (the sector), followed by two upper case letters. 
-
-So, `EH8 9YL`, `M13 9QS` and `WC2A 2AE` are all valid postal codes (corresponding to the addresses of British universities - can you guess which?), but `8EH 9YL`, `M13A 9PL` and `WC2A AE2` are not.
-
-Can you change the `pattern` below so it matches all valid codes, without matching any invalid codes?
-Note the use of anchors (`^` and `$`) to ensure the pattern must match the whole example text. 
-
-<!-- TODO: add some more invalid examples -->
-
-```{webr}
-#| exercise: postalcodes
-valid <- c("EH8 9YL", "M13 9PL", "WC2A 2AE")
-invalid <- c("8EH 9YL", "M13A 9PL", "WC2A AE2")
-examples <- c("Valid codes (should be matched):", valid, 
-             "Invalid codes (should not be matched):", invalid)
-pattern <- "^\\w{3} \\w{3}$"
-str_view(examples, pattern, html=TRUE, match=NA)
-```
-
+: How many and in what combination: quantifiers, alternatives and groups {#tbl-quantifiers}
 :::
-
-
-
-<!-- Scope:
-  - Reminder of * and +, introduce ?. 
-  - Introduce {3,4} and {2,}
-  - Note that any specifier can be quantified, including  and [A-Z]+
-  - Greedy and non-greedy matches
-  -->
-
-### Groups:
-
-<!-- Scope:
-  - Reminder of () for patterns (cat|dog)
-  - combinations like (cat|dog)?
-  - Explain about capture groups in str_extract and str_replace
-  -->
-
-### Example patterns
-
-<!--
-  - Table of example patterns (table 9.3 from cssbook.net)
-  -->
-
-
-
-:::{.callout-note title="What is 'regular' about these expressions?"}
-
-Scope: Explain the link between regular expressions and finite state automata, 
-and provide a visual example of how a regex is parsed,
-
-<!--Claude: in the 1950s, Kleene described "regular events/languages" as the patterns that a simple state machine can recognise. Ken Thompson built them into the ed editor around 1968, and grep comes from the ed command g/re/p (globally search for a regular expression and print). That last fact is a nice hook.-->
-
-Visualization of the FSA for `#(kam[ae]la|walt?z)\\d*`:
-
-```{mermaid}
-%%| echo: false
-flowchart LR
-  S(( )) -->|"#35;"| H(( ))
-  H -->|k| K1(( ))
-  K1 -->|a| K2(( ))
-  K2 -->|m| K3(( ))
-  K3 -->|a| K4(( ))
-  K3 -->|e| K4(( ))
-  K4 -->|l| K5(( ))
-  K5 -->|a| F((( )))
-  H -->|w| W1(( ))
-  W1 -->|a| W2(( ))
-  W2 -->|l| W3(( ))
-  W3 -->|t| W4(( ))
-  W4 -->|z| F
-  W3 -->|z| F
-  F -->|"\d"| F
-```
-
-Perhaps add a small note that (1) because they can in principle be matched in a single forward pass, regular expression matching are quite efficient, but (2) 'modern' additions like backreferences 
-break this and need a different way of matching. But this all starts being way complex. 
-
-:::
-
-### Reference tables
-
-<!-- Scope:
-  - Table of regex syntax (table 9.2 from cssbook.net)
-  - Table of stringr functions (table 9.4 from cssbook.net)
--->
-
-
 
 
 
