@@ -575,21 +575,6 @@ so it matches the theoretical concepts validly but is also clear and unambiguous
 If it turns out that coders are coding certain categories or examples wrong, 
 the first thing you would generally do is improve the codebook, not fire the coders. 
 
-That said, let's see if we can improve performance by making a more detailed codebook.
-For this, let's base ourselves on the instructions from @vanatteveldt2021validity (p. 125),
-which 
-
-```{webr}
-instruction <- str_c(
-  "You are classifying newspaper headlines by their sentiment about the economy, ",
-  "as in a content analysis of economic news. ",
-  "Judge only the headline itself, not anything else you may know about the events it refers to. ",
-  "Codebook: positive = the headline evaluates the economy or economic conditions as good or improving; ",
-  "negative = as bad or worsening; ",
-  "neutral = the headline gives no evaluation of economic conditions, or is ambiguous or mixed. ",
-  "Answer with only one word, in lowercase: positive, negative, or neutral.")
-```
-
 <!--
 category definitions;
 decision rules for borderline cases;
