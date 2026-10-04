@@ -41,6 +41,18 @@ template <- "{{instruction}}\n\nThe headline: {{headline}}"
 english <- interpolate(template, instruction = instruction, headline = headlines$translation)
 dutch <- interpolate(template, instruction = instruction, headline = headlines$headline)
 
+# The improved prompt from the 'Writing a good prompt' section, based on the codebook for human coders
+instruction_codebook <- str_c(
+  "You are classifying newspaper headlines by their sentiment about the economy, ",
+  "as in a content analysis of economic news. ",
+  "Judge only the headline itself, not anything else you may know about the events it refers to. ",
+  "Codebook: positive = the headline evaluates the economy or economic conditions as good or improving; ",
+  "negative = as bad or worsening; ",
+  "neutral = the headline gives no evaluation of economic conditions, or is ambiguous or mixed. ",
+  "Answer with only one word, in lowercase: positive, negative, or neutral.")
+english_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$translation)
+dutch_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$headline)
+
 # Use exactly the settings shown in the book, as the mock does not check them
 haiku <- chat_anthropic(model = "claude-haiku-4-5")
 llama <- chat_ollama(model = "llama3.2:3b")
@@ -51,4 +63,6 @@ gpt <- chat_openai(model = "gpt-4.1-nano")
 for (chat in list(llama, haiku, gemma, gpt)) {
   record_llm(chat, english)
   record_llm(chat, dutch)
+  record_llm(chat, english_codebook)
+  record_llm(chat, dutch_codebook)
 }
