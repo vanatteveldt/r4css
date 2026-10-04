@@ -613,7 +613,7 @@ and/or `str_to_lower` achieves the same aims while re-using a general part of yo
 So practically, the `regex` flags are not actually used that much. 
 :::
 
-### Quantifiers: How many cats do we need?
+### Quantifiers: How many cats do we need? {#sec-quantifiers}
 
 We earlier used `#\\w+` to match hashtags, reading the `+` as "one or more (word characters)". 
 `+` is an example of a quantifier, which indicates how many of the preceding part of the pattern should be matched. Next to `+`, you can also use `*`, meaning "zero or more": `#trump\\d*` would match `#trump24`, `#trump2020` but also plain `#trump` as the digits are optional. 

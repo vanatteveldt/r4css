@@ -1,0 +1,90 @@
+# Replays recorded LLM answers (data/llm_recorded.csv) instead of calling a real LLM,
+# by pretending to be a local Ollama server (ellmer::chat_ollama), the Anthropic API (ellmer::chat_anthropic)
+# or the OpenAI Responses API (ellmer::chat_openai)
+llm_recorded <- readr::read_csv("data/llm_recorded.csv", show_col_types = FALSE)
+# ellmer's coro generators get byte-compiled again on every request, which makes replaying
+# hundreds of answers take minutes; without the JIT compiler it takes seconds
+invisible(compiler::enableJIT(0))
+# An empty system prompt is stored as an empty field, which read_csv turns into NA
+llm_recorded$prompt[is.na(llm_recorded$prompt)] <- ""
+# Squish whitespace so that e.g. spreading the prompt over multiple lines still matches;
+# computed once here, as the mock is called for every single request
+llm_key <- function(model, prompt, text) paste(model, stringr::str_squish(prompt), stringr::str_squish(text), sep = "\r")
+llm_recorded_keys <- llm_key(llm_recorded$model, llm_recorded$prompt, llm_recorded$text)
+# chat_anthropic() and chat_openai() refuse to start without a key; the mock never uses it
+if (Sys.getenv("ANTHROPIC_API_KEY") == "") Sys.setenv(ANTHROPIC_API_KEY = "not-needed-for-recorded-answers")
+if (Sys.getenv("OPENAI_API_KEY") == "") Sys.setenv(OPENAI_API_KEY = "not-needed-for-recorded-answers")
+
+# Shortcut for the common case: if all prompts are recorded, return the recorded answers directly.
+# Replaying hundreds of answers through ellmer is too slow in the browser.
+# Otherwise fall back to the real function, which then goes through the httr2 mock below.
+parallel_chat_text <- function(chat, prompts, ...) {
+  system <- chat$get_system_prompt()
+  if (is.null(system)) system <- ""
+  answers <- llm_recorded$answer[match(llm_key(chat$get_model(), system, as.character(prompts)), llm_recorded_keys)]
+  if (!anyNA(answers)) return(answers)
+  ellmer::parallel_chat_text(chat, prompts, ...)
+}
+
+options(httr2_mock = function(req) {
+  path <- httr2::url_parse(req$url)$path
+  if (path == "/api/tags") {
+    # Only report the local (Ollama) models as installed, not the hosted ones like Claude
+    local_models <- unique(llm_recorded$model[!stringr::str_detect(llm_recorded$model, "^(claude|gpt)")])
+    models <- lapply(local_models, \(m) list(
+      name = m, model = m, modified_at = "2026-10-01T12:00:00Z", size = 2019393189, digest = "recorded"))
+    return(httr2::response_json(url = req$url, body = list(models = models)))
+  }
+  if (path == "/api/show") {
+    return(httr2::response_json(url = req$url, body = list(capabilities = list("completion"))))
+  }
+  body <- req$body$data
+  anthropic <- path == "/v1/messages"
+  openai <- path == "/v1/responses"
+  # Message content is either a plain string or a list of parts with a $text field
+  content_text <- function(content) {
+    if (is.character(content)) content else paste(vapply(content, \(part) part$text, ""), collapse = "")
+  }
+  messages <- if (openai) body$input else body$messages
+  roles <- vapply(messages, \(m) m$role, "")
+  # The system prompt is optional: the book's examples put all instructions in the user message
+  system <- if (anthropic && !is.null(body$system)) content_text(body$system) else
+    if (any(roles == "system")) content_text(messages[[which(roles == "system")[1]]]$content) else ""
+  text <- content_text(messages[[length(messages)]]$content)
+  answer <- llm_recorded$answer[match(llm_key(body$model, system, text), llm_recorded_keys)]
+  if (is.na(answer)) {
+    explanation <- paste(
+      "I'm sorry, Dave, I'm afraid I can't let you do that :(\n",
+      "\nDon't worry, nothing went wrong. It's just that unfortunately to get LLMs working",
+      "in the interactive examples, we had to pre-record all the messages.",
+      "So, it can only replay the answers we recorded for the exact prompts and texts in the examples.",
+      "If you change the prompt or the texts, there is no recorded answer.",
+      "To try your own prompts, run this code in R on your own computer with a real LLM.")
+    # cat() rather than message(), so it still shows in chunks with `message: false`
+    cat("\n\n", explanation, "\n\n")
+    error <- list(message = explanation, type = "no_recorded_answer")
+    error_body <- if (anthropic) list(type = "error", error = error) else list(error = error)
+    return(httr2::response_json(url = req$url, status_code = 400, body = error_body))
+  }
+  if (anthropic) {
+    return(httr2::response_json(url = req$url, body = list(
+      id = "recorded", type = "message", role = "assistant", model = body$model,
+      content = list(list(type = "text", text = answer[1])),
+      stop_reason = "end_turn", usage = list(input_tokens = 0, output_tokens = 0)
+    )))
+  }
+  if (openai) {
+    return(httr2::response_json(url = req$url, body = list(
+      id = "recorded", object = "response", status = "completed", model = body$model,
+      output = list(list(type = "message", id = "recorded", role = "assistant", status = "completed",
+                         content = list(list(type = "output_text", text = answer[1], annotations = list())))),
+      usage = list(input_tokens = 0, output_tokens = 0, total_tokens = 0)
+    )))
+  }
+  httr2::response_json(url = req$url, body = list(
+    id = "recorded", object = "chat.completion", created = 0, model = body$model,
+    choices = list(list(index = 0, finish_reason = "stop",
+                        message = list(role = "assistant", content = answer[1]))),
+    usage = list(prompt_tokens = 0, completion_tokens = 0, total_tokens = 0)
+  ))
+})

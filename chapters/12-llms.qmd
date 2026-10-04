@@ -1,20 +1,582 @@
+---
+webr:
+  resources:
+    - ../data/dutch_sentiment.csv
+    - ../data/llm_recorded.csv
+---
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-# Using LLMs: tidyllm (todo) {#sec-llm}
+# Using LLMs with `ellmer` (todo) {#sec-llm}
 
+One of the newest and most powerful tools in the computational social science toolbox
+are Large Language Models (LLMs) such as ChatGPT and Claude.
+You've probably used them at some point with their chat interface, 
+and maybe also through something like Claude Code. 
+In this chapter we will see another side of LLMs:
+they can be used as powerful analysis tools.
+Since LLMs have a good understanding of natural language,
+asking them whether a text is negative can give a much more valid answer than
+using a dictionary-based sentiment analysis.
 
-::: {.callout-note}
-**Proposed chapter scope:** Practical LLM use via API with `tidyllm`. Covers sending prompts and handling responses, using both proprietary APIs and local models via Ollama. Deliberately treats the LLM as a black box — what's actually happening under the hood (embeddings, transformers) is covered in Part III.
+In this chapter you will learn how to use LLMs to do classification tasks such as
+sentiment analysis, and the importance of good prompts and validation.
+We will also discuss the ethical, climate and privacy considerations around LLMs and 
+discuss the tradeoffs of proprietary vs local models. 
+
+::: {.callout-note title="LLMs in this interactive textbook"}
+As a small technical note: we cannot actually call LLMs from the browser.
+So, for all examples in this chapter we have 'mocked' the LLM:
+when it looks like you call the LLM, it actually produces a canned response. 
+Practically, this means that you cannot change the prompts in
+the interactive version of the book.
+Of course, you are still encouraged to play with the code itself
+to change the analysis or sampling or even to swap the model,
+as long as you use one of the models used in this chapter. 
+
+You are encouraged to play with LLMs in your local R installation as well.
+This will require either getting an API key for one of the proprietary models 
+such as Claude or GPT, or installing an open model on your own computer,
+see the instructions in @sec-ollama.
+
+To see the script we used to pre-record the LLM answers, 
+you can check the [record_llm.R](https://github.com/vanatteveldt/r4css/blob/main/data/record_llm.R) script on the book's GitHub page as well as the resulting [csv file](https://github.com/vanatteveldt/r4css/blob/main/data/llm_recorded.csv).
 :::
+
+## Chapter objectives {.unnumbered}
+
+<!-- TODO -->
+
+## Data for this chapter {.unnumbered}
+
+For this chapter, we will use the Dutch sentiment data described in @vanatteveldt2021validity,
+who published their dataset on [GitHub](https://github.com/vanatteveldt/ecosent):
 
 
 ```{webr}
-library(tidyllm)
-address_schema <- tidyllm_schema(
-  name = "AddressSchema",
-  Street = field_chr("A common street name")
-)
-address_schema
+#|warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/dutch_sentiment.csv", "dutch_sentiment.csv")
+headlines <- read_csv("dutch_sentiment.csv")
+head(headlines)
 ```
+
+As you can see, this has the sentiment and English translation for 284 headlines. They are all from economic news, and are coded by the three authors based on whether the headline describes the economy as doing well or poorly. 
+
+::: {.challenge}
+- How would you approach a sentiment analysis of this data? 
+- Do you think a dictionary should work well for this?
+- What question would you ask ChatGPT or Claude to do a sentiment analysis?
+- Would it work better on the Dutch original, or on the English translation?
+:::
+
+## LLMs in the social sciences {#sec-llm-intro}
+
+Many social science questions require analysing the content of messages or other cultural artefacts. This can range from analysing newspaper coverage or social media posts about 
+political or societal issues, to emails or messages exchanged in an organization or 
+even the profile pictures and chat messages in dating apps. 
+
+This is traditionally called *content analysis*, defined by @krippendorff2018content
+as "making replicable and valid inferences from data to their context". 
+As this definition implies, this always entails an amount of inference or interpretation,
+since we are generally not interested in the usage of particular words (or image pixels),
+but rather in what these words can tell us about the sender, the receiver, or the broader society or culture in which they are produced. 
+
+Although manual content analysis is still needed for validation, 
+automatic text and image classification is very useful for analysing larger data sets.
+We have seen dictionary approaches in the previous chapters, 
+but for many research questions this turns out to not lead to valid inferences:
+there is no set of words that accurately captures anger, let alone the moral framing of an argument (cf. @vanatteveldt2021validity).
+For this reason many scholars turned to machine learning, 
+but due to the requirement for large training sets this is also not always feasible,
+even with advanced "deep learning" approaches (e.g. @laurer2024less).
+
+LLMs have changed this equation quite dramatically:
+their understanding of natural language, including the ability to be prompted in natural language, means that they are very good at 'zero-shot classification': you can ask an LLM to classify a specific text
+using categories that you can describe in the instructions, and the LLM can often perform very well
+without needing any training data [@tornberg2025large].
+
+As an example, the code below uses a locally running LLM to classify the first 10 headlines
+from the sentiment analysis data.
+
+```{webr}
+#| setup: true
+#| exercise: demo_llm_first
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+```
+
+```{webr}
+#| exercise: demo_llm_first
+#| warning: false
+library(ellmer)
+chat <- chat_ollama(model = "gemma4:e4b")
+
+instruction <- str_c(
+  "Does this economic news headline describe the economy as ",
+  "doing well (positive), poorly (negative), or neither (neutral)? ",
+  "Answer with only one word: positive, negative, or neutral.")
+
+set.seed(1)
+headlines |>
+  slice_sample(n=10) |>
+  mutate(llm_sentiment = parallel_chat_text(
+    chat=chat, 
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
+  )) |> select(translation, sentiment, llm_sentiment)
+```
+
+The LLM we used did pretty well: it correctly classified 8 out of 10 example sentences,
+without any training data and with a minimal instruction in the *prompt*. 
+This model (`gemma4:e4b`) is a new and fairly small model that runs well on my own computer,
+so it is heartening to see that even this model already does fairly well 
+(on these 10 sentences, at least!).
+
+::: {.callout-note title="ellmer syntax"}
+
+The code above introduced three new new functions from the `ellmer` package.
+Let's take a second to look at these in detail.
+
+- First, we create a *chat object* using `chat_ollama`. This object encodes various choices
+  such as what provider to use, but also which model and optionally other parameters like temperature.
+  For example, we could also use `gpt <- chat_openai(model = "gpt-4.1-nano", parameters=params(temperature=0))` to use OpenAI's nano model with a temperature of zero 
+  (which makes the model more deterministic, but possibly less creative).
+- Next, `interpolate` was used to create the *prompts* to be sent to the model.
+  In this case, it creates a single message containing both the instructions and the headline, 
+  similar to asking it as a single question in the chat interface. 
+  The `interpolate` function is very similar to the `str_glue` function we saw in @sec-strdetect:
+  it fills the instruction object and translation column values into the template text,
+  producing 10 prompts with different headline texts. 
+  If `interpolate` is used within `mutate` as it is here,
+  it can directly access both columns of the data frame and global objects like `instruction`.
+  Do note that because task instructions often need to use actual curly braces, 
+  the makers of `interpolate` decided to use double braces for its variables: `{{instruction}}`.
+- Finally, the `parallel_chat_text` function sends the `prompts`
+  created with the `interpolate` function to the LLM specified in the `chat=` argument. 
+  The LLM then responds with a single message, (hopefully) following the instruction to use one of the valid responses (in this case, positive, negative, or neutral).
+  This process is repeated for each row in the data frame, so each sentence is classified completely independently. 
+
+Note that we use `set.seed(1)` to set the random seed used in the sampling, 
+to ensure that the same sentences are 'sampled' if we re-run
+(and to be totally honest, I picked seed 1 because the models show some interesting variation on these sentences).
+The random seed would normally not fix the responses, as the LLM itself is non-deterministic,
+even with temperature set to zero. 
+However, since we used canned responses, they will always be the same if you run this in the book.
+If you try it on your own computer the answers can vary every run.
+Note that you are free to change the random seed and explore performance on other subsets,
+as we pre-recorded the answers for all headlines in the dataset. 
+:::
+
+It should be noted that the LLM is essentially a 'black box'.
+We don't really know what goes on inside, we can only observe the output it produces given our input.
+This underscores the need for validating the performance of your specific instructions and model on your specific task.
+
+Moreover, the same input does not always give the same output:
+queries can be made more repeatable by setting a lower model *temperature*, 
+but even at temperature zero the models are not fully deterministic
+(cf. @vallejovera2025llms). 
+
+It can often be useful to ask for the 'reasoning' of the model as well,
+that is, ask the model to explain why it made a specific choice (see @sec-ellmer).
+Very often, this can be useful in spotting mistakes or fine-tuning the instructions.
+Ultimately, however, this is just more words produced by the same black-box LLM:
+we don't actually know if the reason it states is actually its reason for making a choice
+(and @turpin2023language conclude that in some circumstances LLMs can give "unfaithful explanations" about their decisions, to the point of post-hoc rationalizing wrong decisions).
+
+
+### Concerns and considerations 
+
+When using LLMs for text classification, there are a number of things you should be aware of.
+
+First, LLMs can make mistakes. Even with the newest models and the best prompts,
+they can get things wrong. It's even worse if the answer is biased, 
+that is, that the error is systematic rather than random.
+Since LLMs are trained on existing data, there is always a risk that inequities in the training material
+can be reinforced.
+For example, @vallejovera2025llms found that LLMs are biased when coding political text:
+the same statement on immigration was consistently coded more negatively when attributed to a right-wing party than to a left-wing party, even with explicit instructions to ignore the party label.   
+For this reason, it remains important to **validate** the results of the classification,
+and especially to check that performance is similar across categories of interest (e.g. gender, ethnicity, or party). 
+
+Second, there are issues of privacy and reproducibility, especially when using proprietary models
+accessed via an API. If you use an API for classifying e.g. open survey responses, these responses 
+will be sent to e.g. OpenAI or Anthropic's server. 
+Depending on many details, this might be against the terms of use of the data, 
+the consent form signed by the participants, and/or privacy regulations.
+A second potential problem is reproducibility: 
+the model hosted by an API can change without notice and without retaining access to earlier versions,
+so there is no guarantee we can call the same model 5 years from now.
+Both issues are mitigated by using local models, either on your own computer or on a server hosted
+within your organization. 
+This adds costs and complexity, however, and this is limited to *open-weights models*:
+models like `llama` or `qwen` that have been published and can be downloaded locally. 
+
+<!-- TODO:  add a link to our research note and give a better comparison
+Unfortunately, these models often still underperform compared to the state of the art 
+proprietary models.  
+-->
+
+Third, the issue of sustainability is often raised. 
+Data centers are huge consumers of power and water supplies, 
+and by using LLMs you contribute to the pollution they cause. 
+It should be noted, however, that single queries, especially to a relatively small model, do not directly cause that much pollution or water usage.
+Although it's hard to determine energy use of proprietary APIs, @jegham2025hungry estimate that a single query to a small model can even be less energy intensive than a normal Google search, but the more complex reasoning models can consume significantly more than that.
+This also points to the importance of not always using the most powerful model for every task:
+if a task can be solved with a small, non-reasoning model it would waste resources to use a bigger model for that task. 
+Similarly, if a question can be answered on a sample of 100 texts, 
+it would be much more polluting to analyse 10,000 texts instead.
+
+## Choosing and connecting a model
+
+Before we can call LLMs from R, we need to connect to a specific server and model. 
+
+### Using hosted LLMs  {#sec-llm-api}
+
+The easiest way to get started is by using a hosted proprietary model such as OpenAI's GPT models or Anthropic's Claude. 
+The first thing you would need to do is go to their respective websites, create an account, 
+and create an API key. 
+This will require a payment method, but even just 10 euros or dollars can go a long way. 
+Of course, whether you are able and willing to do this is completely your decision. 
+
+The specific instructions depend on the platform, but it's generally just a couple of clicks
+(and a credit card). See for example the [instructions from OpenAI](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key) and the [Anthropic instructions](https://platform.claude.com/docs/en/get-api-key). 
+
+This API key identifies you to the service, and allows R to use the API in your name. 
+For this reason, the API key should be treated as sensitive information:
+anyone who has the key can use your credits, and so your money, to query the API!
+So, never place the API key in an R script or report.
+Instead, you should place this key in your *environment file*, which is loaded by R at startup.
+In RStudio, you can run the command `file.edit("~/.Renviron")`, and it should open this file directly.
+There, add the API key on a single line in the format KEY=VALUE, so something like:
+
+```
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-...
+```
+
+After that, restart R (or run `readRenviron("~/.Renviron")`). You can check that the key is loaded with 
+`str_sub(Sys.getenv("OPENAI_API_KEY"), end=10)` - this should print the first 10 characters of your key in the console output.
+
+After this, you can use models from that provider in your code, for example to use Claude Haiku for the same sentiment task:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_llm_haiku', 'demo_llm_ollama', 'demo_models_ollama']
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+instruction <- str_c(
+  "Does this economic news headline describe the economy as ",
+  "doing well (positive), poorly (negative), or neither (neutral)? ",
+  "Answer with only one word: positive, negative, or neutral.")
+```
+
+```{webr}
+#| exercise: demo_llm_haiku
+#| warning: false
+library(ellmer)
+chat <- chat_anthropic(model = "claude-haiku-4-5")
+
+instruction <- str_c(
+  "Does this economic news headline describe the economy as ",
+  "doing well (positive), poorly (negative), or neither (neutral)? ",
+  "Answer with only one word: positive, negative, or neutral.")
+
+set.seed(1)
+headlines |>
+  slice_sample(n=10) |>
+  mutate(llm_sentiment = parallel_chat_text(
+    chat=chat,
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
+  )) |> select(translation, sentiment, llm_sentiment)
+```
+
+As you can see, this uses `claude-haiku-4-5`, which is the smallest of the Claude family of models.
+It also does fairly well, getting 7 out of 10 answers correct, 
+which is as likely to be a sampling variation as a real difference from the results above. 
+
+Note that `ellmer` will automatically search for the `ANTHROPIC_API_KEY` for this model, 
+so if that key is in your environment it should work out of the box on your own computer.
+For using OpenAI, change that line to e.g. `chat <- chat_openai(model = "gpt-4.1-nano")`
+(and make sure that `OPENAI_API_KEY` is provided). 
+How well does GPT nano classify these 10 headlines?
+
+Note that the way this is set up it's very easy to change LLM providers 
+and even switch from a proprietary to a local model: 
+just change the `chat_` function and use the new chat object, and the rest of the code will run as before. 
+This makes it easy to compare performance across different models and providers,
+which can be an important part of validation. 
+
+After running this, you can use `token_usage()` on your own computer to check how many tokens you used,
+and what the dollar cost was for this. 
+In my case, using Haiku for classifying all 284 headlines in both original Dutch and English cost a grand total of 5 cents, while OpenAI cost was rounded to zero cents. 
+
+
+### Using local models with Ollama {#sec-ollama} 
+
+As an alternative to using a hosted model, it is perfectly possible (and sometimes preferable)
+to run a model on your own computer, especially if you have a powerful computer with a good graphics card. 
+
+First, you should [download and install Ollama](https://ollama.com/download/).
+For Windows and Mac, you can choose 'manual download' and run the downloaded installer as normal
+(and Linux users and general nerds like me can of course run the terminal command).
+After that, go to [http://localhost:11434/](http://localhost:11434/) in your browser, it should say
+"Ollama is running". 
+
+The next step is to actually download a model.
+Their [library](https://ollama.com/library) lists all available models,
+where each model shows a "size" statistic - if this is (comfortably) smaller than your GPU memory size
+it should work relatively quickly. 
+For example, we could pick [llama3.2:3b](https://ollama.com/library/llama3.2), 
+listed as 2GB in size, which should fit most computers (and very easily fits my GPU's 24GB memory). 
+Note that even if you don't have a dedicated GPU, or the model is too large to fit,
+it will still run, just (much) slower. 
+
+To install this model, you can open a terminal and run `ollama pull llama3.2:3b`.
+You can also download the model from R with `pull` from the `ollamar` package.
+
+```{r eval=F}
+library(ollamar)
+pull("llama3.2:3b")  
+```
+
+You can then check which models exist with
+
+```{webr}
+#| exercise: demo_models_ollama
+#| warning: false
+models_ollama()
+```
+
+Now that Ollama is running and we have a model, we can use it in the same way as earlier
+(using the prompt defined above):
+
+```{webr}
+#| exercise: demo_llm_ollama
+#| warning: false
+chat <- chat_ollama(model = "llama3.2:3b")
+
+set.seed(1)
+headlines |>
+  slice_sample(n=10) |>
+  mutate(llm_sentiment = parallel_chat_text(
+    chat=chat,
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
+  )) |> select(translation, sentiment, llm_sentiment)
+```
+
+Results here show an interesting development:
+It's substantively correct in 6 out of 10 headlines,
+but in three cases it replied with a capitalized response ('Neutral' and 'Negative'), and
+in one cases added a period at the end of its response ('negative.').  
+Apparently it follows the instructions on
+what to emit less scrupulously than the other models did. 
+In this case it can be fixed post-hoc rather easily using `str_to_lower`
+and `str_remove_all` (see @sec-stringr)
+but in other cases the model might just start chatting about the task, rather than solving it for you. 
+
+
+## Validation: can we trust the labels? {#sec-llm-validation}
+
+The code above showed performance on a very small subset of the data.
+How well do the four models we tested so far do on the full data?
+
+(Note that this runs quickly here because we are using pre-computed responses,
+but it can easily take multiple minutes if you run this on your own computer)
+
+```{webr}
+#| setup: true
+#| exercise: demo_validation_run
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+instruction <- str_c(
+  "Does this economic news headline describe the economy as ",
+  "doing well (positive), poorly (negative), or neither (neutral)? ",
+  "Answer with only one word: positive, negative, or neutral.")
+```
+
+```{webr}
+#| exercise: demo_validation_run
+#| warning: false
+chat_llama <- chat_ollama(model = "llama3.2:3b")
+chat_haiku <- chat_anthropic(model = "claude-haiku-4-5")
+chat_gemma <- chat_ollama(model = "gemma4:e4b")
+chat_nano <- chat_openai(model = "gpt-4.1-nano")
+
+results <- headlines |>
+  mutate(
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"), 
+    llm_llama = parallel_chat_text(chat_llama, prompts),
+    llm_haiku = parallel_chat_text(chat_haiku, prompts),
+    llm_gemma = parallel_chat_text(chat_gemma, prompts),
+    llm_nano = parallel_chat_text(chat_nano, prompts)
+  ) 
+head(results)
+```
+
+As you can see, the values for each model are now added to each sentence, so 
+we can compare performance. 
+Note that we computed `prompts` as a separate column here since it's shared between all models,
+with the added benefit that we can now also inspect it to see if the prompt reads as intended. 
+
+<!-- TODO: add a table of the actual answers per model? -->
+
+### Analysing the results
+
+An easy way to do this is to use `pivot_longer` (see @sec-pivot-longers) to turn this into a
+long format data frame, so we can see performance per model:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_validation_accuracy', 'demo_validation_confusion']
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+instruction <- str_c(
+  "Does this economic news headline describe the economy as ",
+  "doing well (positive), poorly (negative), or neither (neutral)? ",
+  "Answer with only one word: positive, negative, or neutral.")
+# Cached versions of `results` and `results_long` from the chunks in this section: looks the answers
+# up in the recordings directly, rather than replaying all of them through ellmer, which takes a while
+cached_answers <- function(model, prompts) {
+  llm_recorded$answer[match(llm_key(model, "", prompts), llm_recorded_keys)]
+}
+results <- headlines |>
+  mutate(
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    llm_llama = cached_answers("llama3.2:3b", prompts),
+    llm_haiku = cached_answers("claude-haiku-4-5", prompts),
+    llm_gemma = cached_answers("gemma4:e4b", prompts),
+    llm_nano = cached_answers("gpt-4.1-nano", prompts)
+  )
+results_long <- results |>
+  pivot_longer(starts_with("llm_"), names_to="model", values_to="llm_result") |>
+  mutate(
+    model = str_remove_all(model, "^llm_"),
+    llm_result_cleaned=str_to_lower(llm_result) |> str_remove_all("[^a-z]"))
+```
+
+```{webr}
+#| exercise: demo_validation_accuracy
+#| warning: false
+results_long <- results |> 
+  pivot_longer(starts_with("llm_"), names_to="model", values_to="llm_result") |>
+  mutate(
+    model = str_remove_all(model, "^llm_"),
+    llm_result_cleaned=str_to_lower(llm_result) |> str_remove_all("[^a-z]")) 
+head(results_long)
+
+cat("\nPerformance per model:\n")
+results_long |>
+  group_by(model) |>
+  summarize(
+    accuracy=mean(sentiment==llm_result),
+    accuracy_cleaned=mean(sentiment==llm_result_cleaned)
+  )
+```
+
+<!-- TODO: do we need a discussion / callout on statistical error and what we are genealizing to? -->
+
+This first produces a clean version of the results with one row per model per headline.
+We also compute a cleaned version of the llm result by running `str_to_lower` and then removing all characters other than lowercase `a-z`, and removed the `llm_` prefix from the model name (see @sec-stringr for the `str_*` functions),
+
+This reports the overall accuracy by taking the mean of the comparison between the gold standard value (`sentiment`) and the llm result (since `TRUE` and `FALSE` are equivalent to 1 and 0,
+the mean of a comparison is the proportion of cases that they were the same, i.e. the accuracy).
+and compute accuracy of the cleaned version as well. 
+
+As you can see, performance varies quite a bit between models.
+Looking at the cleaned accuracy, haiku does best on this specific test, with nano not far behind
+Interestingly, when you compare the raw and cleaned accuracy, you can see that especially llama 
+and nano had a lot of trouble following the output instructions: 
+`llama` produced a response other than the three categories in 108 of 284 headlines
+(all capitalization and/or full stops) but 72 of these were actually correct after cleaning.
+
+::: {.challenge title="Are the LLMs outperforming humans? And dictionaries?"}
+
+The @tornberg2025large article we cited above is provocatively titled
+"Large Language Models Outperform Expert Coders and Supervised Classifiers at Annotating Political Social Media Messages". Do they?
+
+Let's compare our numbers to the table of results from @vanatteveldt2021validity. 
+
+- Do our LLMs outperform dictionaries and classical machine learning approaches?
+- How do our LLMs compare to crowd coding and/or trained manual coding?
+- Our current models are relatively cheap models, with a fairly naive prompt. 
+  Where do you think performance might go to if we use a bigger model and/or a better prompt?
+- Can we generalize these answers to the more general task of classifyin political texts? Why (not)?
+:::
+
+<!-- TODO: callout on (train/)test/validation split -->
+
+### Confusion matrices
+
+To understand the kind of errors made by a classifier, let's see which categories
+the gemma model gets wrong:
+
+<!-- TODO perhaps introduce count() and tally() in chapter 5 and simplify this? -->
+
+```{webr}
+#| exercise: demo_validation_confusion
+#| warning: false
+results_long |>
+  filter(model == "gemma") |>
+  group_by(sentiment, llm_result_cleaned) |>
+  summarize(value=n()) |>
+  ungroup() |>
+  pivot_wider(names_from="llm_result_cleaned")
+```
+
+(see @sec-pivot for `pivot_wider`, and @sec-summarize for `group_by |> summarize`)
+
+This produces what is known as a *confusion matrix*, 
+which is a frequently used tool for getting a better understanding of classifier performance.
+The rows contain the actual (gold) answers, and the columns the classification produced by the model.
+The diagonal cells are correct (gold equals classification), and the off-diagonal cells show how often each possible mistake is made.
+
+In this case, it shows a quite interesting picture:
+by far the most frequent mistakes are assigning neutral sentences to negative (n=31) or positive (34).
+So, apparently the model is too reluctant to use the neutral category.
+
+<!-- TODO: change this into an exercise, and put the challenge after the exercise? -->
+
+::: {.challenge title="Can we unfuddle the LLM?"}
+
+We noticed above that gemma is likely to overuse positive and negative at the expense of neutral. 
+
+- How could we improve this?
+- Can you do the same analysis for haiku? What is the outcome?
+- Would the improvement for gemma also help haiku? What is the way forward?
+:::
+
+## Writing a good prompt {#sec-llm-prompt}
+
+In the examples above we saw that model choice has a strong effect on performance,
+at least on the small sample we inspected. 
+The second important driver of performance is the instruction (or prompt) that we use.
+The instruction can be seen as the operationalization of the variable we're trying to measure,
+and it's important to make sure that we are indeed measuring what we think we are measuring.
+
+There is another similarity (or at least analogy) to manual annotation here:
+the instructions act as the *codebook* used in manual annotation,
+and one of the most important parts of a successful annotation project is getting the codebook right 
+so it matches the theoretical concepts validly but is also clear and unambiguous to coders. 
+If it turns out that coders are coding certain categories or examples wrong, 
+the first thing you would generally do is improve the codebook, not fire the coders. 
+
+
+<!--
+category definitions;
+decision rules for borderline cases;
+few-shot examples, built with str_c()/str_glue() from a small tibble of examples, which ties back to chapter 9;
+-->
+<!-- TODO: few-shot --> 
+<!-- TODO: structure output? -->
+

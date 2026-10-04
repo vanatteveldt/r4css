@@ -40,6 +40,13 @@ readr::read_csv("https://raw.githubusercontent.com/vanatteveldt/ecosent/refs/hea
   readr::write_csv(here::here("data/dutch_sentiment.csv"))
 ```
 
+## Recorded LLM answers
+
+- **File**: [llm_recorded.csv](llm_recorded.csv)
+- **Source**: Generated for this book by sending the prompts used in chapter 12 to the listed model, with the same system/user messages that `mall` sends through `ellmer`. New recordings are added with [record_llm.R](record_llm.R) (the first `llama3.2:3b` answers were recorded via an Open WebUI server before that script existed)
+- **Description**: The interactive book cannot call a real LLM, so the hidden setup chunks replay these answers (see `chapters/exercises/_llm_mock.qmd`). Each row is one `model` + `prompt` (system prompt) + `text` (user message) combination with the model's `answer`. Prompts or texts not in this file produce a message instead of an answer.
+- **License**: MIT, as the Dutch economic news sentiment data above that the texts come from
+
 ## Dutch elections data
 
 - **File**: [dutch_elections_2023.csv](dutch_elections_2023.csv)
