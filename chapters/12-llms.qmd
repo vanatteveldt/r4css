@@ -9,7 +9,6 @@ webr:
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
 <!-- TODO: show how to run a simple prompt -->
-
 <!-- TODO: explain that a chat object also contains/remembers the message history -->
 
 # Using LLMs with `ellmer` (todo) {#sec-llm}
@@ -515,7 +514,7 @@ Let's compare our numbers to the table of results from @vanatteveldt2021validity
 - How do our LLMs compare to crowd coding and/or trained manual coding?
 - Our current models are relatively cheap models, with a fairly naive prompt. 
   Where do you think performance might go to if we use a bigger model and/or a better prompt?
-- Can we generalize these answers to the more general task of classifyin political texts? Why (not)?
+- Can we generalize these answers to the more general task of classifying political texts? Why (not)?
 :::
 
 <!-- TODO: callout on (train/)test/validation split -->
@@ -560,10 +559,19 @@ We noticed above that gemma is likely to overuse positive and negative at the ex
 - Would the improvement for gemma also help haiku? What is the way forward?
 :::
 
-## Writing a good prompt {#sec-llm-prompt}
+## Writing a good prompt (in progress) {#sec-llm-prompt}
 
-In the examples above we saw that model choice has a strong effect on performance,
-at least on the small sample we inspected. 
+<!-- Too much text. Better structure:
+- note the problem with neutral, and go to a demo with the new instructions asap 
+  (using the gemma underuse of neutral and maybe capitalization as hook)
+- move the prompt engineering 'theory' into a callout
+- end with an exercise where we give a third possible prompt (few-shot?) and have them test 
+  which instruction is best (for each model), challenge to ask why, and nudge to try more things at home
+- add a callout of fitting the gold standard and test/validation split
+-->
+
+
+In the examples above we saw that model choice has a strong effect on performance. 
 The second important driver of performance is the instruction (or prompt) that we use.
 The instruction can be seen as the operationalization of the variable we're trying to measure,
 and it's important to make sure that we are indeed measuring what we think we are measuring.
@@ -575,11 +583,81 @@ so it matches the theoretical concepts validly but is also clear and unambiguous
 If it turns out that coders are coding certain categories or examples wrong, 
 the first thing you would generally do is improve the codebook, not fire the coders. 
 
-<!--
-category definitions;
-decision rules for borderline cases;
-few-shot examples, built with str_c()/str_glue() from a small tibble of examples, which ties back to chapter 9;
--->
-<!-- TODO: few-shot --> 
-<!-- TODO: structure output? -->
+In general, good codebooks often contain a good explanation of the overall task, 
+as well as clear definitions of each category.
+Often, decision rules can be given for specific hard or borderline cases. 
+Finally, it's possible to give one or more examples for each code, 
+or to provide examples at the end. 
+
+Note that giving examples at the end turns the task from a "zero-shot classification"
+into a "few-shot classification". This can improve performance and can make the expected 
+output format clear. It is important to give the input and output in the exact format that will
+be used in the actual coding, and that the examples themselves are not present in the test set. 
+
+That said, let's see if we can improve performance by making a more detailed codebook.
+For this, let's base ourselves on the coding instructions that were given to the trained coders
+for the data used in @vanatteveldt2021validity (see p. 125):
+
+<!-- suggestion: have the prompt elements separate and glue together for readability -->
+```{r, eval=F}
+instruction <- str_c(
+  "You are classifying newspaper headlines by their sentiment about the economy, ",
+  "as in a content analysis of economic news. ",
+  "Judge only the headline itself, not anything else you may know about the events it refers to. ",
+  "Codebook: positive = the headline evaluates the economy or economic conditions as good or improving; ",
+  "negative = as bad or worsening; ",
+  "neutral = the headline gives no evaluation of economic conditions, or is ambiguous or mixed. ",
+  "Answer with only one word, in lowercase: positive, negative, or neutral.")
+```
+
+As you can see, this instruction makes it clear what the overall task is,
+and that the coder should disregard any substantive background knowledge.
+It also gives a more detailed explanation of the categories, emphasizing that it should be about the economy and that positive can either be that things are good or that they are improving. 
+It also gives a broader definition of neutral cases. 
+The last sentence was added by us 
+(since coders would only have these options available in the tool, it was not needed in the original instructions).
+
+<!-- for persona: e.g. Zheng et al. 2023, "Is 'A Helpful Assistant' the Best Role…?", -->
+<!-- reasoning makes answer harder to parse, good hook for structured output,
+    and note that it's not really needed rather than harming (but still useful for 
+    inspecting / checking the answers -->
+
+It should be noted that this instruction is not 'perfect', 
+and that what is the best instruction can vary over time or between models.
+For example, it is disputed whether giving an overall task description actually helps models,
+and there is a tradeoff between short instructions like this, or longer, more detailed instructions that may also just cause especially smaller models to forget or ignore earlier parts of the instruction.
+It also used to be recommended to explicitly ask for reasoning in the instruction (something like: "give your reasons first, and then provide the answer as a single word at the end"), 
+but this is probably no longer beneficial for current models. 
+
+<!-- TODO: demo+exercise for few-shot 
+
+Claude: Yes, I think few-shot is the right third prompt. It sets up a progression from the naive prompt, to the codebook prompt, to the codebook plus examples. That's also how codebooks are refined in practice, and each step adds one thing you can isolate. Some things to decide before you record:
+
+1. Where the examples come from
+
+Taken from dutch_sentiment. You'd remove them with anti_join() and score all three prompts on that reduced set, so the comparison stays fair. That's a few lines of extra code, but it shows the holdout idea in action and leads straight into the validation callout.
+Taken from the original codebook, or written by you. The test set stays intact and the examples are authentically codebook material. Does p. 125 or the coder training material have example headlines?
+Either works. I'd lean towards the first because it teaches the holdout idea, unless the codebook has good examples.
+
+2. Which examples to use
+
+Use one or two per category, plus at least one mixed or ambiguous headline labelled neutral. That case is the gemma problem, so the examples should show it explicitly.
+Keep the labels balanced. Models tend to copy the majority label among the examples, and to some extent the label of the last example. A sentence on that in the callout supports your "not perfect, depends on model" point.
+3. Format
+
+Each example should look exactly like a real item: the same The headline: … wording, followed by the answer in lowercase.
+Your actual prompts end after the headline, with no Answer: marker. You'll probably want to add one to both the examples and the real prompt, so the model knows where its answer goes. That means the few-shot prompt changes the template as well as the instruction. That's fine, but the text should say so.
+4. Building the prompt: show-and-tell, not exercise
+
+Building the examples block from a small tibble with str_glue() + str_c(collapse = "\n\n") ties nicely back to ch. 9.
+It can't be an exercise, though, because the mock needs the prompt string to match exactly. Any student variation would miss the recordings. So make the construction show-and-tell, and keep the exercise to scoring the three prompts per model, as in your plan.
+5. Cost
+The examples get repeated in every one of the 284 calls. Mention this in a sentence, since it's a real tradeoff with paid APIs, and it echoes your point about long prompts.
+
+
+
+
+
+--> 
+<!-- TODO: reasoning + structure output? -->
 
