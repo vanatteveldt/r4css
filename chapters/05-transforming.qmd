@@ -535,7 +535,7 @@ Some things to note about this code:
 - We used `n=n()` to add the total amount of cases per group. This is a very useful function, but it can be confusing since it doesn't take any arguments - it just counts the number of rows in each group.
 - We don't store the result in an object, but only display it on the screen. If you want to continue analysing the summary result, you can simply assign it to an object like any other.
 - We use `str_remove(test, "-disagree")` to remove the `-disagree` suffix from the test column, see @sec-stringr for an in-depth discussion of text handling
-- We prefix the outcomes with a number (1 to 4) to make the alphabetic sorting match the natural ordering. See @sec-factor for a more elegant solution
+- We prefix the outcomes with a number (1 to 4) to make the alphabetic sorting match the natural ordering. See @sec-beautiful-factor for a more elegant solution
 
 ### Exercise: Bechdel test over time (part 1)
 

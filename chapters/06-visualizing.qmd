@@ -417,7 +417,7 @@ transformation operations explained in the previous chapter,
 as will be showcased by the grouped and stacked examples below. 
 :::
 
-### Making it beautiful
+### Making it beautiful {#sec-beautiful-factor}
 
 The graph above works, but it's not the most beautiful. 
 Let's make a nicer version:
