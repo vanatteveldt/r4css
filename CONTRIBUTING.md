@@ -225,6 +225,7 @@ These are downstream of the principles above and should mostly be invisible:
 - Use tidyverse pipelines (`|>`, base R pipe) over nested calls when there's more than one step.
 - Use `#| warning: false` on chunks where startup messages would otherwise clutter the output (e.g. `library(sjPlot)`).
 - Hide setup chunks with `#| setup: true` and the matching `#| exercise:` ID(s); never with `#| include: false` and a manual re-definition — the `setup` mechanism is what quarto-live re-runs on `↻ Start Over`.
+- When a `::: {.exercise}`, `::: {.challenge}` or callout has a `{webr}` chunk, put the chunk inside the div, along with its hints, solution and checker. The closing `:::` goes after all of them, not straight after the prose.
 
 ## What goes where
 

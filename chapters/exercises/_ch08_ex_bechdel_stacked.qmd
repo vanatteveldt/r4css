@@ -59,7 +59,6 @@ A number of things are still missing:
 
 Fix all the TODOs below. You can run the graph at any moment to see how you are doing,
 and of course you can ask for hints on which functions to use. 
-:::
 
 ```{webr}
 #| setup: true
@@ -203,6 +202,7 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::
 
 
 ::: {.challenge title="How close can you get?"}
@@ -216,7 +216,6 @@ Some of these (especially the dividing line and the side labels) go well beyond 
 The `{webr}` block below starts you off with the solution to the exercise above -- feel free to experiment,
 look up ggplot functions you haven't seen yet, and see how far you get.
 There's no single right answer here, and no checker: this is purely for the fun of it.
-:::
 
 ```{webr}
 #| warning: false
@@ -418,3 +417,4 @@ instead of a simple `caption=` is probably not really worth it in most applicati
 But now you know that you can if you really want to!
 
 ::::
+:::

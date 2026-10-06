@@ -4,6 +4,7 @@ webr:
     - ../data/us-president.csv
     - ../data/us-states.csv
     - ../data/bechdel.csv
+    - ../data/co2_emissions.csv
 editor_options: 
   chunk_output_type: console
 ---
@@ -66,6 +67,7 @@ by the same MIT lab:
 
 ```{webr}
 #| exercise: usdata3
+#| warning: false
 download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/us-states.csv", "us-states.csv")
 meta <- read_csv("us-states.csv")
 head(meta)
@@ -78,7 +80,7 @@ percentage White, percentage young (<30) and old (65), median household income a
 ## Scales: the link between values and aesthetics {#sec-vis-scales}
 
 ```{webr}
-#| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4', 'usdot5', 'ustheme', 'ustheme2', 'ustheme3', 'plot_annotate']
+#| exercise: ['usline', 'usline2', 'usdot', 'usdot2', 'usdot3', 'usdot4', 'usdot5', 'ustheme', 'ustheme2', 'ustheme3', 'facet_wrap', 'plot_annotate']
 #| setup: true
 votes <- read_csv("data/us-president.csv")
 meta <- read_csv("data/us-states.csv")
@@ -458,7 +460,8 @@ An alternative way to display more information is to use `facets`.
 For example, we can plot vote shares in a number of key states:
 
 ```{webr}
-key_states <- c("Arizona",  "Florida", "Michigan", "Pennsylvania")
+#| exercise: facet_wrap
+key_states <-c("Arizona",  "Florida", "Michigan", "Pennsylvania")
 
 votes |> 
   filter(state %in% key_states, party %in% c("Democrat", "Republican"), !is.na(candidate)) |>
@@ -488,7 +491,9 @@ To show this, let's go back to the CO2 emissions data introduced in @sec-co2:
 
 ```{webr}
 #| exercise: facet_grid
-co2 <- read_csv("data/co2_emissions.csv") |>
+#| warning: false
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/co2_emissions.csv", "co2_emissions.csv")
+co2 <- read_csv("co2_emissions.csv") |>
   select(country, year, co2, methane, nitrous_oxide) |>
   pivot_longer(co2:nitrous_oxide, names_to="ghg_type") 
 head(co2)
