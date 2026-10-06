@@ -365,13 +365,14 @@ hashtags <- posts |>
 
 ```{webr}
 #| exercise: wordcloud
+library(ggrepel)
 set.seed(1)
 hashtags |>
   filter(tag != "#election2024") |>
   slice_max(order_by=n, n=75, with_ties = FALSE) |> 
   mutate(x=rnorm(n()) / sqrt(n), y=rnorm(n()) / sqrt(n))  |>
   ggplot(aes(x=x, y=y, size=n, label=tag)) +
-    ggrepel::geom_text_repel(min.segment.length=Inf) +
+    geom_text_repel(min.segment.length=Inf) +
   theme_void() + theme(legend.position="none")
 ```
 
