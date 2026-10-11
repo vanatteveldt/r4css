@@ -33,7 +33,7 @@ In this chapter, you will learn how to use various `stringr` functions for deali
 + Making simple word plots (@sec-wordplots)
 + Optionally, learn regular expression syntax in more detail to make powerful patterns (@sec-regex)
 
-As always, the chapter ends with a [multiple choice quiz](#sec-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
+As always, the chapter ends with a [multiple choice quiz](#sec-stringr-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
 
 
 ::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
@@ -807,7 +807,7 @@ Below are some examples of regular expressions for common patterns like dates or
 
 
 
-## Quiz questions
+## Quiz questions {#sec-stringr-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 

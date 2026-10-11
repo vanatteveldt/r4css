@@ -200,7 +200,7 @@ Chapters can include short multiple-choice quizzes, gathered at the end of the c
 
 **How to apply:**
 
-- **Placement:** quizzes go at the end of the chapter, under a `## Quiz questions` heading, not inline with the prose — they shouldn't interrupt the narrative the way exercises/challenges do.
+- **Placement:** quizzes go at the end of the chapter, under a `## Quiz questions {#sec-<chapter>-quizquestions .unnumbered}` heading (see principle 10), not inline with the prose — they shouldn't interrupt the narrative the way exercises/challenges do.
 - **Section headers, not string labels.** Give every section its own real heading and id (`## Some section {#sec-something}`) if it doesn't have one already, and tag each quiz sub-section with a genuine markdown heading that starts with a crossref back to it (e.g. `### @sec-something quiz: some section`). This isn't just cosmetic: content inside a raw HTML block (the `<div class="quiz">` widgets) is opaque to Quarto — no markdown, no shortcodes, no `@sec-` crossrefs get processed inside it. Keeping the section reference as real chapter-level markdown, and confining raw HTML to just the quiz mechanics, is what makes the crossref actually resolve. Code spans inside the raw HTML need literal `<code>` tags for the same reason — backtick-style `` `code` `` inside a `<li>` renders as literal backticks, not `<code>`.
 - **File location:** one quiz file *per section*, `chapters/quizzes/_chNN_quiz_slug.qmd`, included right after that section's heading in the `## Quiz questions` block. The shared CSS/JS for the widget lives once in `chapters/quizzes/_quiz_widget.qmd`, included once per chapter (before the first per-section include) rather than duplicated in every quiz file. See ch. 9's `## Quiz questions` section for the pattern.
 - **HTML attribute quoting.** Choice metadata (`data-correct`, `data-explain`) is double-quoted; a literal `"` inside that text breaks the attribute silently and corrupts everything after it in the tag. Use `'single quotes'` for any quoted term inside `data-explain`. Also keep `data-explain` as plain text — it's inserted via `textContent` in the JS, so HTML tags inside it (including `<code>`) show up as literal angle brackets rather than rendering.
@@ -217,6 +217,35 @@ Chapters can include short multiple-choice quizzes, gathered at the end of the c
 - **Show concrete data, always.** Every question shows the actual data frame (or a representative excerpt) it's asking about, never "imagine a data frame with columns X and Y." This matches principle 5 and keeps the question testable rather than abstract.
 - **Distractors are real misconceptions, not filler.** Each wrong answer should represent something a student could plausibly believe — forgetting to reassign (`d <- filter(d, ...)` vs. `filter(d, ...)`), confusing two similarly-named functions, swapping argument order — not an obviously-silly option nobody would pick.
 - **Not a grading mechanism.** Nothing is recorded; a student can retry immediately. This is lower-stakes even than the "permission to fumble" tone of exercises (principle 4), since there's no code to get wrong, just an answer to reconsider.
+
+### 10. Chapter structure: objectives up front, quiz at the end, only substantive sections numbered
+
+Each chapter opens and closes in the same way, so students know where to find the overview and the self-test. See chapter 12 for the full pattern.
+
+At the start, after the chapter's introduction:
+
+1. `## Chapter objectives {.unnumbered}`: a short list of what the student will learn, each item linking to the section that covers it (`@sec-...`).
+2. A sentence pointing to the quiz at the end, linking to its heading: `[multiple choice quiz](#sec-<chapter>-quizquestions)`.
+3. A collapsed callout listing the functions the chapter introduces, with what each does and the section(s) where it appears:
+
+    ```markdown
+    ::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+    | Function | What it does | Section |
+    |:-----|:----------|:-----|
+    | `str_detect()` | does the text contain the pattern? | @sec-strdetect |
+    :::
+    ```
+
+4. Optionally, `## Data for this chapter {.unnumbered}`, introducing a dataset that recurs throughout the chapter (with `download.file()`, principle 8, and a gloss of the columns, principle 5). Leave it out when sections use different datasets, and introduce each where it is first used instead.
+
+At the end: `## Quiz questions {#sec-<chapter>-quizquestions .unnumbered}` (principle 9).
+
+**Why:** the section numbers (12.1, 12.2, ...) should refer only to the substantive sections, so cross-references and quiz headings such as "@sec-llm-intro quiz" stay meaningful. The quiz id carries a chapter prefix (e.g. `sec-llm-quizquestions`) because ids must be unique across the whole book.
+
+**How to apply:**
+
+- Mark the objectives, data and quiz headings `.unnumbered`; give every substantive section a real heading and `#sec-` id.
+- Keep the function table up to date when adding or removing functions from the chapter.
 
 ## Style conventions
 
