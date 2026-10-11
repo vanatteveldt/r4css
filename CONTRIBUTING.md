@@ -220,7 +220,7 @@ Chapters can include short multiple-choice quizzes, gathered at the end of the c
 
 ### 10. Chapter structure: objectives up front, quiz at the end, only substantive sections numbered
 
-Each chapter opens and closes in the same way, so students know where to find the overview and the self-test. See chapter 12 for the full pattern.
+Each chapter opens and closes in the same way, so students know where to find the overview and the self-test. See chapter 11 for the full pattern.
 
 At the start, after the chapter's introduction:
 

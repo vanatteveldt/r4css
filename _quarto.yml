@@ -28,8 +28,8 @@ book:
       chapters:
         - chapters/09-stringr.qmd
         - chapters/10-tidytext.qmd
-        - chapters/11-embeddings.qmd
-        - chapters/12-llms.qmd
+        - chapters/11-llms.qmd
+        - chapters/12-embeddings.qmd
         - chapters/13-images.qmd
         - chapters/14-mltour.qmd
     - part: "Getting Your Own Data"

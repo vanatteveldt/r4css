@@ -23,8 +23,8 @@ which can handle most of the cleaning functions such as normalizing, filtering a
 In the next chapters we will look at other parts of the pipeline: 
 <!--scraping and reading textual data (@sec-scraping),-->
 analysing Text as Data (@sec-textasdata), 
-embeddings and clustering (@sec-embeddings),
 using LLMs as an analysis tool (@sec-llm),
+embeddings and clustering (@sec-embeddings),
 and dealing with image data (@sec-images).
 
 ## Chapter objectives {.unnumbered}

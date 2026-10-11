@@ -1,4 +1,6 @@
 ---
+aliases:
+  - 12-llms.html
 webr:
   resources:
     - ../data/dutch_sentiment.csv
@@ -643,7 +645,7 @@ It also gives a more detailed explanation of the categories, emphasizing that it
 It also gives a broader definition of neutral cases. 
 So, let's see if this codebook actually improves performance for Gemma?
 
-{{< include exercises/_ch12_ex_codebook.qmd >}}
+{{< include exercises/_ch11_ex_codebook.qmd >}}
 
 
 :::{.callout-note title="What makes good instructions?"}
@@ -869,21 +871,21 @@ So, writing a good prompt and validating the results remains crucial for any val
 
 ### @sec-llm-intro quiz: LLMs and the `ellmer` package
 
-{{< include quizzes/_ch12_quiz_intro.qmd >}}
+{{< include quizzes/_ch11_quiz_intro.qmd >}}
 
 ### @sec-llm-models quiz: choosing and connecting a model
 
-{{< include quizzes/_ch12_quiz_models.qmd >}}
+{{< include quizzes/_ch11_quiz_models.qmd >}}
 
 ### @sec-llm-validation quiz: validating the labels
 
-{{< include quizzes/_ch12_quiz_validation.qmd >}}
+{{< include quizzes/_ch11_quiz_validation.qmd >}}
 
 ### @sec-llm-prompt quiz: writing a good prompt
 
-{{< include quizzes/_ch12_quiz_prompt.qmd >}}
+{{< include quizzes/_ch11_quiz_prompt.qmd >}}
 
 ### @sec-llm-structuredoutput quiz: structured output
 
-{{< include quizzes/_ch12_quiz_structuredoutput.qmd >}}
+{{< include quizzes/_ch11_quiz_structuredoutput.qmd >}}
 
