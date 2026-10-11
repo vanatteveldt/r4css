@@ -1,12 +1,10 @@
----
-title: "Dealing with Images (todo)"
----
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-::: {.callout-note}
-**Proposed chapter scope:** Working with image data end-to-end: loading, preprocessing (resizing, normalizing, metadata extraction), and analysis via vision LLMs or other APIs. Whether to also include embeddings and clustering here or move them entirely to Part III (chapter 15) is still to be decided — depends on how much the preprocessing section grows.
+# Dealing with Images (todo) {#sec-images}
 
-(could also be a nice teaser to whet the appetite for the perhaps harder topics in part III?)
+::: {.callout-note}
+**Proposed chapter scope:** Applying the tools from the previous chapters to images. Covers loading and preprocessing (resizing, metadata extraction, e.g. with `magick`), coding images with vision LLMs (the approach from @sec-llm), and image embeddings with clustering (the approach from @sec-embeddings), showing a grid of example images per cluster.
+
+Embeddings and model outputs are precomputed/recorded; check how much the image files (or thumbnails) add to `webr.resources`. If processing a folder of images needs `map`, use it without much explanation and point forward to @sec-scraping.
 :::

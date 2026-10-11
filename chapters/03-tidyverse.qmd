@@ -32,7 +32,7 @@ will be explained later.
 
 ::: {.callout-tip title="Info"}
 Throughout this chapter (and other chapters) there are interactive code boxes
-and exercises marked with {{< fa play >}}.
+and exercises marked with the [▷ Run Code] button.
 Note that you cannot break anything in these example code boxes! Every
 time you hit the ‘Run code’ button, it will start over from scratch, and you can always press
 the `↻ Start Over` button to reset the example.

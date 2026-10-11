@@ -1,0 +1,15 @@
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# A Short Tour of Machine Learning (todo) {#sec-ml}
+
+::: {.callout-note}
+**Proposed chapter scope:** A showcase of supervised machine learning, not a full course, and the chapter says so up front. It shows what supervised learning is by doing it once, explains how it relates to the LLMs and embeddings from earlier chapters, and points to where to learn more.
+
+- Supervised vs. unsupervised learning, referring back to clustering in @sec-embeddings.
+- Logistic regression on three kinds of features: word counts (@sec-textasdata), text embeddings (@sec-embeddings), and image embeddings (@sec-images), using the same split and metrics, to show the trade-off between interpretable per-word weights and accuracy. Labels can be hand-coded or produced by an LLM.
+- Overfitting, the train/test split, and regularization (`glmnet`; check that it runs in webR). This section should get the id `sec-ml-traintest`, which @sec-llm refers to. Use the terms *development set* and *test set* as in @sec-llm, and note that what content analysis calls validation, ML calls testing.
+- Precision, recall and F1, building on the confusion matrix in @sec-llm-validation.
+- Conceptual explainer, without code: logistic regression is a single neuron, a neural network stacks them, a transformer is a very large network, and its hidden states are the embeddings used earlier.
+- Where R stops: `tidymodels` for the full ML workflow in R; Python for fine-tuning, BERTopic and local models.
+:::

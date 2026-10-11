@@ -1,0 +1,10 @@
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# Using APIs (todo) {#sec-apis}
+
+::: {.callout-note}
+**Proposed chapter scope:** Getting data from web APIs with `httr2`. JSON responses motivate a proper explanation of lists and nested data, and turning them into data frames (`unnest_wider`, `hoist`). Pagination gives a natural use for `while`; error handling and rate limits give natural uses for `if` and `possibly`, building on the functions and `map` from @sec-scraping.
+
+Use APIs that send CORS headers so they work in webR (e.g. the Wikipedia API with `origin=*`), or fall back to recorded responses as in @sec-llm.
+:::

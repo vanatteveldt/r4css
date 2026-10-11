@@ -1,0 +1,12 @@
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# Embeddings and Clustering (todo) {#sec-embeddings}
+
+::: {.callout-note}
+**Proposed chapter scope:** Representing texts as embedding vectors, and exploring those vectors without labels. Covers getting embeddings via `tidyllm` (precomputed/recorded, as in @sec-llm), similarity and nearest neighbours, projection to 2D for visualization (PCA; UMAP if `uwot` runs in webR), and k-means clustering. Clusters are validated by reading examples per cluster; choosing k is a substantive decision as well as a technical one.
+
+The chapter ends with a do-it-yourself topic model: embed, cluster, then have an LLM label each cluster from a sample of its texts. A callout explains that this is essentially what BERTopic automates (in Python), and mentions LLM-native approaches like TopicGPT. For "where R stops", point to @sec-ml.
+
+**Ordering note:** this chapter is meant to come *after* @sec-llm. It sits before it temporarily to keep chapter numbers stable for current students; swap after the teaching period. Refer to other chapters only by `@sec-` ids so the swap stays trivial.
+:::

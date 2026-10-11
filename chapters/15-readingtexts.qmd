@@ -1,0 +1,8 @@
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# Reading in Texts (todo) {#sec-readtext}
+
+::: {.callout-note}
+**Proposed chapter scope:** Getting a collection of documents into a data frame. Covers `readtext` for a folder of txt, docx, or pdf files (check whether PDF support works in webR), including document variables from file names, and ready-made text collections such as `gutenbergr`. No new programming constructs are needed: `readtext` reads a whole folder without `map`.
+:::

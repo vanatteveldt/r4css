@@ -27,21 +27,17 @@ book:
     - part: "Text and Image Analysis"
       chapters:
         - chapters/09-stringr.qmd
-        - chapters/10-scraping.qmd
-        - chapters/11-tidytext.qmd
+        - chapters/10-tidytext.qmd
+        - chapters/11-embeddings.qmd
         - chapters/12-llms.qmd
         - chapters/13-images.qmd
-    - part: "Machine Learning"
+        - chapters/14-mltour.qmd
+    - part: "Getting Your Own Data"
       chapters:
-        - chapters/14-tidymodels.qmd
-        - chapters/15-textclassification.qmd
-        - chapters/16-dimensionality.qmd
-        - chapters/17-torch.qmd
-    - part: "Programming Concepts"
-      chapters:
-        - chapters/18-flowcontrol.qmd
-        - chapters/19-datastructures.qmd
-        - chapters/20-software.qmd
+        - chapters/15-readingtexts.qmd
+        - chapters/16-scraping.qmd
+        - chapters/17-apis.qmd
+    - chapters/18-bestpractices.qmd
     - chapters/references.qmd
 
 bibliography: references.bib

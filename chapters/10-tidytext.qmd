@@ -1,0 +1,15 @@
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+{{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+# Text as Data: tidytext (todo) {#sec-textasdata}
+
+
+::: {.callout-note}
+**Proposed chapter scope:** Rule- and dictionary-based text analysis with `tidytext`. Covers tokenization, word frequencies, TF-IDF, and dictionary-based sentiment analysis. Deliberately stays at the interpretable/rule-based level.
+
+Topic models (LDA) appear as a *negative example*: bag-of-words topics are lists of words you have to interpret yourself. The modern alternative (embed, cluster, label with an LLM) is in @sec-embeddings.
+
+The chapter ends with document-term counts that are ready to use as features; @sec-ml uses them for a logistic regression.
+
+Include a short callout for readers with their own folder of texts or PDFs, pointing to @sec-readtext.
+:::

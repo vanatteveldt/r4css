@@ -20,8 +20,12 @@ but also open survey questions or question metadata.
 Very often, we need to clean, preprocess and/or analyse this textual data. 
 This chapter will take the first steps in this by introducing the tidyverse `stringr` package,
 which can handle most of the cleaning functions such as normalizing, filtering and extracting parts of textual columns. 
-In the next chapters we will look at other parts of the pipeline: scraping and reading textual data (@sec-scraping),
-analysing Text as Data (@sec-textasdata), and using LLMs as an analysis tool (@sec-llm).
+In the next chapters we will look at other parts of the pipeline: 
+<!--scraping and reading textual data (@sec-scraping),-->
+analysing Text as Data (@sec-textasdata), 
+embeddings and clustering (@sec-embeddings),
+using LLMs as an analysis tool (@sec-llm),
+and dealing with image data (@sec-images).
 
 ## Chapter objectives {.unnumbered}
 
@@ -754,7 +758,7 @@ Below are some examples of regular expressions for common patterns like dates or
 | URL | `https?://\\S+` | "https://example.com?a=b" |
 | E-mail address | `[\\w.-]+@[\\w.-]+\\.\\w+` | "jane.doe@example.com" |
 | Hashtag | `#\\w+` | "#election2024" |
-| At-mention (including Bluesky domains) | `@[\\w.-]+` | "@vanatteveldt.com" |
+| At-mention (including Bluesky domains) | `@[\\w.-]+` | "\@vanatteveldt.com" |
 | Emoji | `\\p{Extended_Pictographic}` | "😀" |
 | HTML tags | `</?\\w[^>]*>` | `"</html>"` |
 | HTML character escapes | `&[^;]+;` | `"&nbsp;"` |

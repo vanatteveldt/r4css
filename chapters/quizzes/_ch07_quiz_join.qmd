@@ -9,7 +9,7 @@
 | 3 | Netherlands | 7 |
 | 4 | Luxembourg | 5 |
 
-<p>And country-level data <code>countries</code> with GDP per capita (in thousands of dollars):
+<p>And country-level data <code>countries</code> with GDP per capita (in thousands of dollars):</p>
 
 | country | gdp_pc |
 |---|---:|
