@@ -9,7 +9,6 @@ Count how often Trump is mentioned per week,
 to see whether attention to him changes over the course of the campaign.
 Ignore the difference between lowercase and uppercase, i.e. 
 count `trump` or `TRUMP` as well as `Trump`.
-:::
 
 ```{webr}
 #| setup: true
@@ -119,4 +118,5 @@ Some questions to think about:
 #| exercise: ex_mentions_trump_challenge
 head(posts)
 ```
+:::
 :::

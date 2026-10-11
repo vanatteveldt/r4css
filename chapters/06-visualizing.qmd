@@ -122,7 +122,7 @@ and point at a modelling issue in all cases except the first.
 Now that you are convinced of the need for visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
 
 
-::: {.callout-tip title="Learning more"}
+::: {.callout-note title="Learning more"}
 This chapter will introduce most of the technical details of ggplot needed to make visualizations,
 but does not go as deeply into some aspects of visualization as you might want. 
 To learn more, check these fantastic and freely available sources:
@@ -266,7 +266,7 @@ Finding the balance between these takes practice, and also very much depends on 
 for data exploration for yourself or colleagues familiar with the data you can choose a more complex visualization
 than for a graph aimed at telling a story to a broader audience.
 
-::: {.callout-note title="Common aesthetics"}
+::: {.callout-tip title="Common aesthetics"}
 You've now seen `x`, `y`, `color`, and `size`. These are the aesthetics you'll reach for most often:
 
 | Aesthetic | Used for |
@@ -344,8 +344,7 @@ ggplot(data=gap_2010, mapping=aes(x=infant_mortality, y=fertility, color=contine
 Now the trend line is also colored by continent. 
 In fact, this creates a separate trend line per continent.
 
-::: {.callout-note title="Aesthetic constants"}
-
+::: {.callout-tip title="Aesthetic constants"}
 
 In all the examples above, we created mappings between data columns and aesthetic elements of the plot. 
 For example, `geom_point(aes(color=continent))` created a mapping between the color and the `continent` column. 
@@ -823,7 +822,7 @@ Finally, `complete` in this form only completes years (and continents) that are 
 If there are years that are left out for all continents, you can fix this by using
 `complete(year=full_seq(year, 1), continent)` instead, which creates the full sequence for the year variable between the observed extremes.
 
-::: {.callout-tip title="Saving plots for production"}
+::: {.callout-note title="Saving plots for production"}
 
 By default, ggplot shows the plot in the viewer pane (or on this website),
 which is useful for your own exploration. 

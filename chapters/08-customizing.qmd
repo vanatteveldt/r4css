@@ -398,7 +398,7 @@ legend titles can be set either in the labs or in the scale;
 and axis and other titles can be removed in the labs, the scale, or the theme.
 Any of those places is fine, so just put it where it's most convenient. 
 
-::: {.callout-tip title="`library(scales)` vs. `scales::`"}
+::: {.callout-note title="`library(scales)` vs. `scales::`"}
 In the last example, we used `scales::label_percent` rather than calling `library(scales)` at the top.
 
 Technically, using `library` *attaches* the package, making all functions available directly in the rest of the session.

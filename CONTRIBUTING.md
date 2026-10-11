@@ -69,7 +69,7 @@ Concrete examples in chapter 2:
 - Reach for **show-and-tell** when introducing a new command or piece of data — the cognitive load of "what is this?" is already enough.
 - Reach for an **exercise** when a single small modification cleanly tests whether the student understood the previous block. Keep the diff small (rename a column, change a filter value, swap an argument). Always include a hint and a solution. In the solution, explain the _why_ as well as giving the right code. As the hint is no longer viewable after viewing the solution, you should often include the information in the hint also in the solution text.
 - Reach for a **challenge** when the right response is _thinking_ (interpreting a graph, predicting a result, picking your own variable to plot). Do not write a checker for it.
-- The first time a chapter introduces each of the three, point at the format with a callout note (see [the info callout at line 91](chapters/02-funwithr.qmd#L91) for how chapter 2 explains the exercise format).
+- The first time a chapter introduces each of the three, point at the format with a callout tip (see [the info callout at line 91](chapters/02-funwithr.qmd#L91) for how chapter 2 explains the exercise format).
 
 **Open question:** is "exercise vs. challenge" pulling its weight, or could we collapse to two categories? I think three is right but happy to be argued out of it.
 
@@ -152,7 +152,7 @@ A comment that says `# filter the votes data to Amsterdam` above `filter(municip
 
 ### 7. Concept callouts arrive just-in-time, in the prose
 
-When a new R or tidyverse construct first carries weight in code, follow up with a small `.callout-note` that names and explains it — _not_ before. The student should see the construct doing something useful first, then read the explanation, then encounter the construct again later as a familiar tool.
+When a new R or tidyverse construct first carries weight in code, follow up with a small `.callout-tip` that names and explains it — _not_ before. The student should see the construct doing something useful first, then read the explanation, then encounter the construct again later as a familiar tool.
 
 Concrete examples in chapter 2:
 
@@ -165,8 +165,16 @@ Concrete examples in chapter 2:
 **How to apply:**
 
 - Don't open a chapter or section with a vocabulary list. Introduce constructs by using them.
-- When a new construct first appears, write the chunk so the construct is doing visible work, then add a `.callout-note` immediately after that names and explains it.
+- When a new construct first appears, write the chunk so the construct is doing visible work, then add a `.callout-tip` immediately after that names and explains it.
 - It's often fine to _not_ explain a construct on its first appearance if the student can pattern-match from context. Save the callout for the second or third appearance — the moment the student is most likely to be wondering.
+
+**Callout types: tip = need-to-know, note = nice-to-know.**
+
+- `.callout-tip` is for things the student needs to follow the rest of the chapter: concept explanations, the pitfalls they will hit, "which function when" summaries, and how the interactive mechanisms work. Example: ["ellmer syntax"](chapters/11-llms.qmd#L186).
+- `.callout-note` is for interesting background that can be skipped without losing the thread: asides, history, alternative notations, things that only matter when working locally, and pointers to further reading. Example: [`` `library(scales)` vs. `scales::` ``](chapters/08-customizing.qmd#L401). Reference material (column glossaries, "Functions introduced in this chapter") is also a collapsed note.
+- `.callout-important` is reserved for exercise solutions, and exercise hints are `.callout-tip` by quarto-live convention.
+
+The test: would a student who skipped this callout get stuck later in the chapter or the book? If so, it's a tip.
 
 ### 8. Data loading: visible chunks are self-contained via `download.file()`
 

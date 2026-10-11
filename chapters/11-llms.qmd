@@ -27,7 +27,7 @@ sentiment analysis, and the importance of good prompts and validation.
 We will also discuss the ethical, climate and privacy considerations around LLMs and 
 discuss the tradeoffs of proprietary vs local models. 
 
-::: {.callout-note title="LLMs in this interactive textbook"}
+::: {.callout-tip title="LLMs in this interactive textbook"}
 As a small technical note: we cannot actually call LLMs from the browser.
 So, for all examples in this chapter we have 'mocked' the LLM:
 when it looks like you call the LLM, it actually produces a canned response. 
@@ -183,7 +183,7 @@ the question we asked above.
 The `parallel_chat_text` ensures that all headlines start from the same context,
 so the second headline is not influenced by the first. 
 
-::: {.callout-note title="ellmer syntax"}
+::: {.callout-tip title="ellmer syntax"}
 
 The code above introduced three new functions from the `ellmer` package.
 Let's take a second to look at these in detail.
@@ -648,7 +648,7 @@ So, let's see if this codebook actually improves performance for Gemma?
 {{< include exercises/_ch11_ex_codebook.qmd >}}
 
 
-:::{.callout-note title="What makes good instructions?"}
+:::{.callout-tip title="What makes good instructions?"}
 
 Drafting the right instructions is probably the most important part of using 
 LLMs for text classification [cf. @atreja2025prompt]. 

@@ -108,7 +108,7 @@ str_glue("Number of posts about trump: {nrow(trump_posts)}")
 ```
 
 
-:::{.callout-note title="str_glue"}
+:::{.callout-tip title="str_glue"}
 In the example above, we used `str_glue` to display the number of posts in a nice way. You've actually already seen this in @sec-vis-why, where we used it to create a nice label in a graph.
 
 `str_glue` is a very useful function for building a text by 'glueing' calculated values (such as `{nrow(posts)}`) into a text. Technically, all R code within curly braces (`{}`) will be evaluated and inserted into the text. 
@@ -169,7 +169,7 @@ head(posts)
 
 {{< include exercises/_ch09_ex_mentions_over_time.qmd >}}
 
-::: {.callout-note title="Analysis of texts: characters or words?"}
+::: {.callout-tip title="Analysis of texts: characters or words?"}
 
 In the examples and exercise above, we use the `str_` functions 
 to perform simple text analyses by counting mentions of candidates. 
@@ -221,7 +221,7 @@ This is actually very unsurprising, since that tag was used to select the posts,
 
 Note that the reason why the total is lower than the total number of posts is that the code above only extracts the *first* occurrence of a pattern, so in the other posts another tag was used before that tag (and see @sec-extractall for `str_extract_all` to extract all tags)
 
-::: {.callout-note title="Regular expressions?"}
+::: {.callout-tip title="Regular expressions?"}
 The pattern introduced above (`#\\w+`) may look weird, overly complex, or suspiciously like a cartoon curseword. But it's actually a very standardized and useful way to express character patterns called **regular expressions** (or *regex*, for friends)
 
 Although this will be explained in much more detail in @sec-regex,
@@ -274,7 +274,7 @@ Note that this only replaces the at-mention until a non-word character appears. 
 which might or might not be a desired effect.
 For more powerful ways of specifying patterns, see @sec-regex below. 
 
-:::{.callout-note title="Matching periods: escaping and fixed()"}
+:::{.callout-tip title="Matching periods: escaping and fixed()"}
 As noted above, the `\\w` pattern matches letters, numbers, and underscore, but not the dots in a domain name. 
 Confusingly, the period character (`.`) also does not (just) match a literal dot:
 it is a character class itself, and matches every possible character (apart from line breaks). So,
@@ -473,7 +473,7 @@ But if you were getting curious about questions like "how do we match words inst
 "what other things are there except for \\w and \\d", or "can we make a perfect pattern for matching emails", read on!
 
 
-::: {.callout-note title="So how do regular expressions actually work?"}
+::: {.callout-tip title="So how do regular expressions actually work?"}
 
 Each element of a regular expression pattern can have one of three functions:
 

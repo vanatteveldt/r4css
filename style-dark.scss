@@ -10,6 +10,18 @@ div.exercise {
     border-color: #5B7ACB;
 }
 
+div.callout-tip.callout-style-default {
+    background-color: rgba(0, 188, 140, 0.06);
+
+    > .callout-header {
+        background-color: rgba(0, 188, 140, 0.22);
+    }
+
+    .callout-title-container {
+        color: #5FD8B8;
+    }
+}
+
 body .str_view .match {
     background-color: rgba(212, 168, 0, 0.35);
     border-color: #D4A800;

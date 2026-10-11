@@ -277,7 +277,7 @@ unless an optional argument `default="Some value"` is given, in
 which case that value is used instead.
 
 
-::: {.callout-tip title="Package versions and updating packages"}
+::: {.callout-note title="Package versions and updating packages"}
 In this section we used the `recode_values` function.
 This function was introduced in `dplyr` version 1.2, released in April 2026.
 

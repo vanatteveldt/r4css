@@ -56,6 +56,30 @@
     margin-bottom: 0;
 }
 
+/* Tips are need-to-know and should stand out, but without the solid title bar
+   of the exercise and challenge blocks */
+div.callout-tip.callout-style-default {
+    background-color: rgba(24, 188, 156, 0.04);
+
+    > .callout-header {
+        background-color: rgba(24, 188, 156, 0.18);
+    }
+
+    .callout-title-container {
+        color: #0B6E5A;
+        font-weight: 600;
+    }
+}
+
+/* Flatly's navy note border is as dark as the body text and outweighs the tips */
+div.callout-note.callout {
+    border-left-color: #8A99A8;
+
+    .callout-icon-container {
+        display: none;
+    }
+}
+
 div.challenge,
 div.exercise {
     border-radius: 4px;
