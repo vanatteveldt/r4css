@@ -1,0 +1,52 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Text or structure?</div>
+<p class="quiz-question">In the first part of the chapter, we asked the LLM to answer with a single word and then cleaned the answers with <code>str_to_lower()</code> and <code>str_remove_all()</code>. What is different when you use structured output instead?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — you describe the form of the answer with a type, such as type_object() with a field per value. The model has to answer in that form, and ellmer turns the answer into R values, such as columns in a data frame.">You specify the form of the answer, the model has to answer in that form, and you get the answer back as R values.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — structured output only fixes the form of the answer, not its content. The model can still choose the wrong category, so you still need to validate the results.">The model gives more correct answers, because it has to think more carefully about the structure.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the structure is part of the request to the model, not a step afterwards. The model itself produces an answer in the requested form, so there is nothing left to clean.">ellmer automatically cleans the text answers afterwards, like we did with <code>str_to_lower()</code> and <code>str_remove_all()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — structured output says nothing about randomness. Asking the same question twice can still give a different answer, as long as it has the requested form.">The model always gives the same answer to the same question, which makes the results reproducible.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Why unnest?</div>
+<p class="quiz-question">The chapter asks for a reason and a value for each headline:</p>
+<pre><code>headlines |>
+  mutate(prompt = interpolate("{{instruction_noanswer}}\n\nThe headline: {{translation}}"),
+         reply = parallel_chat_structured(chat, prompt, type_reasoned)) |>
+  unnest(reply)</code></pre>
+<p>Why is the <code>unnest(reply)</code> step needed?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — parallel_chat_structured() returns a data frame with a column per field, so the reply column contains a small data frame for each headline. unnest() turns its fields into ordinary columns.">Because each value in <code>reply</code> contains several fields (<code>reason</code> and <code>value</code>), and <code>unnest()</code> turns these into separate columns.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — with structured output the answers are already parsed into R values. unnest() only changes how the result is laid out in the data frame.">Because the model returns a JSON text, which <code>unnest()</code> parses into R values.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — here each headline gets exactly one reason and one value, so unnest() gives one row per headline, with extra columns.">Because <code>unnest()</code> creates a separate row for the reason and for the value of each headline.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — type_enum() already makes sure the value is one of the allowed categories. unnest() doesn't check anything; it only changes the layout of the data frame.">Because <code>unnest()</code> removes the answers that are not one of the allowed categories.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Counting rows</div>
+<p class="quiz-question">You use the <code>type_indicator_list</code> type from the chapter on three headlines. The model finds no indicators in the first headline, one in the second, and two in the third. How many rows does the result have after <code>unnest(reply, keep_empty=TRUE)</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — an array gives one row per item: 1 row for the second headline and 2 for the third. Because of keep_empty=TRUE, the first headline is kept as a single row with NA values, giving 4 rows in total.">4</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that would be the result without keep_empty=TRUE, where the headline without indicators disappears. With keep_empty=TRUE it is kept as a row with NA values.">3, because the headline without indicators is dropped.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — with an array, a headline with two indicators gets two rows, so you get more rows than headlines.">3, one row per headline.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — headlines are not combined: each indicator gets its own row, and the headline without indicators is kept because of keep_empty=TRUE.">2, one row for each headline that has at least one indicator.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: What structured output does and doesn't do</div>
+<p class="quiz-question">Which of these statements about structured output is <em>false</em>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right, this one is false — the type only determines the form of the answer. The model can still give a wrong value, or (as in the chapter) answer 'none' in a text field. Validation remains just as important.">Because the answer has to follow the type, you no longer need to validate the results.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — the field names and descriptions are sent to the model with the prompt, so they work as part of the instructions.">The field names and descriptions in the type are seen by the model, so they act as part of the instructions.</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — with type_enum(), the model can only answer with one of the listed values, so you no longer need to clean answers like 'Neutral' or 'negative.'.">With <code>type_enum()</code>, you no longer need to clean answers like "Neutral" or "negative.".</li>
+<li class="quiz-choice" data-correct="false" data-explain="This one is true — with type_array(), the model can return any number of items, including none, which is why a headline can end up as 0, 1 or more rows.">With <code>type_array()</code>, the model can return a different number of items for each text.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

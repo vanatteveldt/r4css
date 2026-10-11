@@ -31,7 +31,7 @@ In this chapter, you will learn how to use various `stringr` functions for deali
 + Filter data based on the occurrence of specific text (@sec-strdetect)
 + Using basic 'regular expression' patterns to fine, replace or remove parts of a text (@sec-findreplace)
 + Making simple word plots (@sec-wordplots)
-+ Optinally, learn regular expression syntax in more detail to make powerful patterns (@sec-regex)
++ Optionally, learn regular expression syntax in more detail to make powerful patterns (@sec-regex)
 
 As always, the chapter ends with a [multiple choice quiz](#sec-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
 

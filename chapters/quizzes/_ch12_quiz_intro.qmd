@@ -1,0 +1,58 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Asking a follow-up question</div>
+<p class="quiz-question">You run the following code:</p>
+<pre><code>chat &lt;- chat_ollama(model = "gemma4:e4b")
+chat&#36;chat("Is this headline positive or negative? Headline: 'The economy just crashed'")
+chat&#36;chat("Are you sure?")</code></pre>
+<p>What does the model receive when you ask the second question?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a chat object remembers the conversation, so the second call sends the first question, the model's first answer, and the new question. That is why 'Are you sure?' makes sense to the model.">The first question, the model's answer to it, and "Are you sure?"</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that is how parallel_chat_text() treats each prompt, but a chat object keeps the history of its conversation, so the model knows what 'Are you sure?' refers to.">Only "Are you sure?", so the model doesn't know what it should be sure about.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the model's own earlier answer is part of the history too. Without it, the model couldn't reconsider what it said before.">The first question and "Are you sure?", but not the model's earlier answer.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — calling chat&#36;chat() again on the same object continues the conversation; it doesn't start a new one. You would need to create a new chat object for that.">"Are you sure?" in a new, empty conversation, as each call to <code>chat&#36;chat()</code> starts a new chat.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Double braces</div>
+<p class="quiz-question">In the chapter, the prompts are created with</p>
+<pre><code>interpolate("{{instruction}}\n\nThe headline: {{translation}}")</code></pre>
+<p>Why does <code>interpolate()</code> use double curly braces, unlike <code>str_glue()</code>, which uses single ones?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — prompts often contain literal curly braces, for example when asking for JSON output. Using double braces for the variables means those single braces can stay in the text as they are.">Because instructions often contain literal curly braces (e.g. an example of JSON output), which should not be filled in as variables.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — interpolate() fills in single values and columns in exactly the same way; the double braces are about not clashing with literal braces in the prompt text.">Because double braces are needed to fill in a whole column, while single braces only fill in a single value.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the model only ever sees the filled-in text, never the braces. The braces are just placeholders for R.">Because the LLM needs to see which parts of the prompt are variables.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the braces are only a placeholder syntax. Inside mutate(), interpolate() can use both columns (translation) and objects (instruction), with the same double braces.">Because double braces refer to columns of the data frame, and single braces to objects like <code>instruction</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Coding open survey answers</div>
+<p class="quiz-question">You want to classify open survey answers that contain personal information. The consent form promises respondents that their answers will not leave the university's servers. Which approach fits this promise?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — with an open-weights model running locally (e.g. via Ollama on a university server), the answers are never sent to an external company.">Use an open-weights model running on a university server, e.g. via Ollama.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — temperature only makes the answers more deterministic; the survey answers are still sent to the provider's servers.">Use a hosted model such as Claude, but set the temperature to zero.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a smaller model uses less energy, but if it is hosted by an external provider the answers still leave the university.">Use the smallest hosted model available, such as <code>gpt-4.1-nano</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — keeping the API key out of your scripts protects your account, but it doesn't change where the survey answers are sent.">Use a hosted model, but store the API key in your <code>.Renviron</code> file rather than in your script.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Classifying many headlines</div>
+<p class="quiz-question">You want to classify all 284 headlines. Instead of calling <code>chat&#36;chat()</code> for each headline, the chapter uses:</p>
+<pre><code>headlines |>
+  mutate(llm_sentiment = parallel_chat_text(
+    chat = chat,
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}")))</code></pre>
+<p>What does <code>parallel_chat_text()</code> do differently from calling <code>chat&#36;chat()</code> 284 times?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — each prompt is sent as a separate question, so the answer for one headline can't be influenced by the other headlines. You get back one answer per prompt, which you can store directly as a column with mutate().">It sends each prompt as a separate conversation and returns one answer per headline that you can store as a column.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that would be one long question with all headlines in it. parallel_chat_text() sends a separate prompt for each headline and gets a separate answer for each.">It combines all 284 headlines into a single message, so the model can classify them all at once.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — if it simply called chat$chat() 284 times on the same chat object, every headline would be added to the same conversation, so later headlines would be classified in the context of the earlier ones. parallel_chat_text() instead sends each prompt as a separate question.">It automatically calls <code>chat&#36;chat()</code> 284 times so you don't have to repeat it.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'parallel' means that several prompts are sent at the same time, which makes it faster. All prompts go to the one model in the chat object; comparing models means creating a chat object for each.">It sends each headline to several models at the same time, so you can compare their answers.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

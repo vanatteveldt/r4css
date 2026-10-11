@@ -1,29 +1,56 @@
 # Replays recorded LLM answers (data/llm_recorded.csv) instead of calling a real LLM,
 # by pretending to be a local Ollama server (ellmer::chat_ollama), the Anthropic API (ellmer::chat_anthropic)
 # or the OpenAI Responses API (ellmer::chat_openai)
-llm_recorded <- readr::read_csv("data/llm_recorded.csv", show_col_types = FALSE)
+# All columns are text; read_csv would otherwise guess the mostly empty schema column as logical
+llm_recorded <- readr::read_csv("data/llm_recorded.csv", col_types = readr::cols(.default = "c"))
 # ellmer's coro generators get byte-compiled again on every request, which makes replaying
 # hundreds of answers take minutes; without the JIT compiler it takes seconds
 invisible(compiler::enableJIT(0))
-# An empty system prompt is stored as an empty field, which read_csv turns into NA
+# An empty system prompt or schema (for answers that are plain text) is stored as an empty field,
+# which read_csv turns into NA
 llm_recorded$prompt[is.na(llm_recorded$prompt)] <- ""
-# Squish whitespace so that e.g. spreading the prompt over multiple lines still matches;
-# computed once here, as the mock is called for every single request
-llm_key <- function(model, prompt, text) paste(model, stringr::str_squish(prompt), stringr::str_squish(text), sep = "\r")
-llm_recorded_keys <- llm_key(llm_recorded$model, llm_recorded$prompt, llm_recorded$text)
+llm_recorded$schema[is.na(llm_recorded$schema)] <- ""
+# Squish whitespace so that e.g. spreading the prompt over multiple lines still matches.
+# The schema of structured output is part of the key, so changing the type also has no recorded answer.
+# Computed once here, as the mock is called for every single request
+llm_key <- function(model, prompt, text, schema = "") {
+  paste(model, stringr::str_squish(prompt), stringr::str_squish(text), schema, sep = "\r")
+}
+llm_recorded_keys <- llm_key(llm_recorded$model, llm_recorded$prompt, llm_recorded$text, llm_recorded$schema)
+# The JSON schema of the requested structured output, or "" for plain text.
+# Must give the same result as request_schema() in data/record_llm.R
+request_schema <- function(body) {
+  schema <- body$output_config$format$schema
+  if (is.null(schema)) schema <- body$text$format$schema
+  if (is.null(schema)) {
+    # Older ellmer versions (as in webR) ask Claude for structured output as a forced tool call
+    tool <- Filter(\(t) identical(t$name, "_structured_tool_call"), body$tools)
+    if (length(tool) > 0) schema <- tool[[1]]$input_schema$properties$data
+  }
+  if (is.null(schema) && is.list(body$format)) schema <- body$format
+  if (is.null(schema)) "" else as.character(jsonlite::toJSON(schema, auto_unbox = TRUE))
+}
 # chat_anthropic() and chat_openai() refuse to start without a key; the mock never uses it
 if (Sys.getenv("ANTHROPIC_API_KEY") == "") Sys.setenv(ANTHROPIC_API_KEY = "not-needed-for-recorded-answers")
 if (Sys.getenv("OPENAI_API_KEY") == "") Sys.setenv(OPENAI_API_KEY = "not-needed-for-recorded-answers")
+# When chat$chat() prints the answer itself, ellmer streams it in word by word, which a recorded answer
+# can't do. Without that, chat$chat() returns the answer, which R then prints in the same way
+options(ellmer_echo = "none")
 
 # Shortcut for the common case: if all prompts are recorded, return the recorded answers directly.
 # Replaying hundreds of answers through ellmer is too slow in the browser.
 # Otherwise fall back to the real function, which then goes through the httr2 mock below.
-parallel_chat_text <- function(chat, prompts, ...) {
+parallel_chat_text <- function(chat, prompts, ..., rpm = 1e6) {
   system <- chat$get_system_prompt()
   if (is.null(system)) system <- ""
   answers <- llm_recorded$answer[match(llm_key(chat$get_model(), system, as.character(prompts)), llm_recorded_keys)]
   if (!anyNA(answers)) return(answers)
-  ellmer::parallel_chat_text(chat, prompts, ...)
+  ellmer::parallel_chat_text(chat, prompts, ..., rpm = rpm)
+}
+# ellmer limits itself to 500 requests per minute, shared by all chunks on the page,
+# so running a few examples in a row would make readers wait; the recorded answers have no such limit
+parallel_chat_structured <- function(chat, prompts, type, ..., rpm = 1e6) {
+  ellmer::parallel_chat_structured(chat, prompts, type, ..., rpm = rpm)
 }
 
 options(httr2_mock = function(req) {
@@ -51,14 +78,14 @@ options(httr2_mock = function(req) {
   system <- if (anthropic && !is.null(body$system)) content_text(body$system) else
     if (any(roles == "system")) content_text(messages[[which(roles == "system")[1]]]$content) else ""
   text <- content_text(messages[[length(messages)]]$content)
-  answer <- llm_recorded$answer[match(llm_key(body$model, system, text), llm_recorded_keys)]
+  answer <- llm_recorded$answer[match(llm_key(body$model, system, text, request_schema(body)), llm_recorded_keys)]
   if (is.na(answer)) {
     explanation <- paste(
       "I'm sorry, Dave, I'm afraid I can't let you do that :(\n",
       "\nDon't worry, nothing went wrong. It's just that unfortunately to get LLMs working",
       "in the interactive examples, we had to pre-record all the messages.",
       "So, it can only replay the answers we recorded for the exact prompts and texts in the examples.",
-      "If you change the prompt or the texts, there is no recorded answer.",
+      "If you change the prompt, the texts, or the type of structured output, there is no recorded answer.",
       "To try your own prompts, run this code in R on your own computer with a real LLM.")
     # cat() rather than message(), so it still shows in chunks with `message: false`
     cat("\n\n", explanation, "\n\n")
@@ -67,10 +94,21 @@ options(httr2_mock = function(req) {
     return(httr2::response_json(url = req$url, status_code = 400, body = error_body))
   }
   if (anthropic) {
+    # Structured answers are recorded as JSON text. Older ellmer versions (as in webR) ask for them
+    # as a forced call of the tool '_structured_tool_call', and expect the data in the tool's input
+    structured_tool <- identical(body$tool_choice$name, "_structured_tool_call")
+    content <- if (structured_tool) {
+      list(type = "tool_use", id = "recorded", name = "_structured_tool_call",
+           input = list(data = jsonlite::parse_json(answer[1])))
+    } else {
+      list(type = "text", text = answer[1])
+    }
     return(httr2::response_json(url = req$url, body = list(
       id = "recorded", type = "message", role = "assistant", model = body$model,
-      content = list(list(type = "text", text = answer[1])),
-      stop_reason = "end_turn", usage = list(input_tokens = 0, output_tokens = 0)
+      content = list(content),
+      stop_reason = if (structured_tool) "tool_use" else "end_turn",
+      # ellmer 0.4.0 also requires the cache fields
+      usage = list(input_tokens = 0, output_tokens = 0, cache_creation_input_tokens = 0, cache_read_input_tokens = 0)
     )))
   }
   if (openai) {

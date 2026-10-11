@@ -8,10 +8,7 @@ webr:
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-<!-- TODO: show how to run a simple prompt -->
-<!-- TODO: explain that a chat object also contains/remembers the message history -->
-
-# Using LLMs with `ellmer` (todo) {#sec-llm}
+# Zero-shot Classification with LLMs  {#sec-llm}
 
 One of the newest and most powerful tools in the computational social science toolbox
 are Large Language Models (LLMs) such as ChatGPT and Claude.
@@ -49,7 +46,31 @@ you can check the [record_llm.R](https://github.com/vanatteveldt/r4css/blob/main
 
 ## Chapter objectives {.unnumbered}
 
-<!-- TODO -->
+In this chapter, you will learn how to use the `ellmer` package to call LLMs from R.
+You will also practice with existing `tidyverse` functions to analyse the results.
+
++ What is the general place of LLMs in the (computational) social science toolkit? (@sec-llm-intro)
++ Using hosted LLMs via their API and local models via Ollama (@sec-llm-models)
++ Validating LLM results against a gold standard (@sec-llm-validation)
++ Understanding how to improve and test instructions (prompts) (@sec-llm-prompt)
++ Using structured output (@sec-llm-structuredoutput)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-llm-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `chat_ollama()`, `chat_openai()` etc | Create a new chat context for a given model | @sec-llm-intro,  @sec-llm-models |
+| `chat$chat()` | Ask a single question to a LLM | @sec-llm-intro |
+| `interpolate()` | Build a prompt, e.g. based on instruction and text to classify | @sec-llm-intro,  @sec-llm-models |
+| `parallel_chat_text()` | Automatically classify multiple examples with text output | @sec-llm-intro,  @sec-llm-models, @sec-llm-validation |
+| `type_object()`, `type_enum()` etc | Define the desired output structure | @sec-llm-structuredoutput |
+| `chat$chat_structured()` | Ask a single question to an LLM with structured output | @sec-llm-structuredoutput |
+| `parallel_chat_structured()` | Use structured output for multiple examples | @sec-llm-structuredoutput |
+| `unnest()` | Tidyverse function to turn a nested data frame into separate rows and columns | @sec-llm-structuredoutput |
+
+:::
 
 ## Data for this chapter {.unnumbered}
 
@@ -58,14 +79,14 @@ who published their dataset on [GitHub](https://github.com/vanatteveldt/ecosent)
 
 
 ```{webr}
-#|warning: false
+#| warning: false
 library(tidyverse)
 download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/dutch_sentiment.csv", "dutch_sentiment.csv")
 headlines <- read_csv("dutch_sentiment.csv")
 head(headlines)
 ```
 
-As you can see, this has the sentiment and English translation for 284 headlines. They are all from economic news, and are coded by the three authors based on whether the headline describes the economy as doing well or poorly. 
+As you can see, this has the sentiment and English translation for 284 headlines. They are all from (Dutch) economic news during the 2015 eurocrisis, and are coded by the three authors based on whether the headline describes the economy as doing well or poorly. 
 
 ::: {.challenge}
 - How would you approach a sentiment analysis of this data? 
@@ -100,12 +121,11 @@ their understanding of natural language, including the ability to be prompted in
 using categories that you can describe in the instructions, and the LLM can often perform very well
 without needing any training data [@tornberg2025large].
 
-As an example, the code below uses a locally running LLM to classify the first 10 headlines
-from the sentiment analysis data.
+As an example, the code below uses a locally running LLM to classify a sample headline:
 
 ```{webr}
 #| setup: true
-#| exercise: demo_llm_first
+#| exercise: ['demo_llm_first', 'demo_llm_second']
 library(tidyverse)
 headlines <- read_csv("data/dutch_sentiment.csv")
 {{< include exercises/_llm_mock.qmd >}}
@@ -113,6 +133,25 @@ headlines <- read_csv("data/dutch_sentiment.csv")
 
 ```{webr}
 #| exercise: demo_llm_first
+#| warning: false
+library(ellmer)
+chat <- chat_ollama(model = "gemma4:e4b")
+
+chat$chat("Is this headline positive or negative? Headline: 'The economy just crashed'")
+chat$chat("Are you sure?")
+```
+
+As you can see, the model correctly identifies the headline as being negative. 
+Looking at the code, you see we first create `chat`, which represents a link to the chosen model (Gemma). Next, we can call `chat$chat` to run single questions.
+You can also see that the chat object remembers the chat history,
+so the second question is answered in the context of the first.
+
+To do a more systematic sentiment analysis,
+we can make some more structured instructions and apply them automatically to 
+a sample of headlines from the example data:
+
+```{webr}
+#| exercise: demo_llm_second
 #| warning: false
 library(ellmer)
 chat <- chat_ollama(model = "gemma4:e4b")
@@ -137,14 +176,19 @@ This model (`gemma4:e4b`) is a new and fairly small model that runs well on my o
 so it is heartening to see that even this model already does fairly well 
 (on these 10 sentences, at least!).
 
+Note that we created a new `chat` object, since the old `chat` would have remembered
+the question we asked above. 
+The `parallel_chat_text` ensures that all headlines start from the same context,
+so the second headline is not influenced by the first. 
+
 ::: {.callout-note title="ellmer syntax"}
 
-The code above introduced three new new functions from the `ellmer` package.
+The code above introduced three new functions from the `ellmer` package.
 Let's take a second to look at these in detail.
 
 - First, we create a *chat object* using `chat_ollama`. This object encodes various choices
   such as what provider to use, but also which model and optionally other parameters like temperature.
-  For example, we could also use `gpt <- chat_openai(model = "gpt-4.1-nano", parameters=params(temperature=0))` to use OpenAI's nano model with a temperature of zero 
+  For example, we could also use `gpt <- chat_openai(model = "gpt-4.1-nano", params=params(temperature=0))` to use OpenAI's nano model with a temperature of zero 
   (which makes the model more deterministic, but possibly less creative).
 - Next, `interpolate` was used to create the *prompts* to be sent to the model.
   In this case, it creates a single message containing both the instructions and the headline, 
@@ -182,7 +226,7 @@ but even at temperature zero the models are not fully deterministic
 (cf. @vallejovera2025llms). 
 
 It can often be useful to ask for the 'reasoning' of the model as well,
-that is, ask the model to explain why it made a specific choice (see @sec-ellmer).
+that is, ask the model to explain why it made a specific choice (see @sec-llm-structuredoutput).
 Very often, this can be useful in spotting mistakes or fine-tuning the instructions.
 Ultimately, however, this is just more words produced by the same black-box LLM:
 we don't actually know if the reason it states is actually its reason for making a choice
@@ -231,7 +275,7 @@ if a task can be solved with a small, non-reasoning model it would waste resourc
 Similarly, if a question can be answered on a sample of 100 texts, 
 it would be much more polluting to analyse 10,000 texts instead.
 
-## Choosing and connecting a model
+## Choosing and connecting a model {#sec-llm-models}
 
 Before we can call LLMs from R, we need to connect to a specific server and model. 
 
@@ -342,7 +386,7 @@ it will still run, just (much) slower.
 To install this model, you can open a terminal and run `ollama pull llama3.2:3b`.
 You can also download the model from R with `pull` from the `ollamar` package.
 
-```{r eval=F}
+```r
 library(ollamar)
 pull("llama3.2:3b")  
 ```
@@ -375,7 +419,7 @@ headlines |>
 Results here show an interesting development:
 It's substantively correct in 6 out of 10 headlines,
 but in three cases it replied with a capitalized response ('Neutral' and 'Negative'), and
-in one cases added a period at the end of its response ('negative.').  
+in one case added a period at the end of its response ('negative.').  
 Apparently it follows the instructions on
 what to emit less scrupulously than the other models did. 
 In this case it can be fixed post-hoc rather easily using `str_to_lower`
@@ -428,8 +472,6 @@ As you can see, the values for each model are now added to each sentence, so
 we can compare performance. 
 Note that we computed `prompts` as a separate column here since it's shared between all models,
 with the added benefit that we can now also inspect it to see if the prompt reads as intended. 
-
-<!-- TODO: add a table of the actual answers per model? -->
 
 ### Analysing the results
 
@@ -489,15 +531,19 @@ results_long |>
 
 <!-- TODO: do we need a discussion / callout on statistical error and what we are genealizing to? -->
 
-This first produces a clean version of the results with one row per model per headline.
-We also compute a cleaned version of the llm result by running `str_to_lower` and then removing all characters other than lowercase `a-z`, and removed the `llm_` prefix from the model name (see @sec-stringr for the `str_*` functions),
+We start by pivoting the results so each model is in a separate row and each row contains a single `llm_result`,
+and we can then remove the `llm_` prefix from the model name.
+Next, we create a clean version of the llm result by running `str_to_lower` 
+and then removing all characters other than lowercase `a-z` 
+(see @sec-stringr for the `str_*` functions).
 
-This reports the overall accuracy by taking the mean of the comparison between the gold standard value (`sentiment`) and the llm result (since `TRUE` and `FALSE` are equivalent to 1 and 0,
-the mean of a comparison is the proportion of cases that they were the same, i.e. the accuracy).
-and compute accuracy of the cleaned version as well. 
+We can then report the overall accuracy by taking the mean of the comparison between the gold standard value (`sentiment`) and the llm results: since `TRUE` and `FALSE` are equivalent to 1 and 0,
+the mean of a comparison is the proportion of cases in which they were the same, i.e. the accuracy.
+Since we group by model, this reports accuracy of each model separately,
+and it computes scores for both the raw and the cleaned answers. 
 
 As you can see, performance varies quite a bit between models.
-Looking at the cleaned accuracy, haiku does best on this specific test, with nano not far behind
+Looking at the cleaned accuracy, haiku does best on this specific test, with nano not far behind.
 Interestingly, when you compare the raw and cleaned accuracy, you can see that especially llama 
 and nano had a lot of trouble following the output instructions: 
 `llama` produced a response other than the three categories in 108 of 284 headlines
@@ -517,7 +563,6 @@ Let's compare our numbers to the table of results from @vanatteveldt2021validity
 - Can we generalize these answers to the more general task of classifying political texts? Why (not)?
 :::
 
-<!-- TODO: callout on (train/)test/validation split -->
 
 ### Confusion matrices
 
@@ -548,8 +593,6 @@ In this case, it shows a quite interesting picture:
 by far the most frequent mistakes are assigning neutral sentences to negative (n=31) or positive (34).
 So, apparently the model is too reluctant to use the neutral category.
 
-<!-- TODO: change this into an exercise, and put the challenge after the exercise? -->
-
 ::: {.challenge title="Can we unfuddle the LLM?"}
 
 We noticed above that gemma is likely to overuse positive and negative at the expense of neutral. 
@@ -559,29 +602,60 @@ We noticed above that gemma is likely to overuse positive and negative at the ex
 - Would the improvement for gemma also help haiku? What is the way forward?
 :::
 
-## Writing a good prompt (in progress) {#sec-llm-prompt}
+## Writing a good prompt {#sec-llm-prompt}
 
-<!-- Too much text. Better structure:
-- note the problem with neutral, and go to a demo with the new instructions asap 
-  (using the gemma underuse of neutral and maybe capitalization as hook)
-- move the prompt engineering 'theory' into a callout
-- end with an exercise where we give a third possible prompt (few-shot?) and have them test 
-  which instruction is best (for each model), challenge to ask why, and nudge to try more things at home
-- add a callout of fitting the gold standard and test/validation split
--->
+We saw above that Gemma was underutilizing the neutral category compared to the gold standard. 
+One possible reason for that is that the instructions we gave the LLM are worded differently from the codebook used by the human annotators when creating the gold standard.
+Like a codebook in human coding, getting the instructions (or 'prompt') right is a crucial driver of performance for classification with LLMs.
+<!-- These instructions can be seen as the operationalization of the variable we're trying to measure,
+and it's important to make sure that we are indeed measuring what we think we are measuring. -->
+
+So, let's see if we can improve the performance by using instructions that are based directly on the instruction given to the human coders (see @vanatteveldt2021validity p. 125):
+
+```{webr}
+codes <- c(
+  positive = "the headline evaluates the economy or economic conditions as good or improving",
+  negative = "the headline evaluates the economy or economic conditions as bad or worsening",
+  neutral = "the headline gives no evaluation of economic conditions, or is ambiguous or mixed")
+codebook <- str_glue("- {names(codes)} = {codes}") |> str_c(collapse="\n")
+
+task <- "You are classifying newspaper headlines by their sentiment about the economy, as in a content analysis of economic news."
+context <- "Judge only the headline itself, not anything else you may know about the events it refers to."
+answer <- "Answer with only one word, in lowercase: positive, negative, or neutral."
+
+instruction <- str_glue("{task} {context}\n\nCodebook:\n{codebook}\n\n{answer}")
+cat(instruction)
+```
+
+The code above uses a structured approach to creating the prompt.
+The codebook is defined using a (named) vector of codes, 
+which makes it easy to change, add, or remove codes. 
+An instruction for each code is then created with `str_glue`,
+which are collapsed into a single text using `str_c`.
+
+Next, the overall task definition, context, and answering instructions are given.
+After that, `str_glue` is used to make the overall instructions,
+combining the codebook with the other definitions. 
+
+As you can see, these instructions make it clear what the overall task is,
+and that the coder should disregard any substantive background knowledge.
+It also gives a more detailed explanation of the categories, emphasizing that it should be about the economy and that positive can either be that things are good or that they are improving. 
+It also gives a broader definition of neutral cases. 
+So, let's see if this codebook actually improves performance for Gemma?
+
+{{< include exercises/_ch12_ex_codebook.qmd >}}
 
 
-In the examples above we saw that model choice has a strong effect on performance. 
-The second important driver of performance is the instruction (or prompt) that we use.
-The instruction can be seen as the operationalization of the variable we're trying to measure,
-and it's important to make sure that we are indeed measuring what we think we are measuring.
+:::{.callout-note title="What makes good instructions?"}
 
-There is another similarity (or at least analogy) to manual annotation here:
-the instructions act as the *codebook* used in manual annotation,
-and one of the most important parts of a successful annotation project is getting the codebook right 
-so it matches the theoretical concepts validly but is also clear and unambiguous to coders. 
-If it turns out that coders are coding certain categories or examples wrong, 
-the first thing you would generally do is improve the codebook, not fire the coders. 
+Drafting the right instructions is probably the most important part of using 
+LLMs for text classification [cf. @atreja2025prompt]. 
+
+These instructions can be seen as similar to the *codebook* used in manual annotation,
+so we can rely on the decades of experience in drafting manual annotation codebooks 
+as a good starting point for writing LLM instructions.
+Like with codebooks, the two most important criteria for LLM instructions are clarity and validity: the instructions need to be clear and unambiguous;
+and the instructions need to match the theoretical concepts that are being measured. 
 
 In general, good codebooks often contain a good explanation of the overall task, 
 as well as clear definitions of each category.
@@ -589,75 +663,227 @@ Often, decision rules can be given for specific hard or borderline cases.
 Finally, it's possible to give one or more examples for each code, 
 or to provide examples at the end. 
 
+It should be noted that there are no 'perfect' instructions:
+which instructions work best can vary over time or between models.
+For example, many prompts used to start with a 'persona sentence' like 
+"You are a helpful annotation assistant", but @zheng2024 find little evidence that this
+ actually helps models.
+There is also a tradeoff between short instructions like this, or longer, more detailed instructions that may also just cause especially smaller models to forget or ignore parts of the instruction [cf. @liu24; @jaroslawicz25].
+It also used to be recommended to explicitly ask for reasoning in the instruction (something like: "give your reasons first, and then provide the answer as a single word at the end"), 
+but this is probably no longer beneficial for current models [cf. @sprague25]. 
+
 Note that giving examples at the end turns the task from a "zero-shot classification"
 into a "few-shot classification". This can improve performance and can make the expected 
 output format clear. It is important to give the input and output in the exact format that will
-be used in the actual coding, and that the examples themselves are not present in the test set. 
+be used in the actual coding, and that the examples themselves are not present in the test set.
 
-That said, let's see if we can improve performance by making a more detailed codebook.
-For this, let's base ourselves on the coding instructions that were given to the trained coders
-for the data used in @vanatteveldt2021validity (see p. 125):
+One important note is to avoid using information from your gold standard validation
+in your instructions:
+If you check the results on the gold standard, and you notice the LLM makes a mistake,
+it's tempting to include a specific rule against this (type of) mistake.
+However, if you then use the same gold standard to evaluate, you are overestimating
+the performance of the model since it's more likely to do well on the sentence(s) you 
+specifically checked compared to unseen sentences.
+This is even stronger for few-shot examples: 
+if the model has seen a specific example already, it's a very low bar to then classify it correctly in the evaluation. 
+For that reason, best practice is to have a separate set of sentences as examples and for developing the instructions, so the gold standard remains unseen.
+For example, this can be achieved by splitting the data into two sets: a development set and a test set. <!-- TODO (see also @sec-ml-traintest)-->
 
-<!-- suggestion: have the prompt elements separate and glue together for readability -->
-```{r, eval=F}
-instruction <- str_c(
-  "You are classifying newspaper headlines by their sentiment about the economy, ",
-  "as in a content analysis of economic news. ",
-  "Judge only the headline itself, not anything else you may know about the events it refers to. ",
-  "Codebook: positive = the headline evaluates the economy or economic conditions as good or improving; ",
-  "negative = as bad or worsening; ",
-  "neutral = the headline gives no evaluation of economic conditions, or is ambiguous or mixed. ",
-  "Answer with only one word, in lowercase: positive, negative, or neutral.")
+Finally, longer instructions are also more expensive (in API costs or in local compute time). This can be alleviated by caching: modern LLM providers can 'remember' the state after processing the instructions, so it can be re-used by later calls 
+(provided the instructions come first and are longer than a minimum length).
+The exact workings of this are different per provider, so if you need to annotate a large amount of text and/or have long instructions, it can be worth checking how this works for the provider you are using. 
+:::
+
+## Structured Output {#sec-llm-structuredoutput}
+
+In the examples so far, we used the LLM to generate a verbal reply, 
+and then parsed that output using `stringr` functions.
+
+Another possibility is to specify a *structured output* format for the model to use.
+This prevents the problem with having to clean the answers and models potentially giving invalid responses, but it becomes especially useful if a reply consists of multiple distinct values. For example, the code below asks for the sentiment as well as for the reason for the sentiment for an example sentence:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_structured_one', 'demo_structured_all', 'demo_structured_array']
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+codes <- c(
+  positive = "the headline evaluates the economy or economic conditions as good or improving",
+  negative = "the headline evaluates the economy or economic conditions as bad or worsening",
+  neutral = "the headline gives no evaluation of economic conditions, or is ambiguous or mixed")
+codebook <- str_glue("- {names(codes)} = {codes}") |> str_c(collapse="\n")
+task <- "You are classifying newspaper headlines by their sentiment about the economy, as in a content analysis of economic news."
+context <- "Judge only the headline itself, not anything else you may know about the events it refers to."
+# Defined in the first chunk of this section, and needed again in the second
+type_reasoned <- type_object(
+  reason = type_string(description="Your interpretation of the headline and reason for coding it"),
+  value = type_enum(values=names(codes), description="The sentiment of the headline")
+)
+instruction_noanswer <- str_glue("{task} {context}\n\nCodebook:\n{codebook}")
 ```
 
-As you can see, this instruction makes it clear what the overall task is,
-and that the coder should disregard any substantive background knowledge.
-It also gives a more detailed explanation of the categories, emphasizing that it should be about the economy and that positive can either be that things are good or that they are improving. 
-It also gives a broader definition of neutral cases. 
-The last sentence was added by us 
-(since coders would only have these options available in the tool, it was not needed in the original instructions).
+```{webr}
+#| exercise: demo_structured_one
+#| warning: false
+chat <- chat_anthropic(model = "claude-haiku-4-5")
 
-<!-- for persona: e.g. Zheng et al. 2023, "Is 'A Helpful Assistant' the Best Role…?", -->
-<!-- reasoning makes answer harder to parse, good hook for structured output,
-    and note that it's not really needed rather than harming (but still useful for 
-    inspecting / checking the answers -->
+type_reasoned <- type_object(
+  reason = type_string(description="Your interpretation of the headline and reason for coding it"), 
+  value = type_enum(values=names(codes), description="The sentiment of the headline")
+)
+instruction_noanswer <- str_glue("{task} {context}\n\nCodebook:\n{codebook}")
 
-It should be noted that this instruction is not 'perfect', 
-and that what is the best instruction can vary over time or between models.
-For example, it is disputed whether giving an overall task description actually helps models,
-and there is a tradeoff between short instructions like this, or longer, more detailed instructions that may also just cause especially smaller models to forget or ignore earlier parts of the instruction.
-It also used to be recommended to explicitly ask for reasoning in the instruction (something like: "give your reasons first, and then provide the answer as a single word at the end"), 
-but this is probably no longer beneficial for current models. 
+chat$chat_structured(interpolate("{{instruction_noanswer}}\n\nThe headline: They have won a great election victory"), type=type_reasoned)
+```
 
-<!-- TODO: demo+exercise for few-shot 
+As you can see, haiku correctly reasons that this headline is not actually about the economy, so even if it is positive in general it should be coded as neutral.
 
-Claude: Yes, I think few-shot is the right third prompt. It sets up a progression from the naive prompt, to the codebook prompt, to the codebook plus examples. That's also how codebooks are refined in practice, and each step adds one thing you can isolate. Some things to decide before you record:
+Looking at the code, we first define the desired output format as containing a `reason` and a `value`.
+We then use a shortened version of the instructions that omits the `answer` part,
+since the model already knows the expected form of the answer.
+Note that the LLM 'sees' the field names and descriptions from the type definition, so this should be seen 
+as part of the instructions given to the LLM. 
 
-1. Where the examples come from
+To apply this to multiple headlines, we can use `parallel_chat_structured`:
 
-Taken from dutch_sentiment. You'd remove them with anti_join() and score all three prompts on that reduced set, so the comparison stays fair. That's a few lines of extra code, but it shows the holdout idea in action and leads straight into the validation callout.
-Taken from the original codebook, or written by you. The test set stays intact and the examples are authentically codebook material. Does p. 125 or the coder training material have example headlines?
-Either works. I'd lean towards the first because it teaches the holdout idea, unless the codebook has good examples.
+```{webr}
+#| exercise: demo_structured_all
+#| warning: false
+chat <- chat_anthropic(model = "claude-haiku-4-5")
 
-2. Which examples to use
+headlines |>
+  mutate(prompt=interpolate("{{instruction_noanswer}}\n\nThe headline: {{translation}}")) |>
+  mutate(reply=parallel_chat_structured(chat, prompt, type_reasoned)) |> 
+  unnest(reply) |> 
+  select(translation, value, reason)
+```
 
-Use one or two per category, plus at least one mixed or ambiguous headline labelled neutral. That case is the gemma problem, so the examples should show it explicitly.
-Keep the labels balanced. Models tend to copy the majority label among the examples, and to some extent the label of the last example. A sentence on that in the callout supports your "not perfect, depends on model" point.
-3. Format
+As you can see, this works mostly the same as the earlier `parallel_chat_text` call, with the main difference that we inserted an `unnest` call after the `parallel_chat_structured`.
+The reason for that is that the reply column is no longer a single value, but instead is now a dataframe itself. 
+The `unnest` function then creates separate columns for the `reason` and `value`.
 
-Each example should look exactly like a real item: the same The headline: … wording, followed by the answer in lowercase.
-Your actual prompts end after the headline, with no Answer: marker. You'll probably want to add one to both the examples and the real prompt, so the model knows where its answer goes. That means the few-shot prompt changes the template as well as the instruction. That's fine, but the text should say so.
-4. Building the prompt: show-and-tell, not exercise
+It is also possible to ask for multiple answers for each prompt. 
+For example, we could ask the LLM to identify which specific economic indicators are mentioned and how they are evaluated:
 
-Building the examples block from a small tibble with str_glue() + str_c(collapse = "\n\n") ties nicely back to ch. 9.
-It can't be an exercise, though, because the mock needs the prompt string to match exactly. Any student variation would miss the recordings. So make the construction show-and-tell, and keep the exercise to scoring the three prompts per model, as in your plan.
-5. Cost
-The examples get repeated in every one of the 284 calls. Mention this in a sentence, since it's a real tradeoff with paid APIs, and it echoes your point about long prompts.
+```{webr}
+#| exercise: demo_structured_array
+#| warning: false
+economic_indicator <- type_object(
+  indicator = type_string(str_c(
+    "An economic variable or policy measure that can increase or decrease, ",
+    "such as unemployment, prices, interest rates, profits, taxes, budget cuts or restrictions. ",
+    "Also include variables whose change is only implied, e.g. layoffs mean jobs go down. ",
+    "Name the variable itself, not the event. Never use 'none' or an empty string.")),
+  direction = type_enum("The factual change in this variable, regardless of whether that is good or bad",
+                        values=c("up", "down", "stable", "unclear")),
+  evaluation = type_enum("Whether the headline presents this change as good or bad for the economy",
+                        values=c("good", "bad", "neutral"))
+)
+
+type_indicator_list <- type_array(
+  "All economic variables mentioned in the headline. Return an empty list if there are none.",
+  items = economic_indicator)
+
+chat <- chat_anthropic(model = "claude-haiku-4-5")
+result <- headlines |>
+  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{translation}}"),
+         reply = parallel_chat_structured(chat, prompt, type_indicator_list)) |>
+  unnest(reply, keep_empty=TRUE)
+
+result |> select(id, translation, indicator:evaluation)
+```
+
+Looking at the results, we see some interesting details. The first sentence contained no indicators, since it's only about minister Dijsselbloem wanting a solution (and because we specified `keep_empty=TRUE`, the row is kept with the measurement variables set to `NA`). The sentence about 'Deutsche Bank' has two indicators (and hence two rows): the (mega) fines and the spending (cuts). These sentences also nicely show the difference between direction and evaluation: the fines go `'up'`, which is `'bad'`. 
 
 
+Looking at the code, the main difference is in the structured output type.
+We first define a single `economic_indicator` as consisting of three variables (indicator, direction, evaluation)
+which are described in quite a bit of detail. 
+We then define `type_indicator_list` as a `type_array` with this `economic_indicator` as items. 
+Array means a list or sequence of items here, so this is saying the output should be a list of indicators. 
 
+Note that using an intermediate object (`economic_indicator`) here is a pure stylistic choice:
+nesting it within the `type_array` produces the same result. 
+It's also a choice to put so much of the codebook/instructions in the type definition rather than in the instruction:
+both end up in the model, albeit in slightly different places. 
+In any case, avoid repeating things in the instruction that are already present in the structured output type definition. 
 
+:::{.challenge title="Evaluating the indicators"}
+Evaluating the results of the last chunk is left as a challenge for the reader. Some possibly interesting questions:
 
---> 
-<!-- TODO: reasoning + structure output? -->
+- Which headline produced the most indicators? Does that seem right?
+- Produce a table of direction vs. evaluation. Are the two correlated? Do most examples or opposing values make sense?
+- Is there a relation between the gold standard sentiment and either direction or evaluation?
+- Looking in more detail, what perspective is used for the evaluation? Who gets to decide whether lifting financial restrictions is good or bad? 
+- On your own computer, try running a smaller model such as `gpt-4.1-nano`. Do the results differ? Why would that be? How sensitive is this to the phrasing of the descriptions and field names?
+
+If you want, you can use the chunk below to play with these results to try to answer the questions above
+(except for the last):
+
+```{webr}
+#| setup: true
+#| exercise: demo_structured_playground
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+# The `result` of the type_array example above
+economic_indicator <- type_object(
+  indicator = type_string(str_c(
+    "An economic variable or policy measure that can increase or decrease, ",
+    "such as unemployment, prices, interest rates, profits, taxes, budget cuts or restrictions. ",
+    "Also include variables whose change is only implied, e.g. layoffs mean jobs go down. ",
+    "Name the variable itself, not the event. Never use 'none' or an empty string.")),
+  direction = type_enum("The factual change in this variable, regardless of whether that is good or bad",
+                        values=c("up", "down", "stable", "unclear")),
+  evaluation = type_enum("Whether the headline presents this change as good or bad for the economy",
+                        values=c("good", "bad", "neutral"))
+)
+type_indicator_list <- type_array(
+  "All economic variables mentioned in the headline. Return an empty list if there are none.",
+  items = economic_indicator)
+chat <- chat_anthropic(model = "claude-haiku-4-5")
+result <- headlines |>
+  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{translation}}"),
+         reply = parallel_chat_structured(chat, prompt, type_indicator_list)) |>
+  unnest(reply, keep_empty=TRUE)
+```
+
+```{webr}
+#| exercise: demo_structured_playground
+#| warning: false
+head(result)
+```
+:::
+
+As a final note: remember that the schema only determines the form of the answer, not the content.
+So, writing a good prompt and validating the results remains crucial for any valid application.
+
+## Quiz questions  {#sec-llm-quizquestions .unnumbered}
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-llm-intro quiz: LLMs and the `ellmer` package
+
+{{< include quizzes/_ch12_quiz_intro.qmd >}}
+
+### @sec-llm-models quiz: choosing and connecting a model
+
+{{< include quizzes/_ch12_quiz_models.qmd >}}
+
+### @sec-llm-validation quiz: validating the labels
+
+{{< include quizzes/_ch12_quiz_validation.qmd >}}
+
+### @sec-llm-prompt quiz: writing a good prompt
+
+{{< include quizzes/_ch12_quiz_prompt.qmd >}}
+
+### @sec-llm-structuredoutput quiz: structured output
+
+{{< include quizzes/_ch12_quiz_structuredoutput.qmd >}}
 

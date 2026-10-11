@@ -1,0 +1,40 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Raw and cleaned answers</div>
+<p class="quiz-question">For four headlines, a model gave the following answers:</p>
+
+| sentiment | llm_result | llm_result_cleaned |
+|---|---|---|
+| neutral | Neutral | neutral |
+| negative | negative. | negative |
+| positive | positive | positive |
+| negative | positive | positive |
+
+<p>What does <code>summarize(accuracy = mean(sentiment == llm_result))</code> return?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — only the third row matches exactly: 'Neutral' (capital N) and 'negative.' (with a full stop) are not the same as 'neutral' and 'negative'. The mean of TRUE, FALSE, FALSE, FALSE is 1/4 = 0.25.">0.25</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 0.75 is the accuracy of the cleaned answers. The comparison here uses llm_result, where 'Neutral' and 'negative.' don't exactly match the gold standard.">0.75</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the mean of a comparison gives the proportion of rows where it is TRUE, not the number of rows. Here that is 1 of 4 rows.">1</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — R treats TRUE as 1 and FALSE as 0, so you can take the mean of a comparison; it gives the proportion of matching rows.">An error, as you can't take the mean of <code>TRUE</code> and <code>FALSE</code> values.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Reading a confusion matrix</div>
+<p class="quiz-question">This is the confusion matrix of a model on 100 headlines (a simplified version of what we found for Gemma). The rows are the gold standard, the columns the model's answers:</p>
+
+| sentiment | negative | neutral | positive |
+|---|---:|---:|---:|
+| negative | 30 | 3 | 1 |
+| neutral | 11 | 17 | 12 |
+| positive | 1 | 2 | 23 |
+
+<p>Which conclusion does this table support?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — of the 40 neutral headlines, 23 were coded as negative (11) or positive (12). The model is reluctant to use the neutral category.">The model often codes neutral headlines as negative or positive.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — look at the neutral column: only 5 headlines that are not neutral were coded as neutral. The problem is the opposite: neutral headlines get coded as negative or positive.">The model codes too many headlines as neutral.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — negative and positive are rarely confused with each other (1 and 1). Most errors involve the neutral category.">Most errors are positive headlines coded as negative, and vice versa.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the diagonal gives the correct answers: 30 + 17 + 23 = 70 of the 100 headlines, so 70%.">The model gets more than 90% of the headlines right.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

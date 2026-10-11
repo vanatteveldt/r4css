@@ -1,0 +1,23 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Fixing the mistakes you found</div>
+<p class="quiz-question">You compare an LLM's answers to your gold standard and notice it gets headlines about interest rates wrong. You add a specific rule about interest rates to the instructions based on this example, run the model again on the same gold standard, and accuracy goes up from 0.70 to 0.74. What is the problem?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the rule was written for exactly the errors in this gold standard, so the new accuracy is probably too optimistic for new headlines. Develop the instructions on a separate development set, and keep a test set that you only use for the final evaluation.">The rule was based on the same headlines you evaluate on, so 0.74 probably overestimates how well it works on new headlines.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — adding rules for hard cases is good practice, just like in a codebook. The problem is that the rule was based on the same headlines that are then used to evaluate it.">There is no problem: adding decision rules for difficult cases is exactly what a good codebook does.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — you can compare accuracy across prompts, as long as you evaluate on headlines that weren't used to develop the prompt.">Accuracy can't be compared between two different prompts.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the size of the improvement is not the issue. Even a large improvement would be an overestimate if the rule was based on the evaluation headlines.">An improvement of 0.04 is too small to matter, so the rule should be removed again.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: One prompt, several models</div>
+<p class="quiz-question">In the chapter, the instructions based on the human codebook improved accuracy for Gemma (from 0.70 to 0.76), but slightly lowered it for Haiku and nano. What is the best lesson to draw from this?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — there are no 'perfect' instructions: what works best can differ between models (and over time). That is why you validate the combination of instructions and model you actually use.">Which instructions work best can differ between models, so you need to validate each combination of model and instructions.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the codebook instructions clearly helped Gemma. The results show that the effect differs per model, not that the codebook is useless.">The codebook instructions are worse than the simple ones, so you should always use short instructions.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — with a different prompt, a different model might come out on top. The results are about this combination of model and instructions, not about which model is better in general.">Gemma is a better model than Haiku and nano for this task.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — differences of a few percentage points are informative, and the confusion matrices show where they come from (e.g. nano now putting many negative headlines in neutral).">The differences are so small that the choice of instructions doesn't matter.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

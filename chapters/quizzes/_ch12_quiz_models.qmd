@@ -1,0 +1,33 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Sharing your script</div>
+<p class="quiz-question">A student shares the following analysis script with their research group:</p>
+<pre><code>library(ellmer)
+chat &lt;- chat_anthropic(model = "claude-haiku-4-5", api_key = "sk-ant-api03-...")</code></pre>
+<p>What is the problem, and how should it be fixed?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — anyone with the script can now use the key, and thus spend the student's money. The key belongs in the environment file (~/.Renviron) as ANTHROPIC_API_KEY, which ellmer finds automatically.">Anyone who has the script can use the key at the student's expense; the key should go in <code>~/.Renviron</code> as <code>ANTHROPIC_API_KEY</code> instead.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the code would work, but the key is now visible to everyone who gets the script. That's the problem, not the syntax.">The <code>api_key</code> argument doesn't exist, so the code will give an error.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the problem is not which provider is used, but that the key is written in the script where others can see and use it.">Claude can't be used for research, so the student should switch to <code>chat_openai()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — moving the key to the top of the script doesn't hide it; anyone who opens the file can still read and use it.">There's no real problem, but it's tidier to put the key in a separate variable at the top of the script.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Switching to a local model</div>
+<p class="quiz-question">The following code classifies 10 headlines with Claude Haiku:</p>
+<pre><code>chat &lt;- chat_anthropic(model = "claude-haiku-4-5")
+headlines |>
+  slice_sample(n=10) |>
+  mutate(llm_sentiment = parallel_chat_text(
+    chat=chat,
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")))</code></pre>
+<p>What do you need to change to run the same analysis with <code>llama3.2:3b</code> via Ollama?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the chat object is the only thing that knows which provider and model are used. The rest of the code (interpolate, parallel_chat_text) works the same for every model, which makes it easy to compare models.">Only the first line: <code>chat &lt;- chat_ollama(model = "llama3.2:3b")</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — there is no separate function per provider. parallel_chat_text() works with any chat object, so only the chat object itself needs to change.">The first line, and <code>parallel_chat_text()</code> should become <code>parallel_chat_ollama()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a local model runs on your own computer, so no API key is needed; you only need Ollama running with the model installed.">The first line, and you need to add an <code>OLLAMA_API_KEY</code> to your <code>.Renviron</code> file.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the prompt is just text, and it works the same for every model. Whether the instructions work equally well for each model is a question for validation, but the code doesn't need to change.">The first line, and the prompt template, as local models need a different prompt format.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

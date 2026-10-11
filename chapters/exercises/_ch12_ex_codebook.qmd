@@ -1,0 +1,233 @@
+### Exercise: Evaluating the new instructions
+
+::: {.exercise}
+**Part I: run Gemma with the new instructions**
+
+Classify all headlines again with Gemma, but now using the new `instruction` we created earlier.
+You can base yourself on the code from @sec-llm-validation,
+but you only need to run a single model.
+
+Complete the `mutate` function below, 
+but note that you have to use the same prompt template as before
+with the new `instruction` as answers are pre-computed in this interactive exercise.
+`instruction` is available as an object in this code so you don't need to copy/paste it. 
+
+```{webr}
+#| setup: true
+#| exercise: ex_codebook_run
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+codes <- c(
+  positive = "the headline evaluates the economy or economic conditions as good or improving",
+  negative = "the headline evaluates the economy or economic conditions as bad or worsening",
+  neutral = "the headline gives no evaluation of economic conditions, or is ambiguous or mixed")
+codebook <- str_glue("- {names(codes)} = {codes}") |> str_c(collapse="\n")
+task <- "You are classifying newspaper headlines by their sentiment about the economy, as in a content analysis of economic news."
+context <- "Judge only the headline itself, not anything else you may know about the events it refers to."
+answer <- "Answer with only one word, in lowercase: positive, negative, or neutral."
+instruction <- str_glue("{task} {context}\n\nCodebook:\n{codebook}\n\n{answer}")
+```
+
+```{webr}
+#| exercise: ex_codebook_run
+#| warning: false
+chat_gemma <- chat_ollama(model = "gemma4:e4b")
+
+results_codebook <- headlines |>
+  mutate()
+head(results_codebook)
+```
+
+::: { .hint exercise="ex_codebook_run"}
+::: { .callout-tip title="Hint:"}
+1. Use `interpolate` to create the prompt using the same template as before: `"{{instruction}}\n\nThe headline: {{translation}}"`.
+2. Use `parallel_chat_text` with the chat object and the prompts.
+:::
+:::
+
+::: {.solution exercise="ex_codebook_run"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+This is the same code as in @sec-llm-validation, but with only one model.
+The template is also unchanged: because the new instructions are stored in a variable with the same name,
+`interpolate` automatically uses them.
+This is a nice benefit of building the prompt from separate parts:
+you can change the instructions without touching the code that runs the classification.
+
+Note that the template must match exactly,
+since we can only replay the answers that were recorded for these exact prompts.
+
+```{webr}
+#| exercise: ex_codebook_run
+#| solution: true
+#| warning: false
+chat_gemma <- chat_ollama(model = "gemma4:e4b")
+
+results_codebook <- headlines |>
+  mutate(
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    llm_gemma = parallel_chat_text(chat_gemma, prompts)
+  )
+head(results_codebook)
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_codebook_run
+#| check: true
+
+gradethis::grade_this({
+  results_codebook <- .envir_result$results_codebook
+  if (is.data.frame(results_codebook)) {
+    gradethis::fail_if(
+      !"llm_gemma" %in% names(results_codebook),
+      "Your `results_codebook` has no `llm_gemma` column. Did you store the answers under that name?")
+    gradethis::fail_if(
+      anyNA(results_codebook$llm_gemma),
+      "Some headlines have no answer. Did you use the model `\"gemma4:e4b\"`, and exactly the same template as before, `\"{{instruction}}\\n\\nThe headline: {{translation}}\"`?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+**Part II: evaluate the result**
+
+Due to how exercises work in this interactive textbook,
+we will work from the results of the previous exercise,
+regardless of whether you managed to solve it or not.
+
+So, you can start from the `results_codebook` dataframe, which
+has a `sentiment` column and `llm_gemma` column per headline.
+
+Compute the accuracy for this model by computing the proportion of headlines
+for which Gemma gave the correct answer. 
+Next, show the confusion matrix, i.e. a 
+data frame with the gold standard sentiment in the rows,
+Gemma's sentiment in the columns,
+and frequencies in the cells. 
+
+```{webr}
+#| setup: true
+#| exercise: ex_codebook_accuracy
+library(tidyverse)
+headlines <- read_csv("data/dutch_sentiment.csv")
+{{< include exercises/_llm_mock.qmd >}}
+
+library(ellmer)
+codes <- c(
+  positive = "the headline evaluates the economy or economic conditions as good or improving",
+  negative = "the headline evaluates the economy or economic conditions as bad or worsening",
+  neutral = "the headline gives no evaluation of economic conditions, or is ambiguous or mixed")
+codebook <- str_glue("- {names(codes)} = {codes}") |> str_c(collapse="\n")
+task <- "You are classifying newspaper headlines by their sentiment about the economy, as in a content analysis of economic news."
+context <- "Judge only the headline itself, not anything else you may know about the events it refers to."
+answer <- "Answer with only one word, in lowercase: positive, negative, or neutral."
+instruction <- str_glue("{task} {context}\n\nCodebook:\n{codebook}\n\n{answer}")
+# Looks the answers up in the recordings directly, rather than replaying all of them through ellmer, which takes a while
+cached_answers <- function(model, prompts) {
+  llm_recorded$answer[match(llm_key(model, "", prompts), llm_recorded_keys)]
+}
+results_codebook <- headlines |>
+  mutate(
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    llm_llama = cached_answers("llama3.2:3b", prompts),
+    llm_haiku = cached_answers("claude-haiku-4-5", prompts),
+    llm_gemma = cached_answers("gemma4:e4b", prompts),
+    llm_nano = cached_answers("gpt-4.1-nano", prompts)
+  )
+```
+
+```{webr}
+#| exercise: ex_codebook_accuracy
+#| warning: false
+# Compute and print accuracy
+accuracy <- ...
+cat("Overall accuracy:\n")
+accuracy
+
+cat("\nConfusion matrix:\n")
+results_codebook |> ...
+```
+
+::: { .hint exercise="ex_codebook_accuracy"}
+::: { .callout-tip title="Hint:"}
+- For accuracy, you can summarize the mean of whether the two columns are the same (since there is only one model, no need to group_by here)
+- For the confusion matrix, count the frequency of each `sentiment` and `llm_gemma` pair, and then `pivot_wider` to create the table.
+:::
+:::
+
+::: {.solution exercise="ex_codebook_accuracy"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+```{webr}
+#| exercise: ex_codebook_accuracy
+#| solution: true
+#| warning: false
+# Compute and print accuracy
+accuracy <- results_codebook |>
+  summarize(accuracy=mean(sentiment == llm_gemma))
+cat("Overall accuracy:\n")
+accuracy
+
+cat("\nConfusion matrix:\n")
+results_codebook |>
+  group_by(sentiment, llm_gemma) |>
+  summarize(value=n()) |>
+  ungroup() |>
+  pivot_wider(names_from=llm_gemma)
+```
+:::
+:::
+
+```{webr}
+#| exercise: ex_codebook_accuracy
+#| check: true
+
+gradethis::grade_this({
+  # Accept the accuracy as a number, a 1x1 tibble from summarize, or as a percentage
+  correct_accuracy <- mean(results_codebook$sentiment == results_codebook$llm_gemma)
+  accuracy <- .envir_result$accuracy
+  accuracy_value <- suppressWarnings(as.numeric(unlist(accuracy)))
+  gradethis::fail_if(
+    is.null(accuracy),
+    "Did you store the accuracy in a variable called `accuracy`?")
+  gradethis::fail_if(
+    length(accuracy_value) != 1 || is.na(accuracy_value) ||
+      !(isTRUE(all.equal(accuracy_value, correct_accuracy)) ||
+        isTRUE(all.equal(accuracy_value, 100 * correct_accuracy))),
+    "Your `accuracy` is not quite right. It should be a single number: the mean of the comparison between `sentiment` and `llm_gemma`.")
+
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(
+      !"sentiment" %in% names(.result),
+      "The rows of the confusion matrix should be the gold standard: make sure you group by `sentiment` as well as by `llm_gemma`.")
+    gradethis::fail_if(
+      !all(c("positive", "negative", "neutral") %in% names(.result)),
+      "The answers of Gemma should be the columns of the confusion matrix. Did you use `pivot_wider` with `names_from=llm_gemma`?")
+    gradethis::fail_if(
+      dplyr::is_grouped_df(.result),
+      "Your confusion matrix looks right, but it is still grouped. Add `ungroup()` before `pivot_wider`.")
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+
+::: {.challenge title="Did the codebook help?"}
+- Compare the accuracy of Gemma with the new instructions to the accuracy we found in @sec-llm-validation.
+  Did the codebook help?
+- Compare the confusion matrix to the one we made for Gemma before.
+  Where does the improvement come from? Did we fix the problem with the neutral category,
+  and did that come at a cost for the other categories?
+- The `results_codebook` actually also contains the results of the other models, e.g. in `llm_nano`. Can you look at the accuracy of the other models as well? Does the new codebook help them too?
+- Can you make a confusion matrix for the nano model? What is your diagnosis?
+- What do these results tell you about whether there is a single 'best' prompt?
+- On your own computer, with a real LLM (see @sec-llm-api and @sec-ollama), try to improve the instructions further.
+  For example, you could add decision rules for difficult cases, or give an example for each category.
+  Does it help? Does it help for all models?
+:::
+:::
+
