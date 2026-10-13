@@ -244,4 +244,4 @@ Requires the [R extension](https://marketplace.visualstudio.com/items?itemName=R
 
 ## License
 
-*Add license here.*
+All chapter text and figures are licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). All programming source code, including code snippets and exercise scaffolding, is licensed [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Please see [data/README.md](data/README.md) for license information for data files included in this repository. Files in [_extensions/](_extensions/) are third-party and keep their own licenses.

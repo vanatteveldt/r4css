@@ -1,6 +1,6 @@
 # Data for R4CSS
 
-We ship a number of data files in cases where data was not avaiable in a standard R package, or for didactic reason we preferred a different version of the data. Below are short descriptions, attributions, and links to the original data sets. Where possible, the code to produce the shipped version in included as well.
+We ship a number of data files in cases where data was not available in a standard R package, or for didactic reasons we preferred a different version of the data. Below are short descriptions, attributions, and links to the original data sets. Where possible, the code to produce the shipped version is included as well.
 
 ## Bechdel test data
 
@@ -119,8 +119,8 @@ readr::read_csv("https://ourworldindata.org/grapher/world-bank-income-groups.csv
 
 - **File**: [us-president.csv](us-president.csv)
 - **Source**: [MIT Election Lab](https://electionlab.mit.edu/data)
-- **Description***: This data file contains constituency (state-level) returns for elections to the U.S. presidency from 1976 to 2024.
-- ** License**: CC0 1.0 / Public Domain
+- **Description**: This data file contains constituency (state-level) returns for elections to the U.S. presidency from 1976 to 2024.
+- **License**: CC0 1.0 / Public Domain
 
 Code:
 ```{r}
@@ -223,10 +223,10 @@ simple |>
 
 ## US State level metadata
 
-- **File**: [us-president.csv](us-states.csv)
+- **File**: [us-states.csv](us-states.csv)
 - **Source**: [MIT Election Lab](https://electionlab.mit.edu/data)
-- **Description***: The data file election-context-2018.csv contains demographic and past election data at the county level that can easily be merged with 2018 election returns to analyze the 2018 election. Data for Alaska is not included.
-- ** License**: MIT
+- **Description**: The data file election-context-2018.csv contains demographic and past election data at the county level that can easily be merged with 2018 election returns to analyze the 2018 election. Data for Alaska is not included.
+- **License**: MIT
 
 Code:
 ```{r}
