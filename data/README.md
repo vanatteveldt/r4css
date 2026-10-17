@@ -272,3 +272,73 @@ posts |>
   dplyr::select(uri, author_handle:text, created_at, indexed_at, reply_count:quotes) |> 
   readr::write_csv("data/bluesky_us_elections_2024.csv")
 ```
+
+## PImPo and Manifesto data
+
+- **File**: [pimpo.csv](pimpo.csv) (pending approval from Manifesto Project)
+- **Source**: [PImPo](https://manifesto-project.wzb.eu/information/documents/pimpo) and [manifestoR](https://manifesto-project.wzb.eu/manifestor)
+- **Description**: All sentences coded as being about immigration or integration in the PImPo dataset for Austria, Australia, Ireland and the US (elections 1999–2013), plus an equally sized random sample of other sentences. Sentence texts come from the Manifesto Corpus.
+- **License**: See [original terms of use](https://manifesto-project.wzb.eu/information/documents/terms_of_use). In particular, the data may not be redistributed except if authorized in writing by the Manifesto Project, and you must agree to reference the recommended bibliographic citation in any publication that uses this data
+- **Citation**: When using this file, please cite
+  - Lehmann, Pola & Zobel, Malisa (2018): Parties' Immigration and Integration Positions Dataset (PImPo): Version 2018. Berlin: WZB. <https://doi.org/10.25522/manifesto.pimpo.2018>
+  - Lehmann, Pola & Zobel, Malisa (2018): Positions and Saliency of Immigration in Party Manifestos: A Novel Dataset Using Crowd Coding. *European Journal of Political Research* 57(4): 1056–1083. <https://doi.org/10.1111/1475-6765.12266>
+  - Lehmann, Pola / Matthieß, Theres / Merz, Nicolas / Regel, Sven / Werner, Annika (2015): Manifesto Corpus. Version: 20150708174629. Berlin: WZB Berlin Social Science Center.
+  
+  If you download other data from the Manifesto Project, use `manifestoR::mp_cite()` to get the right citation for your corpus version.
+
+Code: (Needs a free [Manifesto Project API key](https://manifesto-project.wzb.eu/) stored as MANIFESTO_API_KEY in .Renviron)
+```{r}
+library(tidyverse)
+codings <- readr::read_csv("https://manifesto-project.wzb.eu/down/datasets/pimpo/PImPo_qsl_wo_verbatim.csv") |>
+  filter(country %in%  c(42, 53, 61, 63))
+# Obtain full text and metadata from Manifesto Project
+manifestoR::mp_setapikey(key = Sys.getenv("MANIFESTO_API_KEY"))
+manifestoR::mp_use_corpus_version(versionid = 20150708174629)
+texts <- codings |>
+  distinct(party, date) |>
+  manifestoR::mp_metadata() |>
+  filter(annotations) |>
+  manifestoR::mp_corpus() |>
+  as.data.frame(with.meta = TRUE) |>
+  select(party, date, pos_corpus = pos, text) |>
+  mutate(party = as.integer(party), date = as.integer(date))
+parties <- manifestoR::mp_maindataset() |>
+  select(party, date, countryname, partyname, partyabbrev) |>
+  mutate(party = as.integer(party), date = as.integer(date))
+# Join pimpo codings with full text and metadata
+pimpo <- codings |>
+  inner_join(texts, by = c("party", "date", "pos_corpus")) |>
+  left_join(parties, by = c("party", "date")) |>
+  mutate(
+    year = date %/% 100,
+    topic = case_when(topic == 1 ~ "immigration", topic == 2 ~ "integration", .default = "none"),
+    direction = case_when(direction == -1 ~ "sceptical", direction == 0 ~ "neutral", direction == 1 ~ "supportive"),
+  ) |>
+  # Revert translated Irish party names
+  mutate(
+    partyname = case_when(partyname == "Family of the Irish" ~ "Fine Gael",
+                          partyname == "Soldiers of Destiny" ~ "Fianna Fáil",
+                          partyname == "We Ourselves" ~ "Sinn Féin",
+                          .default = partyname),
+    partyabbrev = case_when(partyname == "Fine Gael" ~ "FG",
+                            partyname == "Fianna Fáil" ~ "FF",
+                            partyname == "Australian Greens" ~ "AG",
+                            partyname == "Socialist Party" ~ "SP",
+                            .default = partyabbrev)
+  ) |>
+  select(id = rn, country = countryname, year, party = partyname, 
+         party_abbrev =  partyabbrev, text, topic, direction, 
+         certainty_topic, certainty_direction)
+relevant <- filter(pimpo, topic != "none")
+# Sample a matching set of non-immigration sentences
+set.seed(123)
+other <- pimpo |>
+  filter(topic == "none") |>
+  inner_join(count(relevant, country, name = "n_relevant"), by = "country") |>
+  slice_sample(prop = 1) |>
+  filter(row_number() <= n_relevant, .by = country) |>
+  select(-n_relevant)
+bind_rows(relevant, other) |>
+  arrange(id) |>
+  write_csv(here::here("data/pimpo.csv"))
+```
