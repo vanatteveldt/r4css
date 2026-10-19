@@ -1,10 +1,130 @@
+---
+webr:
+  resources:
+    - ../data/pimpo.csv
+---
+
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-# Text as Data: tidytext (todo) {#sec-textasdata}
+# Text as Data: tidytext {#sec-textasdata}
 
+## Chapter objectives {.unnumbered}
 
-::: {.callout-note}
+(todo)
+
+## Data for this chapter {.unnumbered}
+
+For this chapter we will make use of the 'PImPo' (Parties' Immigration and Integration Positions) dataset [@lehmann2018;@lehmann2018ejpr], which is part of the [Manifesto Project](https://manifesto-project.wzb.eu/) [@lehmann2015]. 
+The sample used in this chapter contains about 3,100 English and German sentences 
+from political party manifestos that have been hand-coded for immigration and integration policy positions:
+
+```{webr}
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/pimpo.csv", "pimpo.csv")
+pimpo <- read_csv("pimpo.csv")
+head(pimpo)
+pimpo |> 
+  count(topic, direction, country) |> 
+  pivot_wider(names_from=country, values_from=n)
+```
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_tokenize', 'demo_contrast']
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+immigration_words <- pimpo |>
+  filter(country != "Austria", topic == "immigration", direction != "neutral") |>
+  unnest_tokens(output=word, input=text) |>
+  select(id, year, party_abbrev, direction, word)
+```
+
+As you can see, about half of the sentences are about immigration or integration,
+and all of these are coded for the position of that party on the topic.
+
+Note that this dataset is a small sample of the full Manifesto and PImPo datasets. 
+The full dataset can be obtained using the [manifestoR](https://manifesto-project.wzb.eu/manifestor) package,
+see [this page](https://manifesto-project.wzb.eu/information/documents/pimpo) for instructions on how to get an API key and download the data,
+and see [our data folder README](https://github.com/vanatteveldt/r4css/blob/main/data/README.md) for the script we used to prepare it. 
+
+::: {.callout-note collapse="true"}
+## Columns in the PImPo data - click to expand
+
+| Variable            | Type          | Explanation                                                                                        |
+|---------------------|---------------|----------------------------------------------------------------------------------------------------|
+| id                  | numeric (dbl) | Unique number of each sentence in the original PImPo data                                          |
+| country             | character     | Country of the party (Australia, Austria, Ireland, or United States)                               |
+| year                | numeric (dbl) | Year of the election for which the manifesto was written (1999–2013)                               |
+| party               | character     | Name of the party, as given by the Manifesto Project                                               |
+| party_abbrev        | character     | Abbreviated party name                                                                             |
+| text                | character     | The text of the (quasi-)sentence                                                                   |
+| topic               | character     | Whether the sentence is about `immigration`, `integration`, or neither (`none`)                    |
+| direction           | character     | Position towards immigration or integration: `supportive`, `neutral`, or `sceptical` (missing if the topic is `none`) |
+| certainty_topic     | numeric (dbl) | Percentage of coders who agreed on the topic (missing if the topic is `none`)                      |
+| certainty_direction | numeric (dbl) | Percentage of coders who agreed on the direction (missing if the topic is `none`)                  |
+
+Note that in the full manifestos data set, only a couple percent of sentences are about immigration or integration.
+This data set consists of all those sentences (n=1,548) and an equal number of 
+randomly drawn sentences not about immigration or integration,
+so exactly 50% of each countries' sentences is about immgiration/integration.
+:::
+
+## Tokenization: from characters to words
+
+In the previous chapter we have used regular expressions to do text analysis,
+but this is sometimes awkward as we are normally interested in words rather than characters.
+Using the `tidytext` package, we can `unnest` a text and create a row for each word.
+For example, this creates a data frame with all the words used to talk about
+immigration by the English-language manifestos:
+
+```{webr}
+#| exercise: demo_tokenize
+library(tidytext)
+immigration_words <- pimpo |>
+  filter(country != "Austria", topic == "immigration", direction != "neutral") |>
+  unnest_tokens(output=words, input=text) |> 
+  select(id, year, party_abbrev, direction, word)
+head(immigration_words)
+```
+
+Since this is just a normal data frame, we can use regular tidyverse functions
+to do analysis. 
+For example, let's plot the most contrasting words used for each position:
+
+```{webr}
+#| exercise: demo_contrast
+immigration_words |>
+  count(word, direction) |>
+  group_by(word) |>
+  mutate(n_total=sum(n), proportion=n/n_total) |>
+  filter(n_total > 5) |> arrange(desc(proportion)) |>
+  group_by(direction) |>
+  slice_max(order_by=proportion, n=10) |>
+  ggplot(aes(x=proportion, y=fct_reorder(word, proportion), fill=direction)) + 
+    geom_col() + 
+    facet_wrap(vars(direction), scales = "free_y") + 
+    theme_minimal() + theme(legend.position="none") +
+    labs(title="Typical words in positions supportive or sceptical of migration", 
+         caption="Data: PImPo (Lehmann 2018), sentences from AU, US, IE",
+         x="", y="")
+```
+
+As you can see, sentences that express skepticism towards immigration in this sample
+use mostly words such as enter, boats, borders, rule and enforcement. 
+Sentences supportive of immigration instead talk about refugees, rights and needs, family/families, and comprehensive reform. 
+
+Looking at the code, it might look complex at first but it really only uses the tidyverse
+building blocks you mastered in earlier chapters, especially @sec-summarize.
+First, we compute the `count` of each word per direction (stance)
+and in total. Next, we compute the proportion of each word in that direction, showing us whether a word is almost exclusively used in that direction (proportion near 1) or used as much regardless of the direction (proportion near 0.5). 
+We can then `filter` to only keep words with more than five mentions,
+and use `slice_max` to select only the ten words that have the highest proportion per direction. 
+Finally, we make a bar chart of the top words (@sec-vis), using `facet_wrap` to create separate facets for skeptical and supportive words (@sec-vis-facets).
+
+<!--
 **Proposed chapter scope:** Rule- and dictionary-based text analysis with `tidytext`. Covers tokenization, word frequencies, TF-IDF, and dictionary-based sentiment analysis. Deliberately stays at the interpretable/rule-based level.
 
 Topic models (LDA) appear as a *negative example*: bag-of-words topics are lists of words you have to interpret yourself. The modern alternative (embed, cluster, label with an LLM) is in @sec-embeddings.
@@ -12,7 +132,7 @@ Topic models (LDA) appear as a *negative example*: bag-of-words topics are lists
 The chapter ends with document-term counts that are ready to use as features; @sec-ml uses them for a logistic regression.
 
 Include a short callout for readers with their own folder of texts or PDFs, pointing to @sec-readtext.
-:::
+-->
 
 <!--
 Ordering
