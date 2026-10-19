@@ -20,19 +20,8 @@ The sample used in this chapter contains about 3,100 English and German sentence
 from political party manifestos that have been hand-coded for immigration and integration policy positions:
 
 ```{webr}
-#| warning: false
-library(tidyverse)
-download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/pimpo.csv", "pimpo.csv")
-pimpo <- read_csv("pimpo.csv")
-head(pimpo)
-pimpo |> 
-  count(topic, direction, country) |> 
-  pivot_wider(names_from=country, values_from=n)
-```
-
-```{webr}
 #| setup: true
-#| exercise: ['demo_tokenize', 'demo_contrast']
+#| exercise: ['demo_tokenize', 'demo_contrast', 'temp_pimpo_data']
 library(tidyverse)
 library(tidytext)
 pimpo <- read_csv("data/pimpo.csv")
@@ -40,6 +29,21 @@ immigration_words <- pimpo |>
   filter(country != "Austria", topic == "immigration", direction != "neutral") |>
   unnest_tokens(output=word, input=text) |>
   select(id, year, party_abbrev, direction, word)
+```
+
+
+```r
+# Note: This code will not work until the pimpo.csv file can be redistributed
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/pimpo.csv", "pimpo.csv")
+pimpo <- read_csv("pimpo.csv")
+```
+```{webr}
+#| exercise: temp_pimpo_data
+head(pimpo)
+pimpo |> 
+  count(topic, direction, country) |> 
+  pivot_wider(names_from=country, values_from=n)
 ```
 
 As you can see, about half of the sentences are about immigration or integration,
@@ -85,7 +89,7 @@ immigration by the English-language manifestos:
 library(tidytext)
 immigration_words <- pimpo |>
   filter(country != "Austria", topic == "immigration", direction != "neutral") |>
-  unnest_tokens(output=words, input=text) |> 
+  unnest_tokens(output=word, input=text) |> 
   select(id, year, party_abbrev, direction, word)
 head(immigration_words)
 ```
