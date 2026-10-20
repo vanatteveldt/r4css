@@ -3,6 +3,8 @@
 
 # Dealing with Images (todo) {#sec-images}
 
+Until this chapter appears fully formed like Athena, have a look at [our older image analysis in R tutorial](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/images.md).
+
 ::: {.callout-note}
 **Proposed chapter scope:** Applying the tools from the previous chapters to images. Covers loading and preprocessing (resizing, metadata extraction, e.g. with `magick`), coding images with vision LLMs (the approach from @sec-llm), and image embeddings with clustering (the approach from @sec-embeddings), showing a grid of example images per cluster.
 

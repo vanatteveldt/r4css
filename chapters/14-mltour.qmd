@@ -3,6 +3,9 @@
 
 # A Short Tour of Machine Learning (todo) {#sec-ml}
 
+The tourguide we booked seems to be stuck in the winery. 
+Until they emerge, you can check out this excellent (free) book on [Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
+
 ::: {.callout-note}
 **Proposed chapter scope:** A showcase of supervised machine learning, not a full course, and the chapter says so up front. It shows what supervised learning is by doing it once, explains how it relates to the LLMs and embeddings from earlier chapters, and points to where to learn more.
 

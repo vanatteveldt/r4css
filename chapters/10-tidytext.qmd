@@ -73,10 +73,30 @@ and see [our data folder README](https://github.com/vanatteveldt/r4css/blob/main
 Note that in the full manifestos data set, only a couple percent of sentences are about immigration or integration.
 This data set consists of all those sentences (n=1,548) and an equal number of 
 randomly drawn sentences not about immigration or integration,
-so exactly 50% of each countries' sentences is about immgiration/integration.
+so exactly 50% of each country's sentences is about immigration/integration.
 :::
 
-## Tokenization: from characters to words
+::: {.callout-tip title="Using your own data with readtext"}
+
+The examples in this book all use ready-made csv files available through the Internet.
+There is a good chance, however, that you might want to analyse text files that are on your own computer. 
+
+By far the easiest way to read in multiple text files is using the `readtext` package. You can point this package at a folder (or zip file) and it will automatically read all files inside it. Even better, it automatically parses pdf and docx files and turns them into plain text columns:
+
+```r
+> readtext("your_folder_or_zipfile") |> as_tibble()
+# A tibble: 3 × 2
+  doc_id             text                    
+  <chr>              <chr>                   
+1 plaintext.txt      "A normal text file"    
+3 word_file.docx     "Text from a .docx file"
+4 document.pdf       "Text from a pdf file"
+```
+
+See @sec-readtext (coming soon!) for more details on reading data into R.
+:::
+
+## `unnest_tokens`: From characters to words {#sec-textasdata-tokenization}
 
 In the previous chapter we have used regular expressions to do text analysis,
 but this is sometimes awkward as we are normally interested in words rather than characters.
@@ -116,69 +136,114 @@ immigration_words |>
          x="", y="")
 ```
 
+
 As you can see, sentences that express skepticism towards immigration in this sample
-use mostly words such as enter, boats, borders, rule and enforcement. 
-Sentences supportive of immigration instead talk about refugees, rights and needs, family/families, and comprehensive reform. 
+talk about aliens and use words such as enter, boats, borders, rule and enforcement. 
+Sentences supportive of immigration instead talk about refugees using words like rights, needs, family/families, and comprehensive reform. 
 
 Looking at the code, it might look complex at first but it really only uses the tidyverse
 building blocks you mastered in earlier chapters, especially @sec-summarize.
 First, we compute the `count` of each word per direction (stance)
-and in total. Next, we compute the proportion of each word in that direction, showing us whether a word is almost exclusively used in that direction (proportion near 1) or used as much regardless of the direction (proportion near 0.5). 
+and in total. Next, we compute the proportion of each word in that direction, showing us whether a word is almost exclusively used in that direction (proportion near 1) or used as much regardless of the direction (proportion near the total percentage of words in that direction). 
 We can then `filter` to only keep words with more than five mentions,
 and use `slice_max` to select only the ten words that have the highest proportion per direction. 
-Finally, we make a bar chart of the top words (@sec-vis), using `facet_wrap` to create separate facets for skeptical and supportive words (@sec-vis-facets).
+Finally, we make a bar chart of the top words (@sec-vis), using `facet_wrap` to create separate facets for sceptical and supportive words (@sec-vis-facets).
 
+::: {.callout-tip title="Tokenization in detail"}
+
+Even the simple example above already shows the benefits of working with words instead of character strings. 
+Questions such as which words are used or overused become simple tidyverse operations.
+However, as the example above shows, words that seem similar such as "family" and "families" are treated as distinct words, while "Australia's" is seen as a single word.
+
+This shows that it is important to understand a bit better what's going on under the hood. 
+The process of turning text (a string of characters) into words is called *tokenization*,
+with words often referred to as *tokens* in language processing.
+The `unnest_tokens` function above is quite powerful and can deal with different languages,
+including languages like Chinese or Japanese that don't use spaces to mark word boundaries:
+
+```{webr}
+tibble(text="为人民服务") |> unnest_tokens("word", "text")
+```
+
+As the example above shows, Mao's call to "serve the people" is correctly
+tokenized into 为 ("for"), 人民 ("the people"), and 服务 ("serve"). 
+
+Tokenization, however, is not a one-size-fits-all operation. 
+Let's look at some more examples:
+
+```{webr}
+tibble(text = c("1:30 to go 🙏 #ge2024 #ireland",
+                "Sinn Féin's vice-president",
+                "https://r4css.vanatteveldt.com",              
+                "verhinderung von Kettenasylantragstellungen")) |>
+  unnest_tokens("word", "text", drop = FALSE, strip_punct=FALSE) |> 
+  group_by(text) |>
+  summarize(tokens = str_c(word, collapse="🔹"))
+```
+
+As these examples show, tokenization depends strongly on the presence of spaces and punctuation, although it does not blindly split on all punctuation. 
+As you can see, both `1:30` and `#ge2024` are split into multiple tokens,
+which is probably not how we would normally see it. 
+In the next text, `Sinn Féin` is split into two tokens, with the possessive s in `Féin's` is seen as part of the token. 
+In the url below it, the `://` part is seen as three distinct tokens, while the domain name is kept as a single token.
+Finally, the beautiful German compound Kettenasylantragstellungen ("chain asylum applications") is seen as a single word. 
+
+In each case, the tokenization is correct (or at least defensible).
+However, it does show that in analyses you need to pay attention to tokenization issues:
+for example, a naive search for asylum applications in German would miss that compound,
+and similarly looking for Sinn Féin or the use of hyperlinks after tokenization would be hard.
+All of these issues can be addressed by preprocessing and/or more careful morphological analysis, but make sure that you check the outcome of your tokenization to make sure that what you would call a word or term is also what comes out of `unnest_tokens`. 
+
+Note finally in the code that we first use `unnest_tokens` to create a long data frame,
+and then use `summarize` to collapse all the tokens of each sentence back to a single text, with a distinctive marker between the tokens. 
+:::
+
+## Corpus Analysis {#sec-textasdata-corpus}
 <!--
-**Proposed chapter scope:** Rule- and dictionary-based text analysis with `tidytext`. Covers tokenization, word frequencies, TF-IDF, and dictionary-based sentiment analysis. Deliberately stays at the interpretable/rule-based level.
-
-Topic models (LDA) appear as a *negative example*: bag-of-words topics are lists of words you have to interpret yourself. The modern alternative (embed, cluster, label with an LLM) is in @sec-embeddings.
-
-The chapter ends with document-term counts that are ready to use as features; @sec-ml uses them for a logistic regression.
-
-Include a short callout for readers with their own folder of texts or PDFs, pointing to @sec-readtext.
+3. Corpus and frequency analysis. Counts, then stopwords (which repeats the hook properly), then tf-idf, then a principled comparison (tidylo weighted log-odds, or keyness). Zipf's law could go in a .callout-note.
 -->
 
+::: {.callout-tip title="Preprocessing choices"}
+
+The steps involved in cleaning or transforming a text before the analysis are generally called *preprocessing*. 
+Although there are many steps that are commonly used, such as converting to lower case
+and stripping punctuation, there is no agreed-on "recipe" that each analysis should use.
+In fact, how you should preprocess depends on your research question [cf. @grimmer2022text]: 
+if you are looking at social identity you probably want to keep *stop words* like "us" and "them", while a topical analysis probably wants to ignore those.
+
+Below we list a table of the most common preprocessing steps, based loosely on the reviews by @denny2018text and @hickman2022text:
+
+| Choice | Description | Method (or Code) |
+|:-------|:------------|:-----------------|
+| Lowercasing | Treat *Immigration* and *immigration* as the same word | On by default; turn off with `unnest_tokens(..., to_lower = FALSE)` |
+| Punctuation and symbols | Remove tokens such as `:`, `#` or `-` (and emoji) | On by default; keep them with `unnest_tokens(..., strip_punct = FALSE)` |
+| Numbers | Remove numeric tokens such as `1,500` | `unnest_tokens(..., strip_numeric = TRUE)` |
+| Stop words | Remove frequent words with little content (*the*, *and*, *der*) | `anti_join(stop_words)`; for other languages `get_stopwords(language = "de")` |
+| Trimming | Remove words that are too rare (or too common) to be informative | `add_count(word) |> filter(n >= 5)` |
+| Stemming | Cut words back to a common stem (*families*, *family* → *famili*) | Provided by e.g. te `SnowballC` package |
+| Lemmatization | Replace words by their dictionary form (*families* → *family*, *went* → *go*) | Provided by e.g. the `udpipe` or `spacyr` packages |
+| n-grams | Use combinations of adjacent words as tokens (*sinn féin*, *not good*) | `unnest_tokens(..., token = "ngrams", n = 2)` |
+| Negation | Keep track of negated words (*not good*) | Use bigrams, or join the negation to the next word before tokenizing |
+| Spelling and abbreviations | Normalise variants (*U.S.*, *US*, *USA*) and spelling errors | Recode with `str_replace_all()` before tokenizing, or a spell checker such as `hunspell` |
+
+:::
+
+## Lexical Analysis {#sec-textasdata-dictionary}
+
 <!--
-Ordering
-1. Hook: two politicians compared. This fits the curiosity-first principle. Keep it to one pipeline, unnest_tokens() → count() → log-odds or ratio → plot, with no explanation yet. Then show why it beats ch9: run the ch9 \\b(sad|weak|…)\\b approach on the same text and point out what it misses.
-
-2. Tokenization. I'd use three levels of "what is a word?" rather than only a non-western example:
-
-Familiar: stopwords, case, punctuation, hashtags and @mentions (which connects back to the ch9 Bluesky data).
-Close to home: Dutch or German compounds. Should arbeidsongeschiktheidsverzekering count as one token? Then stemming vs. lemmatization.
-Non-western, two kinds:
-Languages written without spaces (Chinese, Japanese, Thai). unnest_tokens uses tokenizers, which uses ICU word boundaries through stringi. ICU has dictionary-based segmentation for CJK and Thai, so it produces a segmentation. The interesting question is whether the segmentation is right. This would make a good challenge. It needs checking in webR, because I'm not sure the webR build of stringi includes the full ICU data.
-Agglutinative or clitic-heavy languages (Turkish, Arabic wa-/al-). These have spaces, but space-separated chunks are the wrong unit.
-n-grams: I'd put them here rather than later, because negation ("not good") is the obvious failure in section 4 and bigrams are the fix.
-3. Corpus and frequency analysis. Counts, then stopwords (which repeats the hook properly), then tf-idf, then a principled comparison (tidylo weighted log-odds, or keyness). Zipf's law could go in a .callout-note.
-
 4. Dictionaries and validation. Here you can exploit chapter order. dutch_sentiment.csv has gold labels and English translations. If ch10 runs the bing lexicon on the translations and computes accuracy and a confusion matrix, ch11 can open its validation section with "the dictionary got X%, can an LLM do better?". That makes ch10 the place that introduces validation, so ch11's validation section would need a light rewrite to point back to it.
 
 Speeches lack gold labels. For them I'd do face validity (KWIC or str_view on matches) plus a challenge where students hand-code about 20 sentences.
 
 A practical point: get_sentiments("afinn") and get_sentiments("nrc") go through textdata, which asks for an interactive download. That won't work in webR. bing ships with tidytext, so use that, or ship a lexicon in data/.
+-->
 
+## Clustering and Topic Modeling {#sec-textasdata-topicmodeling}
+
+<!--
 5. Topic models. One tension: your current scope note in the file frames LDA as a negative example that points to ch12's embed → cluster → LLM-label approach. BERTopic is that approach, so I'd point to BERTopic by way of ch12 rather than as an alternative to it. stm is worth mentioning, for its covariates and because it's still common in published social-science work. Running the code may be a problem: I don't know whether topicmodels (needs GSL) or stm are on the webR repo. If neither is, precomputed results with a "run this locally" note would work.
+-->
 
+<!--
 6. Close with a document-term matrix (cast_dfm or cast_sparse) as the handoff to ch14, as the scope note says, plus the readtext callout.
-
-Dataset
-You want two named politicians, modern, redistributable, and in English so students can judge face validity themselves. My preference:
-
-UK Prime Minister's Questions, PM vs. Leader of the Opposition (e.g. Sunak vs. Starmer 2023–24, or Starmer vs. Badenoch 2025).
-
-It's a natural experiment: same venue, same week, the two people speaking to each other. Word-choice differences then reflect position (government vs. opposition) and party rather than setting. That gives a nice substantive question: does Starmer's language change when he moves from opposition to government in July 2024?
-Hansard is under the Open Parliament Licence, which allows redistribution with attribution.
-There are enough turns for tf-idf by speaker or session and for a small topic model, while staying small enough for webR.
-ParlaMint (CLARIN, CC BY) is a related option. It has the same structure for about 29 European parliaments, with UD-lemmatized versions. That gives you a ready-made lemmatization example, plus Turkish or Ukrainian speeches for the "spaces aren't enough" case without leaving the corpus.
-Alternatives I considered:
-
-Trump vs. Harris 2024 (debate plus convention speeches) continues ch9's US-election theme. But one debate is thin for tf-idf and topics, and campaign transcripts have murkier licensing than Hansard.
-UN General Debate corpus covers every country up to 2024, which suits a non-western angle. But it's countries rather than politicians, and the non-English speeches are translations, which spoils the tokenization point.
-Recent SOTUs are public domain and modern up to 2025. But they aren't a real "two politicians" comparison; it's one speech a year.
-Dutch debates (e.g. Wilders vs. Timmermans) would link to ch2's election data and give compounds for free. But non-Dutch readers can't judge face validity, and Dutch lexicons are weaker.
-If you like the PMQs idea, I can check which ParlaMint-GB or Hansard date range is actually available, and whether stm, topicmodels and ICU-based CJK segmentation work in webR, before you start writing.
-
-
-
 -->

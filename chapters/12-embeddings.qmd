@@ -3,6 +3,8 @@
 
 # Embeddings and Clustering (todo) {#sec-embeddings}
 
+If you embedded this chapter and looked up its nearest neighbour, you would find "procrastination". Until it drifts to a better cluster, have a look at [our older embeddings tutorial](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/embeddings.md).
+
 ::: {.callout-note}
 **Proposed chapter scope:** Representing texts as embedding vectors, and exploring those vectors without labels. Covers getting embeddings via `tidyllm` (precomputed/recorded, as in @sec-llm), similarity and nearest neighbours, projection to 2D for visualization (PCA; UMAP if `uwot` runs in webR), and k-means clustering. Clusters are validated by reading examples per cluster; choosing k is a substantive decision as well as a technical one.
 
