@@ -3,6 +3,8 @@
 
 # Scraping: rvest (todo) {#sec-scraping}
 
+Until this chapter gives a `200 OK`, check out our earlier [scraping tutorial](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/rvest.md) ([part II](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/rvest_part2.md))
+
 ::: {.callout-note}
 **Proposed chapter scope:** Web scraping with `rvest`. Covers reading HTML, selecting elements with CSS selectors, and extracting structured data from a single page. Then the code is wrapped in a function and applied to many pages with `map` and `list_rbind`: this is where functions and `map` are first introduced, and where lists first appear (as what `map` returns). A callout shows a `for` loop ("you'll see this in other people's code") next to its `map` equivalent.
 

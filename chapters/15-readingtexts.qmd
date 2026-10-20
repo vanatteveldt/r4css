@@ -3,6 +3,9 @@
 
 # Reading in Texts (todo) {#sec-readtext}
 
+I guess you need to write text before you can read it. 
+Until that time, check out our earlier [Gathering Data](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/Gathering_data.md) tutorial, and the note on readtext in @sec-textasdata-tokenization.
+
 ::: {.callout-note}
 **Proposed chapter scope:** Getting a collection of documents into a data frame. Covers `readtext` for a folder of txt, docx, or pdf files (check whether PDF support works in webR), including document variables from file names, and ready-made text collections such as `gutenbergr`. No new programming constructs are needed: `readtext` reads a whole folder without `map`.
 :::

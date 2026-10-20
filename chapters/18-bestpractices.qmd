@@ -3,6 +3,8 @@
 
 # Conclusion: Being a Computational Social Scientist (todo) {#sec-bestpractices}
 
+Being a Computational Social Scientist sometimes means you don't have time to write about being a Computational Social Scientist. However, you can check out [what we wrote earlier](https://cssbook.net/content/chapter16.html) about next steps.
+
 ::: {.callout-note}
 **Proposed chapter scope:** A prose-only concluding chapter. Covers moving from the browser to your own machine (installing R and an IDE, projects), organizing a project and writing reproducible papers with Quarto, version control with git and sharing code and data, documentation and comments, and responsible use of AI coding assistants (when to use them and how to check their output, tying back to validation in @sec-llm). Ends with where R stops and what to learn next. R packages and containers (Docker) only get pointers.
 :::
