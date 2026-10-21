@@ -13,6 +13,8 @@ When asked to review, respond with feedback (issues, gaps, suggestions) in chat.
 
 One exception: you are free to correct typos. Please just fix them, and note where you fixed them so I can review. 
 
+The same goes for references: add missing entries to `references.bib`, fix broken `@citekeys`, and correct bibliographic metadata without asking (match the existing bib style, include DOIs), and note what you changed. This doesn't extend to choosing which works to cite or how they are described in the prose.
+
 This applies to content files. Tooling/config (CLAUDE.md itself, `.claude/`, build scripts, `_quarto.yml`) follows normal rules — ask if unsure.
 
 When you do edit files, use the `Edit`/`Write` tools, not Bash (`sed -i`, `python3 - <<EOF`, etc.): Edit gives the author a reviewable diff, and complex Bash commands (heredocs, `cd …;` compounds) trigger permission prompts even inside the sandbox. If a script is genuinely easier, write it to `$TMPDIR` and run it as a single plain command. Similarly, where possible use multiple single plain commands instead of complicated compound commands to avoid triggering a permissions check.

@@ -21,7 +21,7 @@ from political party manifestos that have been hand-coded for immigration and in
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_tokenize', 'demo_contrast', 'temp_pimpo_data']
+#| exercise: ['demo_tokenize', 'demo_contrast', 'temp_pimpo_data', 'demo_tokenize_chinese', 'demo_tokenize_examples', 'demo_word_counts', 'demo_stopwords', 'demo_stopwords_removed', 'demo_compare_proportion', 'demo_custom_stopwords', 'demo_bigrams', 'demo_bigrams_pmi']
 library(tidyverse)
 library(tidytext)
 pimpo <- read_csv("data/pimpo.csv")
@@ -32,14 +32,11 @@ immigration_words <- pimpo |>
 ```
 
 
-```r
-# Note: This code will not work until the pimpo.csv file can be redistributed
+```{webr}
+#| warning: false
 library(tidyverse)
 download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/pimpo.csv", "pimpo.csv")
 pimpo <- read_csv("pimpo.csv")
-```
-```{webr}
-#| exercise: temp_pimpo_data
 head(pimpo)
 pimpo |> 
   count(topic, direction, country) |> 
@@ -49,7 +46,8 @@ pimpo |>
 As you can see, about half of the sentences are about immigration or integration,
 and all of these are coded for the position of that party on the topic.
 
-Note that this dataset is a small sample of the full Manifesto and PImPo datasets. 
+Note that this dataset is a small sample of the full Manifesto and PImPo datasets,
+redistributed with permission from the Manifesto Project. 
 The full dataset can be obtained using the [manifestoR](https://manifesto-project.wzb.eu/manifestor) package,
 see [this page](https://manifesto-project.wzb.eu/information/documents/pimpo) for instructions on how to get an API key and download the data,
 and see [our data folder README](https://github.com/vanatteveldt/r4css/blob/main/data/README.md) for the script we used to prepare it. 
@@ -109,10 +107,12 @@ immigration by the English-language manifestos:
 library(tidytext)
 immigration_words <- pimpo |>
   filter(country != "Austria", topic == "immigration", direction != "neutral") |>
-  unnest_tokens(output=word, input=text) |> 
+  unnest_tokens(text, output=word) |> 
   select(id, year, party_abbrev, direction, word)
 head(immigration_words)
 ```
+
+<!-- TODO: I use unnest_tokens(text, output=word), which to me is most natural conventional tidy. However, unnest_tokens(word, text) is probably the more common form. Keep, swith to that, or use unnest_tokens(input=text, output=word)? -->
 
 Since this is just a normal data frame, we can use regular tidyverse functions
 to do analysis. 
@@ -132,7 +132,7 @@ immigration_words |>
     facet_wrap(vars(direction), scales = "free_y") + 
     theme_minimal() + theme(legend.position="none") +
     labs(title="Typical words in positions supportive or sceptical of migration", 
-         caption="Data: PImPo (Lehmann 2018), sentences from AU, US, IE",
+         caption="Data: PImPo (Lehmann & Zobel 2018), sentences from AU, US, IE",
          x="", y="")
 ```
 
@@ -162,7 +162,8 @@ The `unnest_tokens` function above is quite powerful and can deal with different
 including languages like Chinese or Japanese that don't use spaces to mark word boundaries:
 
 ```{webr}
-tibble(text="为人民服务") |> unnest_tokens("word", "text")
+#| exercise: demo_tokenize_chinese
+tibble(text="为人民服务") |> unnest_tokens(text, output=word)
 ```
 
 As the example above shows, Mao's call to "serve the people" is correctly
@@ -172,11 +173,12 @@ Tokenization, however, is not a one-size-fits-all operation.
 Let's look at some more examples:
 
 ```{webr}
+#| exercise: demo_tokenize_examples
 tibble(text = c("1:30 to go 🙏 #ge2024 #ireland",
                 "Sinn Féin's vice-president",
                 "https://r4css.vanatteveldt.com",              
                 "verhinderung von Kettenasylantragstellungen")) |>
-  unnest_tokens("word", "text", drop = FALSE, strip_punct=FALSE) |> 
+  unnest_tokens(text, output=word, drop = FALSE, strip_punct=FALSE) |> 
   group_by(text) |>
   summarize(tokens = str_c(word, collapse="🔹"))
 ```
@@ -199,9 +201,252 @@ and then use `summarize` to collapse all the tokens of each sentence back to a s
 :::
 
 ## Corpus Analysis {#sec-textasdata-corpus}
-<!--
-3. Corpus and frequency analysis. Counts, then stopwords (which repeats the hook properly), then tf-idf, then a principled comparison (tidylo weighted log-odds, or keyness). Zipf's law could go in a .callout-note.
+
+Let's have a closer look at the PImPo *corpus* (corpus being the fancy words linguists use when they mean a collection of texts). 
+
+Which words are used to discuss immigration?
+
+```{webr}
+#| exercise: demo_word_counts
+pimpo |>
+  filter(country != "Austria", topic == "immigration") |>
+  unnest_tokens(text, output=word) |>
+  count(word) |>
+  arrange(desc(n))
+```
+
+Although this is a literal answer to our question, it is not a very informative one:
+in almost any text words like "the"  and "to" would be in the top of this list.
+
+### Stop words
+
+Such words are called 'stop words', i.e. words that should not be "stopped" from entering the analysis. 
+Various stop word lists exist for most languages, and for English a selection of stop word lists is immediately available as `stop_words` data frame:
+
+```{webr}
+#| exercise: demo_stopwords
+print("English stop words from `stop_words`")
+stop_words
+
+print("Using the stopwords package to get a list for other languages")
+get_stopwords("de", source="stopwords-iso")
+```
+
+Since these stopword lists are data frames with a 'word' column, 
+we can directly use `anti-join` to remove them from our analysis:
+
+```{webr}
+#| exercise: demo_stopwords_removed
+pimpo |>
+  filter(country != "Austria", topic == "immigration") |>
+  unnest_tokens(text, output=word) |>
+  anti_join(stop_words) |>
+  count(word) |>
+  arrange(desc(n))
+```
+
+And the result is clearly much more informative, with "immigration", "asylum" and "seekers" forming the top three. 
+
+::: {.challenge title="German words"}
+Can you adapt the code above to give the list of most frequent words for the Austrian sentences?
+:::
+
+### Corpus comparison
+
+It is often very informative to *compare* word use in two corpora.
+As in the opening example of the chapter, we can see which words are used
+more in sceptical relative to supportive statements about immigration.
+We could also investigate whether US party manifestos use different words to talk about immigration than Irish, or whether immigration vocabulary changed over time. 
+
+Let's start by looking at the proportion of each word's usage in Irish manifestos:
+
+```{webr}
+#| exercise: demo_compare_proportion
+immigration_vocabulary <- pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  unnest_tokens(text, output=word) |> 
+  count(country, word) |>
+  pivot_wider(names_from=country, values_from=n, values_fill=0) |>
+  rename(ie=Ireland, us="United States") 
+
+immigration_vocabulary |>
+  mutate(total=ie+us, prop_ie=ie / total) |>
+  filter(total>10) |>
+  arrange(desc(prop_ie))
+```
+
+This produces some interesting findings: apparently asylum, employment and investment
+are uniquely Irish concerns in the immigration manifestoes. 
+Unsurprisingly, it also contains a lot of words referring to Ireland, Irish parties (the Greens), and the EU. 
+If you change the last line to `arrange(prop_ie)` you will see that in the US discourse
+this is even stronger. 
+
+However, this comparison is very naive. 
+First, we did not do any cleaning (although `unnest_tokens` by default lowercases and removes punctuation).
+Proportion as a measure is also deeply flawed: 
+it does not take into account that the Irish corpus is simply bigger than the American
+(probably because they have more parties, even though there are three US election cycles in the data versus only two Irish ones).
+Moreover, since proportion peaks at 1 when only one corpus uses a word,
+it will show mostly which words are unique, even if there are much more frequent words that are overused in either corpus. 
+This is mitigated a bit by setting a minimum frequency (`total>10`), 
+but that is an arbitrary cutoff value. 
+
+For the cleaning, this is actually a case where stopword removal probably will do more harm than good: 
+comparison naturally filters out words that are very frequent in both corpora, 
+and if US parties use 'should' more while Irish parties use 'will' more (which they actually do!), this might be an interesting finding rather than noise. 
+However, two cleaning steps are probably a good idea: 
+removing the possessive `'s`, and creating a manual 'stop word list' containing country and party names. 
+
+To create the manual list, we can actually use the `party` column for the party names,
+using `unnest_tokens` again to separate the parties into words:
+
+```{webr}
+#| exercise: demo_custom_stopwords
+country_words <- tibble(word=c("ireland", "irish", "america", "american", "americans", "united", "states"))
+party_words <- pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  select(party) |>
+  unnest_tokens(input = party, output = word) |>
+  distinct() 
+custom_stopwords <- bind_rows(country_words, party_words)
+custom_stopwords$word
+```
+
+This also shows how stop words are often not a trivial decision:
+as the list includes 'united', 'fine' and 'left', it would remove these words regardless of whether they are used as party names.
+This can partly be solved by postponing the lower casing until after using the stop word list, but e.g. 'Left' could also be used as the start of a sentence so it won't fully solve it. Using word combinations ("n-grams") would be a better solution here, see @sec-textasdata-ngrams below. 
+
+A classical measure in corpus comparison is *chi-squared*,
+which is a standard non-parametric statistic that we can use to test whether
+a country uses a word more (or less) frequently than 'expected', i.e. than if usage were unrelated to country. 
+Although this is an oft-used measure, it overestimates the unexpectedness for rare words
+(and paradoxically, in language rare words are very common!)
+
+For this reason, @monroe08 suggest using a weighted log-odds measure which they demonstrate
+by comparing Republican and Democratic word use on issues such as abortion.
+The log-odds ratio essentially tells us how much less surprised we would be to encounter a word if we know whether it came from the Irish or American corpus. 
+It is also the same statistic used in logistic regression to indicate 
+how strongly the independent variable (country) is related to the dependent variable (is it this word or a different word).
+This measure is then smoothed to deal with low frequency words, 
+and weighted by dividing by the standard error to produce something akin to a z-score. 
+The good news is that this measure is implemented in the `tidylo` package,
+so we don't need to know any mathematics to be able to use it. 
+
+Let's put these steps together and get a more well-founded corpus comparison:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_compare_logodds', 'demo_compare_plot']
+library(tidyverse)
+library(tidytext)
+library(tidylo)
+pimpo <- read_csv("data/pimpo.csv")
+
+country_words <- tibble(word=c("ireland", "irish", "america", "american", "americans", "united", "states"))
+party_words <- pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  select(party) |>
+  unnest_tokens(input = party, output = word) |>
+  distinct()
+custom_stopwords <- bind_rows(country_words, party_words)
+
+immigration_comparison <- pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  unnest_tokens(text, output=word) |>
+  mutate(word = str_remove(word, "['’]s$")) |>
+  anti_join(custom_stopwords, by = "word") |>
+  count(country, word) |>
+  complete(country, word, fill = list(n = 0)) |>
+  mutate(n_other = sum(n) - n, .by = word) |>
+  bind_log_odds(country, word, n)
+```
+
+```{webr}
+#| exercise: demo_compare_logodds
+library(tidylo)
+immigration_comparison <- pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  unnest_tokens(text, output=word) |>
+  mutate(word = str_remove(word, "['’]s$")) |>
+  anti_join(custom_stopwords) |>
+  count(country, word)  |> 
+  complete(country, word, fill = list(n = 0)) |> 
+  mutate(n_other = sum(n) - n, .by=word) |>
+  bind_log_odds(country, word, n)
+
+immigration_comparison |>
+  arrange(desc(log_odds_weighted))
+```
+
+As you can see from this output, the words that are found are quite different from the words in the earlier (proportion-based) list. 
+The weighted log odds focuses less on the words that were exclusive to either corpus (for which proportion=1) and more on more common words that are overused in either corpus. 
+For example, take *our* in the American manifestos: it is also used in the Irish manifestos, so its proportion is much lower than 1 and it didn't show up in the first results above. But because it's a very common word, a difference this large is much less likely to be due to chance, making it the top word by weighted log odds. 
+Arguably, overused common words are substantively more interesting than less frequent exclusive words, but of course that ultimately depends on the research question. 
+
+Besides this substantive difference, the statistical measure also avoids the need for an arbitrary frequency cutoff, gives a more informative measure of the 'keyness' of each word, and solves the problem of not accounting for the relative size of both corpora.
+
+Looking at the code, most of it should start looking familiar.
+We start by filtering and tokenizing as above. 
+Then we have two cleaning steps, removing all word-ending `'s` and removing words from our custom stop word list.
+Then we count the frequency of each word in each corpus, 
+and use `complete` to ensure words not used in a corpus get a zero
+(which is necessary for computing the log odds ratio correctly).
+Then we add two additional columns:
+`n_other` so we can compare frequencies more easily (using `.by=` as a shortcut for `group_by`), and `bind_log_odds` to add the log odds column.
+
+Finally, let's use this to create a graph similar to those used in @monroe08, with word frequency on the horizontal axis and keyness on the vertical:
+
+```{webr}
+#| exercise: demo_compare_plot
+all_words <- immigration_comparison |>
+  filter(country == "United States") |>
+  mutate(x = n + n_other + runif(n(), -.4, .4))
+
+focus_words <- all_words |> 
+  filter(abs(log_odds_weighted) > .8 | n+n_other > 100) |>
+  arrange(desc(abs(log_odds_weighted)))
+
+ggplot(all_words, aes(x=x, y=log_odds_weighted)) + 
+  geom_hline(lty=2, color="grey", yintercept=0) + 
+  geom_point(alpha = 0.1) + 
+  geom_text(data=focus_words, aes(label=word, color=log_odds_weighted),
+            check_overlap = TRUE,size = 3.5, vjust = -0.5) + 
+  scale_color_gradient2(low="#2ca25f", high="#1f4e9c", mid="#444", midpoint=0, guide=NULL) + 
+  scale_x_log10(breaks = c(1, 10, 100, 1000)) + 
+  theme_minimal() + 
+  theme(panel.grid = element_blank()) + 
+  labs(title="Which words are used in US and Irish manifestos to talk about immigration?",
+       subtitle="(Words with identical counts are spread out horizontally)",
+       caption="Data: PImPo (Lehmann & Zobel 2018)",
+       x="Word frequency (log scale)", 
+       y="Weighted log odds\n  ← Irish | American →")
+```
+
+This graph shows all words from the comparison, with words overused in American manifestos on the top (and in blue), and words used more in Ireland at the bottom in green. 
+More common words are on the right and rare words on the left, 
+with the horizontal 'bands' indicating how many words shared the same count and log odds value.
+
+This graph nicely shows the different words used in both countries:
+American manifestos talk about borders, lawm, illegal, and immigrants and use words like 'should' and 'must', while Irish manifestos talk about asylum (seekers), services, food, community and prefer the word 'will'. 
+On the right you can see that traditional stop words such as "is" or "and" have low log odds scores, making normal stop word removal unnecessary (and even harmful as it generally also removes words like 'must' or 'will').
+
+
+<!-- 
+Not sure whether to include something like this (with a reference to Zipf or power law distribution)
+Finally the plot clearly shows that most of the words are in the center-left: 
+there is a 'long tail' of words with low frequency that are not (statistically) typical for either corpus.
+In most cases, the interesting words for analysis are neither the very rare ones nor the very frequent ones, as the latter tend to be 'stop words' like *and* and *the*.
 -->
+
+Looking at the code, there are a number of interesting "tricks" used to make this graph:
+
+- First, we select the US words as main data set, and manually calculate the `x` position by adding some random noise to the total word frequency. We could also have used `geom_jitter`, but by adding the noise before the log transformation it has less effect on words with a higher count.
+- Next, we define a separate set of 'focus words' to highlight, in this case taking all words with an absolute log odds of above .8 or a total frequency above 100. 
+- In the ggplot, we use a regular `geom_point` to show all words as points, with a low alpha value to show overlapping points. A `hline` shows a dashed y=0 line as a visual guide. 
+- Then, a `geom_text` with `data=focus_words` shows text only for the chosen words, using `vjust` to make sure the labels are shown above the points. 
+
+The rest is fairly straightforward: a log x scale, a minimal theme, and labels to make the graph interpretable. 
+
 
 ::: {.callout-tip title="Preprocessing choices"}
 
@@ -220,13 +465,166 @@ Below we list a table of the most common preprocessing steps, based loosely on t
 | Numbers | Remove numeric tokens such as `1,500` | `unnest_tokens(..., strip_numeric = TRUE)` |
 | Stop words | Remove frequent words with little content (*the*, *and*, *der*) | `anti_join(stop_words)`; for other languages `get_stopwords(language = "de")` |
 | Trimming | Remove words that are too rare (or too common) to be informative | `add_count(word) |> filter(n >= 5)` |
-| Stemming | Cut words back to a common stem (*families*, *family* → *famili*) | Provided by e.g. te `SnowballC` package |
+| Stemming | Cut words back to a common stem (*families*, *family* → *famili*) | Provided by e.g. the `SnowballC` package |
 | Lemmatization | Replace words by their dictionary form (*families* → *family*, *went* → *go*) | Provided by e.g. the `udpipe` or `spacyr` packages |
 | n-grams | Use combinations of adjacent words as tokens (*sinn féin*, *not good*) | `unnest_tokens(..., token = "ngrams", n = 2)` |
 | Negation | Keep track of negated words (*not good*) | Use bigrams, or join the negation to the next word before tokenizing |
 | Spelling and abbreviations | Normalise variants (*U.S.*, *US*, *USA*) and spelling errors | Recode with `str_replace_all()` before tokenizing, or a spell checker such as `hunspell` |
 
 :::
+
+
+### Collocations and N-grams {#sec-textasdata-ngrams}
+
+In the examples so far, we have focused on single words.
+However, very often it is more informative to treat word combinations like `United states` or `rule of law` as a single token. 
+
+To do this, we can use `unnest_tokens(token="ngrams")` to tokenize to n-grams rather than words. 
+In language processing, an n-gram is a sequence of n words, so `United states` is a 2-gram (or bigram) and `rule of law` is a trigram. 
+
+
+```{webr}
+#| exercise: demo_bigrams
+bigrams <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=token, token="ngrams", n=2) |>
+  count(token) |>
+  arrange(-n)
+bigrams
+```
+
+As you can see, most bigrams are actually not that interesting, with patterns like "of the" and "in the" dominating the list. 
+
+As before, this can be remedied relatively easily by removing stop words.
+Of course, we cannot simply `anti_join` on the stop word list as the tokens are now bigrams,
+but we can create a regular expression pattern for any ngrams that contain a bigram
+by collapsing all stop words to a single `|`-separated pattern and placing `\\b` on either side:
+
+```{webr}
+#| setup: true
+#| exercise: demo_bigrams_stopwords
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+bigrams <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=token, token="ngrams", n=2) |>
+  count(token) |>
+  arrange(-n)
+```
+
+```{webr}
+#| exercise: demo_bigrams_stopwords
+stop_words_pattern <- str_glue("\\b({str_c(stop_words$word, collapse='|')})\\b")
+bigrams_filtered <- bigrams |>
+  filter(!str_detect(token, stop_words_pattern))
+bigrams_filtered
+```
+
+This is already a quite informative list, showing meaningful combinations like *asylum seekers* and party names like *fine gael*. 
+
+However, as above stop words are a very blunt solution. 
+For example, `united states` is not present above because the onix stop word list contains `states` as a stop word. On the other extreme, the smaller 'snowball' stop word list does not contain a word such as 'will', so switching to that list will bring in patterns like "will also".
+
+In corpus linguistics, point-wise mutual information (PMI) is often used for detecting *collocations*: word combinations which are more frequent than you would expect from their underlying frequencies.
+There is no built-in function for computing PMI in `tidytext`, but fortunately it is relatively easy to compute it ourselves:
+
+```{webr}
+#| exercise: demo_bigrams_pmi
+word_freq <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=word) |>
+  count(word, name="n_word") |>
+  mutate(p_word=n_word / sum(n_word))
+
+bigrams_pmi <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=bigram, token="ngrams", n=2) |>
+  count(bigram) |>
+  mutate(p_bigram=n / sum(n)) |>
+  filter(n >= 5) |>
+  unnest_tokens(input=bigram, output=word, drop=FALSE) |>
+  left_join(word_freq, by = "word") |>
+  summarize(pmi = log2(first(p_bigram)) - sum(log2(p_word)), n = first(n), .by = bigram) |>
+  arrange(desc(pmi))
+
+bigrams_pmi
+```
+
+Substantively, this list looks mostly right, with Irish party names topping the list as both fianna and fáil only occur as part of the collocation. 
+It also contains terms like 'green card' and 'climate change', titles like 'president bush', and constructs like 'long term'. 
+Most importantly, bigrams like 'of the' are not included:
+Since stop words are themselves very frequent, combinations with stop words are expected to be relatively frequent as well.
+
+### Using n-grams in frequency analysis
+
+We can use the bigrams we found above to preprocess the texts before a regular frequency analysis.
+In particular, we can create a list of replacements so e.g. "green party" becomes "green_party":
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_collocations', 'demo_compare_ngrams']
+library(tidyverse)
+library(tidytext)
+library(tidylo)
+pimpo <- read_csv("data/pimpo.csv")
+
+word_freq <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=word) |>
+  count(word, name="n_word") |>
+  mutate(p_word=n_word / sum(n_word))
+
+bigrams_pmi <- pimpo |>
+  filter(country != "Austria") |>
+  unnest_tokens(input=text, output=bigram, token="ngrams", n=2) |>
+  count(bigram) |>
+  mutate(p_bigram=n / sum(n)) |>
+  filter(n >= 5) |>
+  unnest_tokens(input=bigram, output=word, drop=FALSE) |>
+  left_join(word_freq, by = "word") |>
+  summarize(pmi = log2(first(p_bigram)) - sum(log2(p_word)), n = first(n), .by = bigram) |>
+  arrange(desc(pmi))
+
+collocations <- bigrams_pmi |> filter(pmi >= 8) |> pull(bigram)
+replacements <- str_replace_all(collocations, " ", "_") |>
+  set_names(str_glue("\\b{collocations}\\b"))
+```
+
+```{webr}
+#| exercise: demo_collocations
+collocations <- bigrams_pmi |> filter(pmi >= 8) |> pull(bigram)
+replacements <- str_replace_all(collocations, " ", "_") |>
+  set_names(str_glue("\\b{collocations}\\b"))
+replacements
+```
+
+As you can see, this is a *named vector* of strings, where the name is the pattern to look for 
+(`\\bunited states\\b`) and the value is the replacement (`united_states`). 
+This is created by first selecting those bigrams with a pmi over 8 and 'pulling' the bigram column.
+We then replace the spaces by underscores, and finally set the pattern as the names. 
+
+This can be used to augment earlier analyses, e.g. the word comparison:
+
+```{webr}
+#| exercise: demo_compare_ngrams
+pimpo |>
+  filter(country %in% c("United States", "Ireland")) |>
+  mutate(text=str_replace_all(str_to_lower(text), replacements)) |>
+  unnest_tokens(text, output=word) |> 
+  count(country, word) |>
+  complete(country, word, fill=list(n=0)) |>
+  bind_log_odds(country, word, n) |>
+  arrange(desc(log_odds_weighted)) 
+```
+
+As you can see, `united_states` is now seen as a single token, and (if you scroll down) so are terms like `asylum_seekers` and `illegal_aliens` and Irish parties like `fine_gael`.
+Note that we call `str_replace_all` on the lowercased text, as our collocations are all lower cased. 
+
+Note that we used the value 8 based on inspection of the bigrams,
+as there is no sensible agreed-on cutoff value. 
+Depending on the research question it can also be a good idea to manually curate this list to ensure
+that e.g. all party names are included. 
 
 ## Lexical Analysis {#sec-textasdata-dictionary}
 
