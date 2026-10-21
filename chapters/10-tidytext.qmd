@@ -21,12 +21,13 @@ from political party manifestos that have been hand-coded for immigration and in
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_tokenize', 'demo_contrast', 'temp_pimpo_data', 'demo_tokenize_chinese', 'demo_tokenize_examples', 'demo_word_counts', 'demo_stopwords', 'demo_stopwords_removed', 'demo_compare_proportion', 'demo_custom_stopwords', 'demo_bigrams', 'demo_bigrams_pmi']
+#| exercise: ['pimpo_table', 'demo_tokenize', 'demo_contrast', 'demo_tokenize_chinese', 'demo_tokenize_examples', 'demo_word_counts', 'demo_stopwords', 'demo_stopwords_removed', 'demo_compare_proportion', 'demo_custom_stopwords', 'demo_bigrams', 'demo_bigrams_pmi']
 library(tidyverse)
 library(tidytext)
 pimpo <- read_csv("data/pimpo.csv")
-immigration_words <- pimpo |>
-  filter(country != "Austria", topic == "immigration", direction != "neutral") |>
+pimpo_en <- filter(pimpo, country != "Austria")
+immigration_words <- pimpo_en |>
+  filter(topic == "immigration", direction != "neutral") |>
   unnest_tokens(output=word, input=text) |>
   select(id, year, party_abbrev, direction, word)
 ```
@@ -37,14 +38,25 @@ immigration_words <- pimpo |>
 library(tidyverse)
 download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/pimpo.csv", "pimpo.csv")
 pimpo <- read_csv("pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
 head(pimpo)
+```
+
+Since many analyses are language specific, 
+we also created an English language subset `pimpo_en`
+to make it a bit easier to work only on one language. 
+
+Let's have a look at the distribution over topics and directions per country:
+
+```{webr}
+#| exercise: pimpo_table
 pimpo |> 
   count(topic, direction, country) |> 
   pivot_wider(names_from=country, values_from=n)
 ```
 
 As you can see, about half of the sentences are about immigration or integration,
-and all of these are coded for the position of that party on the topic.
+and all of these are coded for the position of that party on the topic. 
 
 Note that this dataset is a small sample of the full Manifesto and PImPo datasets,
 redistributed with permission from the Manifesto Project. 
@@ -105,8 +117,8 @@ immigration by the English-language manifestos:
 ```{webr}
 #| exercise: demo_tokenize
 library(tidytext)
-immigration_words <- pimpo |>
-  filter(country != "Austria", topic == "immigration", direction != "neutral") |>
+immigration_words <- pimpo_en |>
+  filter(topic == "immigration", direction != "neutral") |>
   unnest_tokens(text, output=word) |> 
   select(id, year, party_abbrev, direction, word)
 head(immigration_words)
@@ -208,8 +220,8 @@ Which words are used to discuss immigration?
 
 ```{webr}
 #| exercise: demo_word_counts
-pimpo |>
-  filter(country != "Austria", topic == "immigration") |>
+pimpo_en |>
+  filter(topic == "immigration") |>
   unnest_tokens(text, output=word) |>
   count(word) |>
   arrange(desc(n))
@@ -237,8 +249,8 @@ we can directly use `anti-join` to remove them from our analysis:
 
 ```{webr}
 #| exercise: demo_stopwords_removed
-pimpo |>
-  filter(country != "Austria", topic == "immigration") |>
+pimpo_en |>
+  filter(topic == "immigration") |>
   unnest_tokens(text, output=word) |>
   anti_join(stop_words) |>
   count(word) |>
@@ -258,12 +270,13 @@ As in the opening example of the chapter, we can see which words are used
 more in sceptical relative to supportive statements about immigration.
 We could also investigate whether US party manifestos use different words to talk about immigration than Irish, or whether immigration vocabulary changed over time. 
 
-Let's start by looking at the proportion of each word's usage in Irish manifestos:
+Let's start by looking at the proportion of each word's usage in Irish manifesto sentences about integration or immigration:
 
 ```{webr}
 #| exercise: demo_compare_proportion
-immigration_vocabulary <- pimpo |>
-  filter(country %in% c("United States", "Ireland")) |>
+immigration_vocabulary <- pimpo_en |>
+  filter(topic %in% c("immigration", "integration"), 
+         country %in% c("United States", "Ireland")) |>
   unnest_tokens(text, output=word) |> 
   count(country, word) |>
   pivot_wider(names_from=country, values_from=n, values_fill=0) |>
@@ -275,11 +288,11 @@ immigration_vocabulary |>
   arrange(desc(prop_ie))
 ```
 
-This produces some interesting findings: apparently asylum, employment and investment
+This produces some interesting findings: apparently asylum and employment
 are uniquely Irish concerns in the immigration manifestoes. 
-Unsurprisingly, it also contains a lot of words referring to Ireland, Irish parties (the Greens), and the EU. 
+Unsurprisingly, it also contains a lot of words referring to Ireland and the EU. 
 If you change the last line to `arrange(prop_ie)` you will see that in the US discourse
-this is even stronger. 
+even more of the top-10 words refer to the nation.
 
 However, this comparison is very naive. 
 First, we did not do any cleaning (although `unnest_tokens` by default lowercases and removes punctuation).
@@ -303,7 +316,7 @@ using `unnest_tokens` again to separate the parties into words:
 ```{webr}
 #| exercise: demo_custom_stopwords
 country_words <- tibble(word=c("ireland", "irish", "america", "american", "americans", "united", "states"))
-party_words <- pimpo |>
+party_words <- pimpo_en |>
   filter(country %in% c("United States", "Ireland")) |>
   select(party) |>
   unnest_tokens(input = party, output = word) |>
@@ -341,17 +354,19 @@ library(tidyverse)
 library(tidytext)
 library(tidylo)
 pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
 
 country_words <- tibble(word=c("ireland", "irish", "america", "american", "americans", "united", "states"))
-party_words <- pimpo |>
+party_words <- pimpo_en |>
   filter(country %in% c("United States", "Ireland")) |>
   select(party) |>
   unnest_tokens(input = party, output = word) |>
   distinct()
 custom_stopwords <- bind_rows(country_words, party_words)
 
-immigration_comparison <- pimpo |>
-  filter(country %in% c("United States", "Ireland")) |>
+immigration_comparison <- pimpo_en |>
+  filter(country %in% c("United States", "Ireland"),
+         topic %in% c("immigration", "integration")) |>
   unnest_tokens(text, output=word) |>
   mutate(word = str_remove(word, "['’]s$")) |>
   anti_join(custom_stopwords, by = "word") |>
@@ -364,8 +379,9 @@ immigration_comparison <- pimpo |>
 ```{webr}
 #| exercise: demo_compare_logodds
 library(tidylo)
-immigration_comparison <- pimpo |>
-  filter(country %in% c("United States", "Ireland")) |>
+immigration_comparison <- pimpo_en |>
+  filter(topic %in% c("immigration", "integration"),
+         country %in% c("United States", "Ireland")) |>
   unnest_tokens(text, output=word) |>
   mutate(word = str_remove(word, "['’]s$")) |>
   anti_join(custom_stopwords) |>
@@ -427,8 +443,8 @@ More common words are on the right and rare words on the left,
 with the horizontal 'bands' indicating how many words shared the same count and log odds value.
 
 This graph nicely shows the different words used in both countries:
-American manifestos talk about borders, lawm, illegal, and immigrants and use words like 'should' and 'must', while Irish manifestos talk about asylum (seekers), services, food, community and prefer the word 'will'. 
-On the right you can see that traditional stop words such as "is" or "and" have low log odds scores, making normal stop word removal unnecessary (and even harmful as it generally also removes words like 'must' or 'will').
+American manifestos talk about borders, law, illegal, aliens and immigrants and use 'our' and 'we' a lot; while Irish manifestos talk about asylum (seekers), integration, permits, and applications. 
+On the right you can see that traditional stop words such as "in" or "and" have low log odds scores, making normal stop word removal unnecessary (and even harmful as it generally also removes words like 'our' or 'we').
 
 
 <!-- 
@@ -485,8 +501,7 @@ In language processing, an n-gram is a sequence of n words, so `United states` i
 
 ```{webr}
 #| exercise: demo_bigrams
-bigrams <- pimpo |>
-  filter(country != "Austria") |>
+bigrams <- pimpo_en |>
   unnest_tokens(input=text, output=token, token="ngrams", n=2) |>
   count(token) |>
   arrange(-n)
@@ -506,8 +521,8 @@ by collapsing all stop words to a single `|`-separated pattern and placing `\\b`
 library(tidyverse)
 library(tidytext)
 pimpo <- read_csv("data/pimpo.csv")
-bigrams <- pimpo |>
-  filter(country != "Austria") |>
+pimpo_en <- filter(pimpo, country != "Austria")
+bigrams <- pimpo_en |>
   unnest_tokens(input=text, output=token, token="ngrams", n=2) |>
   count(token) |>
   arrange(-n)
@@ -531,14 +546,12 @@ There is no built-in function for computing PMI in `tidytext`, but fortunately i
 
 ```{webr}
 #| exercise: demo_bigrams_pmi
-word_freq <- pimpo |>
-  filter(country != "Austria") |>
+word_freq <- pimpo_en |>
   unnest_tokens(input=text, output=word) |>
   count(word, name="n_word") |>
   mutate(p_word=n_word / sum(n_word))
 
-bigrams_pmi <- pimpo |>
-  filter(country != "Austria") |>
+bigrams_pmi <- pimpo_en |>
   unnest_tokens(input=text, output=bigram, token="ngrams", n=2) |>
   count(bigram) |>
   mutate(p_bigram=n / sum(n)) |>
@@ -568,15 +581,14 @@ library(tidyverse)
 library(tidytext)
 library(tidylo)
 pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
 
-word_freq <- pimpo |>
-  filter(country != "Austria") |>
+word_freq <- pimpo_en |>
   unnest_tokens(input=text, output=word) |>
   count(word, name="n_word") |>
   mutate(p_word=n_word / sum(n_word))
 
-bigrams_pmi <- pimpo |>
-  filter(country != "Austria") |>
+bigrams_pmi <- pimpo_en |>
   unnest_tokens(input=text, output=bigram, token="ngrams", n=2) |>
   count(bigram) |>
   mutate(p_bigram=n / sum(n)) |>
@@ -608,8 +620,9 @@ This can be used to augment earlier analyses, e.g. the word comparison:
 
 ```{webr}
 #| exercise: demo_compare_ngrams
-pimpo |>
-  filter(country %in% c("United States", "Ireland")) |>
+pimpo_en |>
+  filter(country %in% c("United States", "Ireland"),
+         topic %in% c("immigration", "integration")) |>
   mutate(text=str_replace_all(str_to_lower(text), replacements)) |>
   unnest_tokens(text, output=word) |> 
   count(country, word) |>
@@ -626,15 +639,173 @@ as there is no sensible agreed-on cutoff value.
 Depending on the research question it can also be a good idea to manually curate this list to ensure
 that e.g. all party names are included. 
 
-## Lexical Analysis {#sec-textasdata-dictionary}
+## Dictionary Analysis {#sec-textasdata-dictionary}
 
-<!--
-4. Dictionaries and validation. Here you can exploit chapter order. dutch_sentiment.csv has gold labels and English translations. If ch10 runs the bing lexicon on the translations and computes accuracy and a confusion matrix, ch11 can open its validation section with "the dictionary got X%, can an LLM do better?". That makes ch10 the place that introduces validation, so ch11's validation section would need a light rewrite to point back to it.
+One of the oldest tools in the computational social science toolbox is dictionary analysis:
+using a (generally hand crafted) set of words to detect whether a concept occurs or to measure a variable such as tone or stance. 
 
-Speeches lack gold labels. For them I'd do face validity (KWIC or str_view on matches) plus a challenge where students hand-code about 20 sentences.
+As a first application of a dictionary, let's see if we can create a dictionary to detect whether a document is about migration. 
+Although it is entirely possible (and sometimes the best idea) to create a dictionary yourself,
+it is also a good idea to check the literature for existing dictionaries.
+For example, @palicki2023selecting published an 'expert validated search query' for migration,
+which we can use in a shortened form:
 
-A practical point: get_sentiments("afinn") and get_sentiments("nrc") go through textdata, which asks for an interactive download. That won't work in webR. bing ships with tidytext, so use that, or ship a lexicon in data/.
+```{webr}
+#| setup: true
+#| exercise: ['demo_dictionary_match', 'demo_dictionary_confusion', 'dictionary_playground']
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+immigration_pattern <- "asyl|immigra|migra|refugee|foreigner|emigra"
+immigration_matches <- pimpo_en |>
+  select(id, country, party, topic, text) |>
+  unnest_tokens(input="text", output="word") |>
+  mutate(immigration=str_starts(word, immigration_pattern))
+```
+
+```{webr}
+#| exercise: demo_dictionary_match
+immigration_pattern <- "asyl|immigra|migra|refugee|foreigner|emigra"
+immigration_matches <- pimpo_en |> 
+  select(id, country, party, topic, text) |>
+  unnest_tokens(input="text", output="word") |>
+  mutate(immigration=str_starts(word, immigration_pattern)) 
+immigration_matches
+```
+
+As you can see, this created a new column `immigration`, which is `TRUE` if the word matched the dictionary and `FALSE` otherwise. 
+To validate how well the dictionary works, we can summarize the output per sentence
+and compare the dictionary output to the actual topic:
+
+```{webr}
+#| exercise: demo_dictionary_confusion
+immigration_matches  |>
+  group_by(id) |>
+  summarize(topic=first(topic), immigration=any(immigration)) |>
+  count(topic, immigration) |> 
+  pivot_wider(names_from=immigration, values_from=n)
+```
+
+The resulting table is called a *confusion matrix*, with the gold standard outcomes in the rows,
+and the classification predictions in the columns, and each cell showing the frequency of that combination.
+
+The good news is that when the dictionary found a word (the `` `TRUE` `` column) the sentence was almost always about immigration or integration. 
+The less good news is that many of the immigration and integration sentences were missed by the dictionary.
+
+
+::: {.callout-tip title="Precision and recall"}
+The pattern found above is fairly common in dictionaries: 
+because so many different words can be used to refer to a topic, 
+when there is a match it's likely to be relevant, but many relevant texts are missed. 
+
+In text analysis, we often use the terms *precision* and *recall* to indicate these metrics:
+Precision is the proportion of all matched items that were indeed relevant,
+while recall is the proportion of actually relevant items that were matched. 
+
+In the example above, if we consider immigration and integration to both be relevant,
+we have 217+93=310 *true positives*: relevant items that were correctly identified.
+
+To calculate precision, we compare this to the *false positives*, items that were incorrectly classified as relevant. Here we only found 2, so precision is 310/(310+2)=99%
+
+For recall, we instead compare to the *false negatives*, items that were missed (i.e. incorrectly classified as irrelevant). In this case the dictionary missed 112+128=240 sentences, giving a recall of 310/(310+240)=56%
+
+Looking separately at recall for immigration and integration, we can see that it is quite a lot worse for the latter. This makes sense if the dictionary is intended only for immigration, but as you can see it does actually also match 93 integration sentences. 
+
+
+<!-- TODO: drop the dictionary improvement questions from the challenge if it overlaps with the exercise -->
+::: {.challenge}
+- Can you calculate what these numbers would be if the dictionary is only supposed to match immigration (i.e., integration is also seen as irrelevant)?
+- How would you extend the dictionary to get better recall on (especially) integration? Does that work if you try it in the playground below?
+- Can you change the dictionary to measure only immigration? Does it work? Why (not)?
+
+
+```{webr}
+#| exercise: dictionary_playground
+improved_pattern <- "asyl|immigra|migra|refugee|foreigner|emigra"
+pimpo_en |> 
+  unnest_tokens(input="text", output="word") |>
+  mutate(immigration=str_starts(word, improved_pattern)) |>
+  group_by(id) |>
+  summarize(topic=first(topic), immigration=any(immigration)) |>
+  count(topic, immigration) |> 
+  pivot_wider(names_from=immigration, values_from=n)
+```
+:::
+
+:::
+
+<!-- TODO: Exercise idea: compare immigration to non-immigration in missed sentences. 
+     Add challenge to think about train/test split
 -->
+
+### Sentiment Analysis
+
+Dictionaries are frequently used in sentiment analysis, 
+even though research often finds they perform poorly in social science applications [cf @vanatteveldt2021validity]. Let's see whether an existing dictionary can differentiate between sceptical and supportive sentences. 
+
+Tidytext ships with the sentiment dictionary published by @huliu04 (often called the Bing dictionary after it's second author's first name)
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_sentiment_dictionary', 'demo_sentiment_join', 'demo_sentiment_confusion']
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+bing <- sentiments |>
+  mutate(value = if_else(sentiment == "positive", 1, -1))
+immigration_sentiment <-  pimpo_en |>
+  filter(topic != "none")|>
+  select(id, country, party, topic, direction, text) |>
+  unnest_tokens(output=word, input=text) |>
+  left_join(bing, by="word")
+```
+
+```{webr}
+#| exercise: demo_sentiment_dictionary
+bing <- sentiments |>
+  mutate(value = if_else(sentiment == "positive", 1, -1))
+bing
+```
+
+Since this dictionary contains full words instead of word stems, 
+we can join it to the result of `unnest_tokens`:
+
+```{webr}
+#| exercise: demo_sentiment_join
+immigration_sentiment <-  pimpo_en |>
+  filter(topic != "none")|>
+  select(id, country, party, topic, direction, text) |>
+  unnest_tokens(output=word, input=text) |>
+  left_join(bing) 
+immigration_sentiment
+```
+
+As you can see, most words are not matched, resulting in `NA`s,
+while the word `integrated` is actually coded as positive. 
+Note that we need to use `left_join` here, as otherwise any sentences without matches
+would be silently dropped from the dataset.
+
+Let's sum the values per sentence, and see how they relate to the coded sentiment:
+
+```{webr}
+#| exercise: demo_sentiment_confusion
+immigration_sentiment |>
+  group_by(id) |>
+  summarize(direction=first(direction), value=sum(value, na.rm=TRUE)) |>
+  mutate(sign=sign(value),
+         direction = fct_relevel(direction, "sceptical", "neutral", "supportive")) |>
+  count(direction, sign) |>
+  pivot_wider(names_from=sign, values_from=n)
+```
+
+So, if we assume the sign of the summed sentiment values should correspond to the direction of the stance, this dictionary is performing quite poorly.
+Overall accuracy is only 49%, performing even worse than just guessing 'supportive' for each sentence. 
+Especially sceptical is problematic, with almost as many sceptical sentences coded as positive as negative. 
+This is quite likely due to words that express a desire for stricter immigration and integration rules, 
+but that are coded as positive. We saw the word integrated above, but also words like 'secure' and 'effective' are coded as positive in the dictionary. 
+
 
 ## Clustering and Topic Modeling {#sec-textasdata-topicmodeling}
 
