@@ -275,10 +275,10 @@ posts |>
 
 ## PImPo and Manifesto data
 
-- **File**: [pimpo.csv](pimpo.csv) (pending approval from Manifesto Project)
+- **File**: [pimpo.csv](pimpo.csv)
 - **Source**: [PImPo](https://manifesto-project.wzb.eu/information/documents/pimpo) and [manifestoR](https://manifesto-project.wzb.eu/manifestor)
 - **Description**: All sentences coded as being about immigration or integration in the PImPo dataset for Austria, Australia, Ireland and the US (elections 1999–2013), plus an equally sized random sample of other sentences. Sentence texts come from the Manifesto Corpus.
-- **License**: See [original terms of use](https://manifesto-project.wzb.eu/information/documents/terms_of_use). In particular, the data may not be redistributed except if authorized in writing by the Manifesto Project, and you must agree to reference the recommended bibliographic citation in any publication that uses this data
+- **License**: Redistributed with permission from the Manifesto Project. See [original terms of use](https://manifesto-project.wzb.eu/information/documents/terms_of_use). In particular, the data may not be redistributed except if authorized in writing by the Manifesto Project, and you must agree to reference the recommended bibliographic citation in any publication that uses this data. 
 - **Citation**: When using this file, please cite
   - Lehmann, Pola & Zobel, Malisa (2018): Parties' Immigration and Integration Positions Dataset (PImPo): Version 2018. Berlin: WZB. <https://doi.org/10.25522/manifesto.pimpo.2018>
   - Lehmann, Pola & Zobel, Malisa (2018): Positions and Saliency of Immigration in Party Manifestos: A Novel Dataset Using Crowd Coding. *European Journal of Political Research* 57(4): 1056–1083. <https://doi.org/10.1111/1475-6765.12266>
