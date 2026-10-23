@@ -334,6 +334,7 @@ relevant <- filter(pimpo, topic != "none")
 set.seed(123)
 other <- pimpo |>
   filter(topic == "none") |>
+  mutate(topic = "other") |> 
   inner_join(count(relevant, country, name = "n_relevant"), by = "country") |>
   slice_sample(prop = 1) |>
   filter(row_number() <= n_relevant, .by = country) |>
