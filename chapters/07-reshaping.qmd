@@ -93,7 +93,7 @@ temp_diff <- temp |>
 ggplot(temp, aes(x=year, fill=temp_anomaly, y=fct_reorder(region, temp_anomaly))) + 
   geom_tile() + 
   scale_fill_gradient2(low="darkblue", mid="white", high="darkred", 
-                       midpoint=.54, guide=NULL) + 
+                       midpoint=.54, guide="none") + 
   labs(title="Temperature anomaly per hemisphere",
        x="",
        y="") + 

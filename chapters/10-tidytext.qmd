@@ -75,10 +75,10 @@ and see [our data folder README](https://github.com/vanatteveldt/r4css/blob/main
 | party               | character     | Name of the party, as given by the Manifesto Project                                               |
 | party_abbrev        | character     | Abbreviated party name                                                                             |
 | text                | character     | The text of the (quasi-)sentence                                                                   |
-| topic               | character     | Whether the sentence is about `immigration`, `integration`, or neither (`none`)                    |
-| direction           | character     | Position towards immigration or integration: `supportive`, `neutral`, or `sceptical` (missing if the topic is `none`) |
-| certainty_topic     | numeric (dbl) | Percentage of coders who agreed on the topic (missing if the topic is `none`)                      |
-| certainty_direction | numeric (dbl) | Percentage of coders who agreed on the direction (missing if the topic is `none`)                  |
+| topic               | character     | Whether the sentence is about `immigration`, `integration`, or neither (`other`)                   |
+| direction           | character     | Position towards immigration or integration: `supportive`, `neutral`, or `sceptical` (missing if the topic is `other`) |
+| certainty_topic     | numeric (dbl) | Percentage of coders who agreed on the topic (missing if the topic is `other`)                     |
+| certainty_direction | numeric (dbl) | Percentage of coders who agreed on the direction (missing if the topic is `other`)                 |
 
 Note that in the full manifestos data set, only a couple percent of sentences are about immigration or integration.
 This data set consists of all those sentences (n=1,548) and an equal number of 
@@ -756,7 +756,7 @@ pimpo_en <- filter(pimpo, country != "Austria")
 bing <- sentiments |>
   mutate(value = if_else(sentiment == "positive", 1, -1))
 immigration_sentiment <-  pimpo_en |>
-  filter(topic != "none")|>
+  filter(topic != "other")|>
   select(id, country, party, topic, direction, text) |>
   unnest_tokens(output=word, input=text) |>
   left_join(bing, by="word")
@@ -775,7 +775,7 @@ we can join it to the result of `unnest_tokens`:
 ```{webr}
 #| exercise: demo_sentiment_join
 immigration_sentiment <-  pimpo_en |>
-  filter(topic != "none")|>
+  filter(topic != "other")|>
   select(id, country, party, topic, direction, text) |>
   unnest_tokens(output=word, input=text) |>
   left_join(bing) 
@@ -807,12 +807,225 @@ This is quite likely due to words that express a desire for stricter immigration
 but that are coded as positive. We saw the word integrated above, but also words like 'secure' and 'effective' are coded as positive in the dictionary. 
 
 
-## Clustering and Topic Modeling {#sec-textasdata-topicmodeling}
+## Topic Modeling {#sec-textasdata-topicmodeling}
 
-<!--
-5. Topic models. One tension: your current scope note in the file frames LDA as a negative example that points to ch12's embed → cluster → LLM-label approach. BERTopic is that approach, so I'd point to BERTopic by way of ch12 rather than as an alternative to it. stm is worth mentioning, for its covariates and because it's still common in published social-science work. Running the code may be a problem: I don't know whether topicmodels (needs GSL) or stm are on the webR repo. If neither is, precomputed results with a "run this locally" note would work.
--->
+This chapter so far has mostly looked at which words (and bigrams) occur in a document.
+It can also be very informative to see which words *co-occur*:
+can we find coherent clusters of words that often occur together?
 
-<!--
-6. Close with a document-term matrix (cast_dfm or cast_sparse) as the handoff to ch14, as the scope note says, plus the readtext callout.
--->
+Although we will go into this in much more detail in @sec-embeddings,
+this section will give a small demo of *topic modeling*,
+which used to be a very popular method for exploring a corpus
+[@blei2003latent; see e.g. @jacobi2016quantitative for an application to political communication].
+
+Before running the actual topic model, we convert the 'long' format of the tokens
+into a 'wide' format with one word in every column: a *document-term matrix* or DTM. 
+Since this would produce thousands of columns with mostly zeroes in the cells, rather than using a regular `pivot_wider` we use `cast_sparse`. 
+This creates a *sparse matrix* format to represent the DTM, 
+which is an efficient way to store such a matrix as only the non-zero cells are actually stored.
+
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_dtm', 'demo_lda']
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+dtm <- pimpo_en |>
+  select(id:party, text, topic) |>
+  unnest_tokens(input="text", output="word") |>
+  anti_join(stop_words) |>
+  cast_sparse(row=id, column=word)
+```
+
+```{webr}
+#| exercise: demo_dtm
+dtm <- pimpo_en |>
+  select(id:party, text, topic) |>
+  unnest_tokens(input="text", output="word") |>
+  anti_join(stop_words) |>
+  cast_sparse(row=id, column=word)
+str_glue("dtm is a {class(dtm)} with {nrow(dtm)} rows (docs) and {ncol(dtm)} columns (words)")
+dtm[1:5, 1:5]
+```
+
+Looking at the first 5 rows and columns shows the structure of the dtm: 
+each row is a document, and every column is a word.
+The word *ensure* occurs only in document `193798`, but *social* occurs also in document `194040`.
+It also shows why a dtm is often called a 'bag of words': 
+every document is represented as a set of word frequencies, but all ordering or syntactic structure is ignored. 
+
+We can use the `topicmodels` package to cluster this matrix into topics:
+
+```{webr}
+#| exercise: demo_lda
+library(topicmodels)
+t <- LDA(dtm, k=10, control=list(seed=123))
+
+topic_terms <- posterior(t) |> 
+  pluck("terms") |> 
+  as_tibble(rownames = "lda_topic") |>
+  pivot_longer(-lda_topic, names_to = "term", values_to = "beta") 
+
+topic_terms |>
+  slice_max(beta, n = 10, by = lda_topic) |>
+  summarise(terms = str_c(term, collapse = ", "), .by = lda_topic)
+```
+
+This shows the top-10 words for each topic. Topic 1 seems to be about health care, while topic 7 and 9 are most clearly about immigration. Note that it is not surprising that this corpus yields a mix of immigration and non-immigration topics, as it was sampled to have 50% of sentences about immigration or integration. 
+
+Looking at the code, we can see some interesting things:
+
+- The LDA call creates a topic model `t` with `k=10` clusters. We set a random seed for reproducibility since topic modeling is non-deterministic.
+- To analyse the results, we take the `posterior` distribution from the model, from which we `pluck` the "terms", which is a matrix of probabilities for each term within each topic (pluck is a helper function that takes an element from a list within a tidyverse pipeline)
+- We convert this matrix to a tibble, and pivot it to a long format of weights ("betas") per topic per word
+- Finally, we select the top-10 words with the highest weight, and collapse them to a single value for easy inspection (using the `.by` shortcut to skip the `group_by` step)
+
+One small note: LDA is a 'mixture' model, which means that each document (and word) can be assigned to multiple topics. In our case this is not very useful since our documents are short sentences, but we can still use it to showcase the general working of LDA. 
+
+::: {.challenge title="Playing with Topic Models"}
+You can alter the code above to play around with the topic modeling algorithm. 
+
+- What happens if you change the seed? Do you get similar clusters, or quite different. Note that the ordering of clusters is completely random, so even if you get similar clusters they will have different topic numbers. 
+- What happens if you decrease k, e.g. to 2 or 5? Or increase it to 20? Do the topics feel more coherent, or less? Does their meaning shift?
+:::
+
+Using similar code, we can also inspect the LDA topic loadings for each document, and compare it to the manually assigned topic:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_doc_topics', 'demo_topic_plot', 'demo_topic_sentences']
+library(tidyverse)
+library(tidytext)
+library(topicmodels)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+dtm <- pimpo_en |>
+  select(id:party, text, topic) |>
+  unnest_tokens(input="text", output="word") |>
+  anti_join(stop_words) |>
+  cast_sparse(row=id, column=word)
+t <- LDA(dtm, k=10, control=list(seed=123))
+topic_terms <- posterior(t) |>
+  pluck("terms") |>
+  as_tibble(rownames = "lda_topic") |>
+  pivot_longer(-lda_topic, names_to = "term", values_to = "beta")
+doc_topics <- posterior(t) |>
+  pluck("topics") |>
+  as_tibble(rownames = "id") |>
+  pivot_longer(-id, names_to = "lda_topic", values_to = "gamma") |>
+  mutate(id = as.numeric(id)) |>
+  left_join(pimpo_en, join_by(id))
+```
+
+```{webr}
+#| exercise: demo_doc_topics
+doc_topics <- posterior(t) |>
+  pluck("topics") |>
+  as_tibble(rownames = "id") |>
+  pivot_longer(-id, names_to = "lda_topic", values_to = "gamma") |>
+  mutate(id = as.numeric(id)) |>
+  left_join(pimpo_en, join_by(id))
+
+doc_topics |>  
+  summarize(gamma=mean(gamma), .by=c(lda_topic, topic)) |>
+  ggplot(aes(x = topic, y = factor(lda_topic, levels=1:10), fill = gamma)) +
+  geom_tile() +
+  geom_text(aes(label = scales::percent(gamma, accuracy = 1))) +
+  scale_fill_distiller(palette = "Blues", direction = 1) + 
+  theme_minimal()
+```
+
+The code here starts very similar to the earlier code, but plucking the `topics` from the posterior.
+It then averages the 'gamma' weights per manual topic and LDA topic and uses that to create a heat map.
+The gamma shows how each document is assigned to the various topics, so the columns add up to 100%.
+
+This shows some interesting patterns. First, as was also evident from the top words,
+LDA topic 7 and 9 are most clearly connected to immigration. 
+Integration is less clearly connected to a topic, with topic 3 having the highest score,
+which is perhaps unsurprising given that our dictionary also had more difficulty finding sentences about integration. 
+Similarly, the sentences with topic 'other' are mostly spread over all LDA topics, with only 14% in the highest topic (2). 
+
+The graph also shows that we should not read too much coherence into topics: 
+the majority of immigration sentences ultimately ends up spread over other topics than 7 and 9.
+This makes sense as immigration is often also discussed in its relation to other topics.
+For example, looking at a number of immigration sentences from LDA topic 1, which we earlier defined as health care, it is clear that immigration is indeed also discussed in the context of health care, both in terms of migrants needing health checks and in terms of immigrants as a solution for a shortage of doctors or nurses. However, it also shows that topic 1 is much broader than just health care, with many sentences talking about e.g. legal aid and family rights. 
+Additionally, many sentences also just don't really have a substantive topic, but LDA still has to assign all of the non-stop words to one of its topics. 
+This highlights the importance of reading actual text to interpret topics rather than just looking at the top words, and avoiding the temptation to assume that a LDA topic maps perfectly on what we would normally call (political) topics. 
+
+::: {.challenge title="Inspecting sentences"}
+
+The code below shows the highest loading 'immigration' sentences for LDA topic 1: 
+
+```{webr}
+#| exercise: demo_topic_sentences
+doc_topics |>
+  filter(lda_topic == "1", topic == "immigration") |>
+  arrange(desc(gamma)) |>
+  select(gamma, text)
+```
+
+- How would you evaluate the earlier 'health care' topic label given these sentences?  Does it change if you look at sentences in the 'other' topic?
+- Can you find the (one) sentence that mentions nurses?
+- Do other topics such as 7 or 9 make more sense? Can you find good labels for these topics?
+:::
+
+Finally, let's combine the document loadings with the word loadings to show the top words per topic, coded by how strongly the topic maps to an immigration topic:
+
+
+```{webr}
+#| exercise: demo_topic_plot
+doc_topics |>
+  slice_max(gamma, n = 1, by = id, with_ties = FALSE) |>
+  summarize(perc_other = mean(topic == "other"), .by = lda_topic) |>
+  inner_join(topic_terms, join_by(lda_topic)) |> 
+  filter(lda_topic %in% c(2, 3, 7, 9)) |> 
+  slice_max(beta, n = 8, by = lda_topic) |>
+  mutate(term = reorder_within(term, beta, lda_topic)) |>
+  ggplot(aes(x = beta, y = term, fill = perc_other)) +
+  geom_col() +
+  scale_y_reordered() +
+  scale_x_continuous(n.breaks = 3) +
+  scale_fill_gradient2(low = "#2166ac", mid = "grey70", high = "#b2182b",
+                       midpoint = 0.5, limits = c(0, 1), name = NULL,
+                       breaks = c(0, 0.5, 1),
+                       labels = c("immigration/\nintegration", "mixed", "other")) +
+  facet_wrap(~lda_topic, scales = "free_y") + 
+  theme_minimal() + theme(legend.key.height = unit(2, "cm"))
+```
+
+This nicely shows how topic 7 and 9 are more strongly dominated by the topic word:
+*immigration* for 9 and *asylum*, *seekers* and *australia* for 7; while topics 3 and especially 2 are less strongly connected to a single word. 
+The LDA topic that was most connected to integration (topic 3) seems to be about work and employment,
+so it makes sense that this is almost a perfect mix between immigration/integration and 'other' sentences.
+Topic 2 is mostly about public spending and it mostly contains sentences not about immigration or integration. 
+
+Looking at the code, we first take the top topic for each sentence, and
+then compute the proportion of sentences in each LDA topic being in the handcoded 'other' topic
+(note that slice_max uses `by=`, while summarize uses `.by=`). 
+Then we join it with the `topic_terms` computed earlier,
+select 4 interesting topics, and take the top 8 words for each topic.
+We then use tidytext's `reorder_within` (and `scale_y_reordered`) to order the words by their loading within each topic, and create a faceted bar plot. 
+
+::: {.callout-tip title="Is topic modeling still state of the art?"}
+
+In the opening lines of this section I wrote that topic modeling "used to be a very popular method for exploring a corpus" -- which raises the question of its current status in the methodological toolbox. 
+
+The short answer is that it is still somewhat useful for a quick exploration of a corpus,
+but has lost most of its use as an analytical tool. 
+
+The reason for this is possibly that it never quite delivered on its 'promise' of finding topics in documents. As the demo above showed, many LDA topics don't neatly correspond to what we would call topics.
+The output is also hard to validate if you don't know what topics you are interested in before the analysis [but see @chang2009reading]. And if you do have hand coded topics, such as in our PImPo data set,
+the correlation of LDA topics with manually coded topics is often relatively weak:
+even topics 7 and 9, which were 'clearly' about immigration, still contain about 25% sentences from the 'other' topic, and together they comprise only 42% of the immigration sentences.
+So, if we would use topic 7 and 9 to identify immigration sentences, we would have a precision of 75% and a recall of 42%, clearly worse even than the small dictionary used above. 
+Note that this is not a fault in the method, but rather underscores that LDA topic modeling is not a
+very useful technique for finding specific topics known beforehand, but rather for exploring an unknown corpus. 
+
+In @sec-embeddings we will explore a more modern approach to word clustering using *embeddings*, 
+which have the benefit of re-using linguistic and pragmatic knowledge from existing language models,
+so the clustering does not have to 'discover' that e.g. *immigration* and *migrant* are related terms. 
+
+If you do want to use regular topic modeling, it is a good idea to check out Structural Topic Models [@roberts2014structural], which allow specifying covariates such as country or year to affect the topic loadings. 
+:::
