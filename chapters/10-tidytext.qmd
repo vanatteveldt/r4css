@@ -10,8 +10,33 @@ webr:
 # Text as Data: tidytext {#sec-textasdata}
 
 ## Chapter objectives {.unnumbered}
+In this chapter, you will learn how to use tidytext to treat 'text as data':
 
-(todo)
++ Using `unnest_tokens` to 'tokenize' a text, turning textual data into a tidy data frame with one word per row (@sec-textasdata-tokenization)
++ Analysing that data frame to show which words occur (@sec-textasdata-corpus)
++ Comparing two corpora (text collections) to highlight typical terms (@sec-textasdata-corpuscomparison)
++ Finding and using n-grams (word pairs or short phrases; @sec-textasdata-ngrams)
++ Using and validating dictionaries for document filtering and sentiment analysis (@sec-textasdata-dictionary)
++ Using LDA Topic Modeling to cluster words into topics (@sec-textasdata-topicmodeling)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-textasdata-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter. 
+
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `unnest_tokens()` | split a text column into tokens (words), with one row per token | @sec-textasdata-tokenization |
+| `stop_words`, `get_stopwords()` | stop word lists, as data frames with a `word` column | @sec-textasdata-corpus |
+| `bind_log_odds()` | add the weighted log odds of each word per corpus (from `tidylo`) | @sec-textasdata-corpuscomparison |
+| `unnest_tokens(token="ngrams", n=)` | split a text column into n-grams rather than single words | @sec-textasdata-ngrams |
+| `sentiments` | the Bing sentiment dictionary, as a data frame with a `word` column | @sec-textasdata-dictionary |
+| `cast_sparse()` | turn a tidy token data frame into a (sparse) document-term matrix | @sec-textasdata-topicmodeling |
+| `LDA()` | fit an LDA topic model (from `topicmodels`) | @sec-textasdata-topicmodeling |
+| `posterior()` | get the word-topic (`terms`) and document-topic (`topics`) weights from a topic model | @sec-textasdata-topicmodeling |
+| `reorder_within()`, `scale_y_reordered()` | order bars within each facet of a faceted plot | @sec-textasdata-topicmodeling |
+
+:::
 
 ## Data for this chapter {.unnumbered}
 
@@ -198,7 +223,7 @@ tibble(text = c("1:30 to go 🙏 #ge2024 #ireland",
 As these examples show, tokenization depends strongly on the presence of spaces and punctuation, although it does not blindly split on all punctuation. 
 As you can see, both `1:30` and `#ge2024` are split into multiple tokens,
 which is probably not how we would normally see it. 
-In the next text, `Sinn Féin` is split into two tokens, with the possessive s in `Féin's` is seen as part of the token. 
+In the next text, `Sinn Féin` is split into two tokens, with the possessive s in `Féin's` seen as part of the token. 
 In the url below it, the `://` part is seen as three distinct tokens, while the domain name is kept as a single token.
 Finally, the beautiful German compound Kettenasylantragstellungen ("chain asylum applications") is seen as a single word. 
 
@@ -214,7 +239,7 @@ and then use `summarize` to collapse all the tokens of each sentence back to a s
 
 ## Corpus Analysis {#sec-textasdata-corpus}
 
-Let's have a closer look at the PImPo *corpus* (corpus being the fancy words linguists use when they mean a collection of texts). 
+Let's have a closer look at the PImPo *corpus* (corpus being the fancy word linguists use when they mean a collection of texts). 
 
 Which words are used to discuss immigration?
 
@@ -232,7 +257,7 @@ in almost any text words like "the"  and "to" would be in the top of this list.
 
 ### Stop words
 
-Such words are called 'stop words', i.e. words that should not be "stopped" from entering the analysis. 
+Such words are called 'stop words', i.e. words that should be "stopped" from entering the analysis. 
 Various stop word lists exist for most languages, and for English a selection of stop word lists is immediately available as `stop_words` data frame:
 
 ```{webr}
@@ -245,7 +270,7 @@ get_stopwords("de", source="stopwords-iso")
 ```
 
 Since these stopword lists are data frames with a 'word' column, 
-we can directly use `anti-join` to remove them from our analysis:
+we can directly use `anti_join` to remove them from our analysis:
 
 ```{webr}
 #| exercise: demo_stopwords_removed
@@ -263,7 +288,7 @@ And the result is clearly much more informative, with "immigration", "asylum" an
 Can you adapt the code above to give the list of most frequent words for the Austrian sentences?
 :::
 
-### Corpus comparison
+### Corpus comparison {#sec-textasdata-corpuscomparison}
 
 It is often very informative to *compare* word use in two corpora.
 As in the opening example of the chapter, we can see which words are used
@@ -489,8 +514,11 @@ Below we list a table of the most common preprocessing steps, based loosely on t
 
 :::
 
+### Exercise: Sceptical or supportive?
 
-### Collocations and N-grams {#sec-textasdata-ngrams}
+{{< include exercises/_ch10_ex_compare_direction.qmd >}}
+
+## Collocations and N-grams {#sec-textasdata-ngrams}
 
 In the examples so far, we have focused on single words.
 However, very often it is more informative to treat word combinations like `United states` or `rule of law` as a single token. 
@@ -644,7 +672,13 @@ that e.g. all party names are included.
 One of the oldest tools in the computational social science toolbox is dictionary analysis:
 using a (generally hand crafted) set of words to detect whether a concept occurs or to measure a variable such as tone or stance. 
 
-As a first application of a dictionary, let's see if we can create a dictionary to detect whether a document is about migration. 
+### Topic Classification {#sec-textasdata-topicdictionary}
+
+As a first application of a dictionary, let's see if we can create a dictionary to classify
+whether topics are relevant for a specific topic. 
+In general, identifying relevant documents for analysis is an excellent use case for dictionaries.
+
+In this case, we might want to know specifically whether a document is about migration. 
 Although it is entirely possible (and sometimes the best idea) to create a dictionary yourself,
 it is also a good idea to check the literature for existing dictionaries.
 For example, @palicki2023selecting published an 'expert validated search query' for migration,
@@ -652,7 +686,7 @@ which we can use in a shortened form:
 
 ```{webr}
 #| setup: true
-#| exercise: ['demo_dictionary_match', 'demo_dictionary_confusion', 'dictionary_playground']
+#| exercise: ['demo_dictionary_match', 'demo_dictionary_confusion', 'demo_precision_recall']
 library(tidyverse)
 library(tidytext)
 pimpo <- read_csv("data/pimpo.csv")
@@ -681,14 +715,13 @@ and compare the dictionary output to the actual topic:
 ```{webr}
 #| exercise: demo_dictionary_confusion
 immigration_matches  |>
-  group_by(id) |>
-  summarize(topic=first(topic), immigration=any(immigration)) |>
-  count(topic, immigration) |> 
+  summarize(immigration=any(immigration), .by=c(id, topic)) |>
+  count(topic, immigration) |>
   pivot_wider(names_from=immigration, values_from=n)
 ```
 
 The resulting table is called a *confusion matrix*, with the gold standard outcomes in the rows,
-and the classification predictions in the columns, and each cell showing the frequency of that combination.
+and the classification predictions in the columns, and each cell showing the frequency of that combination. Note that we group by `c(id, topic)` -- since every sentence has a single topic, this doesn't actually affect the grouping compared to just grouping by `id`, but it means that the topic per sentence is preserved in the summarization result. 
 
 The good news is that when the dictionary found a word (the `` `TRUE` `` column) the sentence was almost always about immigration or integration. 
 The less good news is that many of the immigration and integration sentences were missed by the dictionary.
@@ -708,43 +741,31 @@ we have 217+93=310 *true positives*: relevant items that were correctly identifi
 
 To calculate precision, we compare this to the *false positives*, items that were incorrectly classified as relevant. Here we only found 2, so precision is 310/(310+2)=99%
 
-For recall, we instead compare to the *false negatives*, items that were missed (i.e. incorrectly classified as irrelevant). In this case the dictionary missed 112+128=240 sentences, giving a recall of 310/(310+240)=56%
+For recall, we instead compare to the *false negatives*, items that were missed (i.e. incorrectly classified as irrelevant). In this case the dictionary missed 112+128=240 sentences, giving a recall of 310/(310+240)=56%.
 
-Looking separately at recall for immigration and integration, we can see that it is quite a lot worse for the latter. This makes sense if the dictionary is intended only for immigration, but as you can see it does actually also match 93 integration sentences. 
-
-
-<!-- TODO: drop the dictionary improvement questions from the challenge if it overlaps with the exercise -->
-::: {.challenge}
-- Can you calculate what these numbers would be if the dictionary is only supposed to match immigration (i.e., integration is also seen as irrelevant)?
-- How would you extend the dictionary to get better recall on (especially) integration? Does that work if you try it in the playground below?
-- Can you change the dictionary to measure only immigration? Does it work? Why (not)?
-
+We can also use `summarize` to calculate these:
 
 ```{webr}
-#| exercise: dictionary_playground
-improved_pattern <- "asyl|immigra|migra|refugee|foreigner|emigra"
-pimpo_en |> 
-  unnest_tokens(input="text", output="word") |>
-  mutate(immigration=str_starts(word, improved_pattern)) |>
-  group_by(id) |>
-  summarize(topic=first(topic), immigration=any(immigration)) |>
-  count(topic, immigration) |> 
-  pivot_wider(names_from=immigration, values_from=n)
+#| exercise: demo_precision_recall
+immigration_matches |>
+  summarize(match = any(immigration), .by = c(id, topic)) |>
+  mutate(relevant = topic != "other") |>
+  summarize(precision = sum(relevant & match) / sum(match),
+            recall = sum(relevant & match) / sum(relevant))
 ```
+
+You can change `topic != "other"` to `topic == "immigration"` in the chunk above to calculate precision and recall if we would only consider immigration sentences as relevant.
+As you can see, this increases recall at the expense of precision -- which makes sense given that the confusion matrix showed that the current dictionary also matches 93 integration sentences.
 :::
 
-:::
-
-<!-- TODO: Exercise idea: compare immigration to non-immigration in missed sentences. 
-     Add challenge to think about train/test split
--->
+{{< include exercises/_ch10_challenge_dictionary.qmd >}}
 
 ### Sentiment Analysis
 
 Dictionaries are frequently used in sentiment analysis, 
 even though research often finds they perform poorly in social science applications [cf @vanatteveldt2021validity]. Let's see whether an existing dictionary can differentiate between sceptical and supportive sentences. 
 
-Tidytext ships with the sentiment dictionary published by @huliu04 (often called the Bing dictionary after it's second author's first name)
+Tidytext ships with the sentiment dictionary published by @huliu04 (often called the Bing dictionary after its second author's first name)
 
 ```{webr}
 #| setup: true
@@ -791,20 +812,25 @@ Let's sum the values per sentence, and see how they relate to the coded sentimen
 
 ```{webr}
 #| exercise: demo_sentiment_confusion
-immigration_sentiment |>
-  group_by(id) |>
-  summarize(direction=first(direction), value=sum(value, na.rm=TRUE)) |>
-  mutate(sign=sign(value),
-         direction = fct_relevel(direction, "sceptical", "neutral", "supportive")) |>
-  count(direction, sign) |>
-  pivot_wider(names_from=sign, values_from=n)
+predictions <- immigration_sentiment |>
+  summarize(value = sum(value, na.rm = TRUE), .by = c(id, direction)) |>
+  mutate(predicted = case_when(value < 0 ~ "sceptical",
+                               value > 0 ~ "supportive",
+                               .default = "neutral")) 
+predictions |>
+  count(direction, predicted) |>
+  pivot_wider(names_from = predicted, values_from = n)
 ```
 
 So, if we assume the sign of the summed sentiment values should correspond to the direction of the stance, this dictionary is performing quite poorly.
 Overall accuracy is only 49%, performing even worse than just guessing 'supportive' for each sentence. 
 Especially sceptical is problematic, with almost as many sceptical sentences coded as positive as negative. 
 This is quite likely due to words that express a desire for stricter immigration and integration rules, 
-but that are coded as positive. We saw the word integrated above, but also words like 'secure' and 'effective' are coded as positive in the dictionary. 
+but that are coded as positive. We saw the word integrated above, but also words like 'secure' and 'effective' are coded as positive in the dictionary.
+
+### Exercise: Precision and recall per direction
+
+{{< include exercises/_ch10_ex_sentiment_precision_recall.qmd >}}
 
 
 ## Topic Modeling {#sec-textasdata-topicmodeling}
@@ -1029,3 +1055,27 @@ so the clustering does not have to 'discover' that e.g. *immigration* and *migra
 
 If you do want to use regular topic modeling, it is a good idea to check out Structural Topic Models [@roberts2014structural], which allow specifying covariates such as country or year to affect the topic loadings. 
 :::
+
+## Quiz questions {#sec-textasdata-quizquestions .unnumbered}
+
+{{< include quizzes/_quiz_widget.qmd >}}
+
+### @sec-textasdata-tokenization quiz: from characters to words
+
+{{< include quizzes/_ch10_quiz_tokenization.qmd >}}
+
+### @sec-textasdata-corpus quiz: corpus analysis and comparison
+
+{{< include quizzes/_ch10_quiz_corpus.qmd >}}
+
+### @sec-textasdata-ngrams quiz: collocations and n-grams
+
+{{< include quizzes/_ch10_quiz_ngrams.qmd >}}
+
+### @sec-textasdata-dictionary quiz: dictionary analysis
+
+{{< include quizzes/_ch10_quiz_dictionary.qmd >}}
+
+### @sec-textasdata-topicmodeling quiz: topic modeling
+
+{{< include quizzes/_ch10_quiz_topicmodel.qmd >}}
