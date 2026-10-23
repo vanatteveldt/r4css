@@ -1,0 +1,139 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Getting rid of 'the'</div>
+<p class="quiz-question">You have a tokenized data frame <code>words</code>:</p>
+
+| id | word |
+|---:|---|
+| 1 | the |
+| 1 | asylum |
+| 1 | seekers |
+| 2 | to |
+| 2 | immigration |
+
+<p>Which call removes the stop words, keeping <code>asylum</code>, <code>seekers</code> and <code>immigration</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — anti_join() keeps the rows of words that have no match in stop_words. Since both data frames have a word column, that is the column it joins on."><code>words |> anti_join(stop_words)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — inner_join() does the opposite: it keeps only the rows that do match, so you would be left with just the stop words 'the' and 'to'."><code>words |> inner_join(stop_words)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — left_join() keeps all rows of words, and only adds the columns of stop_words (such as lexicon) where there is a match. Nothing is removed."><code>words |> left_join(stop_words)</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — stop_words is a data frame, not a single word, so == compares each word with a whole data frame rather than checking whether it occurs in the list. To check membership you would need %in% and stop_words$word, but anti_join() is the tidy way to do this."><code>words |> filter(word != stop_words)</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: A different column name</div>
+<p class="quiz-question">A student tokenizes with <code>unnest_tokens(text, output=token)</code>, giving:</p>
+
+| id | token |
+|---:|---|
+| 1 | the |
+| 1 | borders |
+
+<p>Running <code>anti_join(stop_words)</code> on this data frame gives the error <em>`by` must be supplied when `x` and `y` have no common variables</em>. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the stop word list has a column called word, but here the tokens are in a column called token. With no column in common, anti_join() does not know what to join on. Either use output=word, or say what to join on with by = join_by(token == word).">The stop word list has a column <code>word</code>, while the tokens are in a column <code>token</code>, so the join has no column to match on.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — stop_words is available as soon as tidytext is loaded, and the error is about columns, not about a missing object.">Because <code>stop_words</code> needs to be loaded with <code>get_stopwords()</code> first.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — anti_join() works on any data frame, tokenized or not. It just needs a column to match on.">Because <code>anti_join()</code> only works on the output of <code>count()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the id column is not the problem; anti_join() looks for columns with the same name in both data frames, and there are none here.">Because the <code>id</code> column does not exist in <code>stop_words</code>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Us and them</div>
+<p class="quiz-question">Consider these two manifesto sentences:</p>
+
+| party | text |
+|---|---|
+| A | We must protect our borders against them. |
+| B | Newcomers are part of our society. |
+
+<p>For which research question would removing stop words (with <code>anti_join(stop_words)</code>) do the most harm?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — words like 'we', 'our' and 'them' are all on the English stop word list, so removing stop words would throw away exactly the words this question is about. How you preprocess should depend on your research question.">How parties draw boundaries between an in-group and an out-group (<em>we</em>, <em>our</em>, <em>them</em>).</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — for this question the content words (borders, newcomers, society) matter most, and those are not on the stop word list. Removing stop words would probably help by clearing away 'the' and 'of'.">Which substantive issues parties link to immigration (<em>borders</em>, <em>society</em>).</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — words like 'protect' and 'borders' are not stop words, so they survive stop word removal.">Whether parties use words like <em>protect</em> and <em>borders</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — stop word lists are designed for exactly this kind of situation: they remove very frequent words, which makes a list of the most frequent words more informative.">Which words are most frequent in the immigration sentences, apart from very common words like <em>the</em> and <em>to</em>.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Proportion versus log odds</div>
+<p class="quiz-question">These are two words from the comparison of Irish and US immigration sentences. The columns <code>us</code> and <code>ie</code> give how often each country uses the word, <code>prop_us</code> is the proportion of uses that are American (<code>us / (us + ie)</code>), and <code>log_odds_us</code> is the weighted log odds for the US (the higher, the more typical for the US):</p>
+
+| word | us | ie | prop_us | log_odds_us |
+|---|---:|---:|---:|---:|
+| aliens | 9 | 0 | 1.00 | 1.04 |
+| our | 66 | 21 | 0.76 | 1.85 |
+
+<p>By proportion, <em>aliens</em> is the more American word, as Irish manifestos never use it. By log odds, however, <em>our</em> is much more typical for the US. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — proportion reaches 1 for any word only one country uses, however rare it is. The weighted log odds takes frequency into account: with 87 occurrences, a difference as large as for 'our' is very unlikely to be due to chance, while 9 occurrences of 'aliens' is much weaker evidence.">Proportion is 1 for any word used by only one country, even a rare one; for a frequent word like <em>our</em>, a big difference is much less likely to be due to chance.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the log odds has no preference for shared words. A word used only by the US can still score high if it is frequent enough, such as 'nation' (16 times, only in the US), which scores 1.38. What matters is how strong the evidence is, and that depends on frequency.">The log odds prefers words that both countries use, and gives a lower score to words used by only one country.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the log odds is not a difference in counts. It compares the rates at which both countries use a word, and weights this by how certain we can be about that difference.">The log odds measures how many more times the US uses a word: 66 − 21 = 45 times for <em>our</em>, against only 9 for <em>aliens</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — tidylo does not use a stop word list. It is true that 'our' is on the standard English stop word list, which is one reason the chapter argues against removing stop words before a comparison: you would lose one of the most typical American words.">The log odds gives extra weight to <em>our</em> because it is a stop word.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: Missing zeros</div>
+<p class="quiz-question">After <code>count(country, word)</code>, you have:</p>
+
+| country | word | n |
+|---|---|---:|
+| Ireland | asylum | 32 |
+| Ireland | border | 1 |
+| United States | border | 8 |
+
+<p>Why does the chapter add <code>complete(country, word, fill = list(n = 0))</code> before calling <code>bind_log_odds()</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — count() only creates rows for combinations that occur, so there is no row saying that the US used 'asylum' zero times. Without that zero, the log odds of 'asylum' is not computed correctly, and words used by only one country get inflated scores. complete() adds the row United States / asylum / 0.">Without it there is no row for <em>asylum</em> in the US, so <code>bind_log_odds()</code> does not know that the US used it zero times, which distorts the score for words used by only one country.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — bind_log_odds() runs without complete(); it just gives misleading results for words that only one country uses. That's what makes this mistake easy to miss.">Because <code>bind_log_odds()</code> gives an error if any word is missing for a country.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — complete() adds rows, it never removes them. Removing rare words would be 'trimming', which needs a filter().">To remove words that only occur in one country, such as <em>asylum</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the plot works without it as well. complete() is needed for the log odds calculation itself, so that words not used by a country get a count of zero.">To make the plot later in the section look better.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q6: Reading the sign</div>
+<p class="quiz-question">These rows are taken from <code>immigration_comparison |> filter(country == "United States")</code>:</p>
+
+| country | word | n | n_other | log_odds_weighted |
+|---|---|---:|---:|---:|
+| United States | our | 66 | 21 | 1.85 |
+| United States | in | 75 | 88 | 0.00 |
+| United States | asylum | 0 | 32 | -1.86 |
+
+<p>What can you conclude from these values?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a positive score means the US manifestos use a word more than expected, a negative score means they use it less (so Ireland uses it more), and a score near zero means there is no real difference. That's why stop words like 'in' do not need to be removed: the comparison itself filters them out.">US manifestos overuse <em>our</em>, Irish manifestos overuse <em>asylum</em>, and <em>in</em> is used about equally in both.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the score is about how typical a word is for one country compared to the other, not about frequency. 'in' is the most frequent of these words, but it has a score of zero.">The higher the log odds score, the more often the word occurs, so <em>in</em> is used less often than <em>our</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the weighted log odds is not a ratio of counts; it is a statistic similar to a z-score. A negative score means the word is used relatively less in the US than in Ireland.">The Irish manifestos use <em>asylum</em> 1.86 times as often as the US manifestos.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'in' has a score of zero because both countries use it at about the same rate. It is frequent, but it is not typical for either country.">The word <em>in</em> is typical for US manifestos, as it is used 75 times.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q7: Custom stop words</div>
+<p class="quiz-question">To keep party names out of the comparison, the chapter builds a custom stop word list from the <code>party</code> column. Among others, it contains:</p>
+
+| word |
+|---|
+| fine |
+| gael |
+| left |
+| united |
+
+<p>What is the main downside of removing these words with <code>anti_join()</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a stop word list works on single words, without looking at their context. So 'left' is removed whether it is part of a party name or means 'we have left the EU', and 'united' disappears from 'United Nations' as well. Using n-grams such as fine_gael is a better solution.">Words like <em>left</em> and <em>united</em> are also removed when they are not part of a party name, such as in <em>United Nations</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — tokens are lowercased by unnest_tokens(), and so is the party list (it was also tokenized with unnest_tokens()), so the words do match.">The list will not match anything, because the party names are capitalized in the data.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — anti_join() only removes the matching rows (the words), not entire sentences.">All sentences that mention a party are removed from the analysis.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — you can combine any data frames with a word column using bind_rows(), which is exactly how the chapter combines country and party words.">You cannot combine a custom list with the country words, as <code>anti_join()</code> only accepts one stop word list.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

@@ -1,0 +1,117 @@
+The confusion matrix above shows that the sentiment dictionary performs poorly overall.
+But how well does it detect the sceptical statements in particular?
+
+::: {.exercise}
+Starting from the `predictions` data frame created above,
+compute the precision and recall of the sentiment dictionary for detecting *sceptical* statements.
+The result should be a data frame with a `precision` and a `recall` column.
+
+```{webr}
+#| setup: true
+#| exercise: ['ex_sentiment_precision_recall', 'ex_sentiment_per_direction']
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+bing <- sentiments |>
+  mutate(value = if_else(sentiment == "positive", 1, -1))
+immigration_sentiment <-  pimpo_en |>
+  filter(topic != "other")|>
+  select(id, country, party, topic, direction, text) |>
+  unnest_tokens(output=word, input=text) |>
+  left_join(bing, by="word")
+predictions <- immigration_sentiment |>
+  summarize(value = sum(value, na.rm = TRUE), .by = c(id, direction)) |>
+  mutate(predicted = case_when(value < 0 ~ "sceptical",
+                               value > 0 ~ "supportive",
+                               .default = "neutral"))
+```
+
+```{webr}
+#| exercise: ex_sentiment_precision_recall
+predictions
+```
+
+::: { .hint exercise="ex_sentiment_precision_recall"}
+::: { .callout-tip title="Hint:"}
+- Have a look at the precision and recall code in the callout in @sec-textasdata-topicdictionary above.
+  There, `relevant` indicated whether a sentence was actually about immigration,
+  and `match` whether the dictionary matched it.
+- What are the equivalents of these two columns if we want to detect sceptical statements?
+  You can create them with `mutate`.
+:::
+:::
+
+::: {.solution exercise="ex_sentiment_precision_recall"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- A sentence is relevant if it is actually sceptical: `direction == "sceptical"`.
+- A sentence is matched if the dictionary predicted it to be sceptical: `predicted == "sceptical"`.
+- With these two columns, we can use exactly the same `summarize` as in the callout.
+
+```{webr}
+#| exercise: ex_sentiment_precision_recall
+#| solution: true
+predictions |>
+  mutate(relevant = direction == "sceptical",
+         match = predicted == "sceptical") |>
+  summarize(precision = sum(relevant & match) / sum(match),
+            recall = sum(relevant & match) / sum(relevant))
+```
+
+So, the dictionary does quite poorly for sceptical statements:
+less than half of the sentences classified as sceptical are actually sceptical (47% precision),
+and it finds only 38% of the sceptical statements (recall).
+:::
+:::
+
+```{webr}
+#| exercise: ex_sentiment_precision_recall
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    gradethis::fail_if(!all(c("precision", "recall") %in% names(.result)),
+      "We can't find a `precision` and `recall` column yet -- have a look at the code in the callout above.")
+    gradethis::fail_if(nrow(.result) != 1,
+      "Your result should have a single row with the precision and recall for sceptical statements.")
+
+    predictions <- get("predictions", envir = .envir_result)
+    scores <- function(class) {
+      relevant <- predictions$direction == class
+      match <- predictions$predicted == class
+      c(precision = sum(relevant & match) / sum(match), recall = sum(relevant & match) / sum(relevant))
+    }
+    is_result <- function(precision, recall) {
+      isTRUE(all.equal(.result$precision, unname(precision))) && isTRUE(all.equal(.result$recall, unname(recall)))
+    }
+    sceptical <- scores("sceptical")
+    gradethis::fail_if(is_result(sceptical["recall"], sceptical["precision"]),
+      "It looks like precision and recall are swapped -- precision divides by what the dictionary predicted as sceptical, recall by what is actually sceptical.")
+    gradethis::fail_if(is_result(scores("supportive")["precision"], scores("supportive")["recall"]) ||
+                         is_result(scores("neutral")["precision"], scores("neutral")["recall"]),
+      "Close, but these are the scores for a different direction -- we want the precision and recall for *sceptical* statements.")
+    gradethis::pass_if(is_result(sceptical["precision"], sceptical["recall"]),
+      "Well done! You applied the precision and recall code to a different classification task.")
+    gradethis::fail(
+      "Your numbers are different from ours. Which sentences are relevant (actually sceptical), and which are matched (predicted as sceptical)?")
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+:::
+
+::: {.challenge title="Precision and recall for all directions"}
+- Can you compute the precision and recall for all three directions?
+  You could repeat the code above for each direction and combine the results with `bind_rows`, but there is also a much shorter way:
+  if you group by the actual `direction`, the recall for each direction is simply the proportion of correct predictions, `mean(predicted == direction)`.
+  What do you need to group by to compute the precision in the same way?
+- For which direction does the dictionary perform best? Can you explain why it performs so poorly for neutral statements?
+
+```{webr}
+#| exercise: ex_sentiment_per_direction
+predictions |>
+  summarize(recall = mean(predicted == direction), .by = direction)
+```
+:::

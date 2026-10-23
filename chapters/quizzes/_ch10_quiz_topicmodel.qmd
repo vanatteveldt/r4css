@@ -1,0 +1,108 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Casting to a matrix</div>
+<p class="quiz-question">Given these <code>tokens</code>:</p>
+
+| id | word |
+|---:|---|
+| 1 | secure |
+| 1 | borders |
+| 1 | borders |
+| 2 | secure |
+| 2 | jobs |
+
+```r
+tokens |>
+  count(id, word) |>
+  cast_sparse(row=id, column=word, value=n)
+```
+
+<p>What does this code produce? (In a sparse matrix, <code>.</code> means zero.)</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a document-term matrix has one row per document and one column per word, and since we pass value = n, the cells contain the counts from count(). Document 1 has borders = 2 and secure = 1. Because it is a sparse matrix, the zeros (.) are not actually stored."><table><tr><th></th><th>borders</th><th>secure</th><th>jobs</th></tr><tr><th>1</th><td>2</td><td>1</td><td>.</td></tr><tr><th>2</th><td>.</td><td>1</td><td>1</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that's the other way around: in a document-term matrix the documents are the rows and the words are the columns, as given by the row= and column= arguments."><table><tr><th></th><th>1</th><th>2</th></tr><tr><th>borders</th><td>2</td><td>.</td></tr><tr><th>secure</th><td>1</td><td>1</td></tr><tr><th>jobs</th><td>.</td><td>1</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this is what you would get without count() and value = n: cast_sparse() then only records whether a word occurs in a document. Because we pass the counts as value = n, document 1 gets a 2 for 'borders'."><table><tr><th></th><th>borders</th><th>secure</th><th>jobs</th></tr><tr><th>1</th><td>1</td><td>1</td><td>.</td></tr><tr><th>2</th><td>.</td><td>1</td><td>1</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this is the output of count(), which is still in a long format. cast_sparse() turns it into a wide matrix: somewhat like pivot_wider(), but with a more efficient storage format for matrices with mostly zeros."><table><tr><th>id</th><th>word</th><th>n</th></tr><tr><td>1</td><td>borders</td><td>2</td></tr><tr><td>1</td><td>secure</td><td>1</td></tr><tr><td>2</td><td>jobs</td><td>1</td></tr><tr><td>2</td><td>secure</td><td>1</td></tr></table></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: A bag of words</div>
+<p class="quiz-question">Consider these two sentences:</p>
+
+| id | text |
+|---:|---|
+| 1 | Unions fund parties |
+| 2 | Parties fund unions |
+
+<p>What do their rows in the document-term matrix look like?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a DTM is a 'bag of words': it only records how often each word occurs in a document and ignores word order. The two sentences mean very different things, but have exactly the same word counts.">They are identical, because a DTM only stores word counts and ignores word order.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — a DTM has one column per word, not per position, so it has no way of storing which word came first.">They are different, because <em>unions</em> is the first word in sentence 1 and the last word in sentence 2.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — unnest_tokens() lowercases by default, so 'Unions' and 'unions' are the same token. And even with capitals kept, that would not make the DTM record word order.">They are different, because <em>Unions</em> is capitalized in one sentence and not in the other.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'fund', 'parties' and 'unions' are not stop words, so they are all kept.">Both rows are empty, as all words are removed as stop words.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Terms and topics</div>
+<p class="quiz-question">From <code>posterior(t)</code> you can <code>pluck()</code> either <code>"terms"</code> or <code>"topics"</code>. After turning them into a long tibble, you get, for example:</p>
+
+| lda_topic | term | beta |
+|---|---|---:|
+| 5 | law | 0.030 |
+| 5 | english | 0.014 |
+
+| id | lda_topic | gamma |
+|---:|---|---:|
+| 226795 | 5 | 0.93 |
+| 226795 | 1 | 0.01 |
+
+<p>Which statement is correct?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the terms (beta) give the weight of each word within each topic, which you use to find a topic's top words. The topics (gamma) give how each document is divided over the topics, which you use to find the sentences that load highest on a topic.">The <code>beta</code> values say how important each word is for a topic; the <code>gamma</code> values say how much of each document belongs to each topic.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this swaps the two: beta comes from the terms (one value per word per topic), gamma from the topics (one value per document per topic).">The <code>beta</code> values say how much of each document belongs to each topic; the <code>gamma</code> values say how important each word is for a topic.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — LDA is a mixture model, so a document can belong to several topics at once. Here document 226795 is mostly topic 5 (93%), but the remaining 7% is spread over the other topics.">Document 226795 belongs only to topic 5, as each document is assigned to exactly one topic.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — beta is a weight (a probability), not a count; it tells you how likely the word is within the topic.">The word <em>law</em> occurs 0.03 times in topic 5.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: A different seed</div>
+<p class="quiz-question">You run the topic model twice, with a different seed, and look at the top words:</p>
+
+| run | lda_topic | top words |
+|---|---|---|
+| seed = 99 | 9 | asylum, seekers, health, services, community, ... |
+| seed = 123 | 10 | asylum, seekers, rights, women, human, ... |
+
+<p>What does this tell you?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the numbering of topics is arbitrary and changes with the seed, so you can only label a topic by looking at its top words and, importantly, at the texts that load highest on it. Note that the rest of the top words differ: LDA results always vary somewhat between runs.">Probably nothing much: topic numbers are arbitrary, so the same cluster can get a different number in each run.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both topics are clearly about asylum seekers, so both runs seem to have found a similar cluster; it just got a different number. The other top words differ somewhat, but that is normal for LDA and doesn't make either run wrong.">The model found completely different topics, so one of the runs is wrong.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the seed only fixes the randomness so that you get the same result when you run the same code again. It does not tell the model how many topics to find; that is k.">The seed determines the number of topics, so the second run has more topics.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the numbers carry no meaning; they are not ordered by size or importance.">The asylum topic is less important in the second run, as it has a higher number.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q5: Finding immigration sentences</div>
+<p class="quiz-question">You want to find all sentences about immigration in a corpus of manifestos. In this chapter, two methods were compared on the PImPo sentences:</p>
+
+| method | precision | recall |
+|---|---:|---:|
+| dictionary | 99% | 56% |
+| LDA topics 2, 3, 5 and 9 | 62% | 57% |
+
+<p>What is the best conclusion?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — LDA is not designed to find a topic you already know you are looking for; it is a tool for exploring which clusters of words occur in an unknown corpus. For a known concept like immigration, a (validated) dictionary or another targeted method is the better choice.">Topic modeling is mostly useful for exploring an unknown corpus, not for finding a topic you already know you're looking for.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the problem is not just the number of topics. LDA clusters words that co-occur, and those clusters often don't line up neatly with the topics you have in mind, however many you ask for.">LDA would beat the dictionary if you used a larger <code>k</code>, such as 20 topics.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the LDA topics find about as many immigration sentences as the dictionary (recall), but almost 4 in 10 of the sentences in these topics are not about immigration or integration at all, against hardly any for the dictionary (precision).">LDA is better, because it does not need a hand-crafted word list.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that's not the lesson here. Even the dictionary missed 44% of the immigration sentences, and neither method is perfect. The point is that each method has its own purpose, and you need to validate whichever you use.">Both methods are good enough, so it does not matter which one you use.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

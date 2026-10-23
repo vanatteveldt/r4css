@@ -1,0 +1,49 @@
+<div class="quiz">
+<div class="quiz-title">Q1: From sentences to words</div>
+<p class="quiz-question">Given this data frame <code>d</code>:</p>
+
+| id | text |
+|---:|---|
+| 1 | Secure our borders |
+| 2 | Welcome refugees |
+
+<p>Which data frame does <code>d |> unnest_tokens(text, output=word)</code> return?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — unnest_tokens() creates one row per word, keeps the other columns (id) so you know which sentence each word came from, and by default lowercases the words and drops the original text column."><table><tr><th>id</th><th>word</th></tr><tr><td>1</td><td>secure</td></tr><tr><td>1</td><td>our</td></tr><tr><td>1</td><td>borders</td></tr><tr><td>2</td><td>welcome</td></tr><tr><td>2</td><td>refugees</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — unnest_tokens() does lowercase by default (to_lower = TRUE), so 'Secure' becomes 'secure'. You can switch this off with to_lower = FALSE."><table><tr><th>id</th><th>word</th></tr><tr><td>1</td><td>Secure</td></tr><tr><td>1</td><td>our</td></tr><tr><td>1</td><td>borders</td></tr><tr><td>2</td><td>Welcome</td></tr><tr><td>2</td><td>refugees</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this is a list column, which is closer to what str_split() would give you. unnest_tokens() goes one step further and turns each word into its own row, so you get a tidy data frame with one word per row."><table><tr><th>id</th><th>word</th></tr><tr><td>1</td><td>&lt;chr [3]&gt;</td></tr><tr><td>2</td><td>&lt;chr [2]&gt;</td></tr></table></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the original text column is dropped by default. You can keep it with drop = FALSE, as in the tokenization examples in the chapter."><table><tr><th>id</th><th>text</th><th>word</th></tr><tr><td>1</td><td>Secure our borders</td><td>secure</td></tr><tr><td>1</td><td>Secure our borders</td><td>our</td></tr><tr><td>1</td><td>Secure our borders</td><td>borders</td></tr><tr><td>2</td><td>Welcome refugees</td><td>welcome</td></tr><tr><td>2</td><td>Welcome refugees</td><td>refugees</td></tr></table></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: What makes a token?</div>
+<p class="quiz-question">These are the tokens that <code>unnest_tokens()</code> produces for two texts:</p>
+
+| text | tokens |
+|---|---|
+| 1:30 to go 🙏 #ge2024 #ireland | 1 · 30 · to · go · ge2024 · ireland |
+| Sinn Féin's vice-president | sinn · féin's · vice · president |
+
+<p>Which statement about tokenization is true?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — a tokenizer follows general rules based on spaces and punctuation, and each of these splits is defensible. But for a given research question, 1:30 or Sinn Féin might be a single unit, so it is up to you to check whether the tokens match what you want to count.">Tokenization mostly splits text at spaces and punctuation, so whether its tokens match what <em>you</em> consider a word (a time, a party name) depends on your analysis, and you should check the output.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the tokenizer doesn't know what the text means: 1:30 is split into 1 and 30, and Sinn Féin into two tokens. Keeping such units together takes extra steps, such as the n-grams in a later section.">The tokenizer recognizes meaningful units such as times and party names, and keeps them together as one token.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — tokenization does not blindly split on all punctuation: the apostrophe in féin's is kept inside the token, while the hyphen in vice-president is split on.">Tokenization splits text at every space and every punctuation mark.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — there is no single correct tokenization: whether 1:30 should be one token or two depends on what you want to do. That's exactly why you need to check the output yourself.">There is one correct way to tokenize a text, so with a good tokenizer such as <code>unnest_tokens()</code> you don't need to check the output.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Looking for asylum in German</div>
+<p class="quiz-question">You tokenize the Austrian sentences and run <code>filter(word == "asyl")</code> to find sentences about asylum. The sentence <em>Verhinderung von Kettenasylantragstellungen</em> ("preventing chain asylum applications") is not found. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — German glues words together into compounds, and since there are no spaces in Kettenasylantragstellungen, it stays one token. An exact comparison with 'asyl' will never match it. Searching within tokens (e.g. with str_detect) or splitting compounds would be needed.">German compounds are not split, so the whole compound <code>kettenasylantragstellungen</code> is one token, which is not equal to <code>asyl</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — unnest_tokens() works for many languages, even Chinese, which does not use spaces at all. The problem is not the language as such, but that the compound is (defensibly) treated as one word.">Because <code>unnest_tokens()</code> only works for English text.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — unnest_tokens() lowercases by default, and the search term 'asyl' is already in lower case, so capitalization is not the problem here.">Because the tokens are capitalized (<code>Kettenasylantragstellungen</code>), and the search is in lower case.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'von' would be a stop word, but the sentence is only missed because no token equals 'asyl'; removing stop words would not change that.">Because <code>von</code> is a stop word, so the whole sentence is removed.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

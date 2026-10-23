@@ -1,0 +1,70 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Bigrams of a short sentence</div>
+<p class="quiz-question">Which tokens does <code>tibble(text = "rule of law matters") |> unnest_tokens(text, output=token, token="ngrams", n=2)</code> produce?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — n-grams overlap: each bigram starts one word after the previous one. A sentence of 4 words therefore has 3 bigrams."><code>rule of</code>, <code>of law</code>, <code>law matters</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — n-grams overlap rather than cutting the text into consecutive chunks. 'of law' is also a bigram in this sentence."><code>rule of</code>, <code>law matters</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — unnest_tokens() does not know which word combinations are meaningful; it just gives you every pair of adjacent words. Finding the meaningful ones is what PMI is for."><code>rule of law</code>, <code>matters</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that is what you get with the default token = 'words'. With token = 'ngrams' and n = 2, each token is a pair of words."><code>rule</code>, <code>of</code>, <code>law</code>, <code>matters</code></li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Stop words and bigrams</div>
+<p class="quiz-question">You have these bigrams in a column called <code>word</code>:</p>
+
+| word | n |
+|---|---:|
+| of the | 900 |
+| in the | 700 |
+| asylum seekers | 60 |
+
+<p>What happens if you run <code>anti_join(stop_words)</code> on this data frame?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — anti_join() compares whole values: 'of the' is not equal to 'of' or to 'the', so no row matches the stop word list and nothing is removed. That's why the chapter builds a regular expression that detects stop words inside each bigram instead.">Nothing is removed, because no bigram is exactly equal to a single stop word.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that's what you would want, but anti_join() compares whole values: 'of the' as a whole is not in the stop word list, so it is kept.">The rows <em>of the</em> and <em>in the</em> are removed.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — joins never change the values in a column; they only keep or drop (or add) rows and columns.">The stop words are removed from inside the bigrams, leaving <em>of</em>, <em>in</em> and <em>asylum seekers</em>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both data frames have a column called word, so the join runs fine. It just doesn't find any matches.">It gives an error, because the columns have no common names.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Which bigram is a collocation?</div>
+<p class="quiz-question">Consider these bigrams and the frequencies of their words in the corpus:</p>
+
+| bigram | n (bigram) | n (first word) | n (second word) |
+|---|---:|---:|---:|
+| of the | 900 | 4000 | 8000 |
+| fianna fáil | 40 | 40 | 40 |
+| will also | 30 | 1200 | 300 |
+
+<p>Which bigram will have the highest pointwise mutual information (PMI)?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — PMI compares how often a bigram occurs with how often you would expect it based on its words' frequencies. 'fianna' and 'fáil' only ever occur together, which is far more often than you would expect by chance. (Their rarity actually makes the score even higher: PMI is known to favour rare word pairs, which is one reason to set a minimum frequency.)"><em>fianna fáil</em>, because its words only ever occur together.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'of the' is the most frequent bigram, but 'of' and 'the' are so frequent that you would expect them next to each other quite often anyway. PMI corrects for this, which is why such bigrams are not at the top of the PMI list."><em>of the</em>, because it is by far the most frequent bigram.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — PMI is not about which bigram is least frequent; it compares the bigram's frequency to what you'd expect from its words. 'will' and 'also' occur often without each other, so their combination is not very surprising."><em>will also</em>, because it is the least frequent bigram.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — PMI takes the frequencies of the separate words into account, so bigrams with the same count can have very different PMI scores.">They all have the same PMI, as PMI only depends on the bigram count.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: Joining collocations</div>
+<p class="quiz-question">The <code>replacements</code> vector contains patterns (as names) and replacements (as values), for example:</p>
+
+| pattern (name) | replacement (value) |
+|---|---|
+| `\bunited states\b` | `united_states` |
+| `\bfine gael\b` | `fine_gael` |
+
+<p>A student runs <code>mutate(text = str_replace_all(text, replacements))</code> on the sentence <em>The United States will act</em>, but the text does not change. Why?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the collocations come from tokens, which unnest_tokens() lowercased, but the original text still has capitals. str_replace_all() is case sensitive, so 'united states' does not match 'United States'. That's why the chapter uses str_replace_all(str_to_lower(text), replacements).">The patterns are lower case, but the text is not, and <code>str_replace_all()</code> is case sensitive. The text should be lowercased first with <code>str_to_lower()</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — str_replace_all() accepts a named vector as its second argument, replacing each pattern (name) by its value. That's exactly what the chapter does.">Because <code>str_replace_all()</code> cannot use a named vector; you need a separate call for each collocation.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the replacement happens on the text before tokenizing. That's the point: afterwards, unnest_tokens() keeps united_states together as one token, because it does not split on underscores.">Because the text needs to be tokenized with <code>unnest_tokens()</code> before you can replace collocations.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the word boundary marker matches at the start and end of the text as well as next to spaces, so it does not prevent a match here; the capital letters do.">Because the word boundary marker (<code>\\b</code>) in the pattern prevents matches at the start of a sentence.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>

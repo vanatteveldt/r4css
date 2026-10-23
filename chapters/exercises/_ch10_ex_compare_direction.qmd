@@ -1,0 +1,149 @@
+At the start of this chapter we compared the words used in sceptical and supportive statements about immigration,
+using a simple proportion. Now that we know about weighted log odds, we can redo that comparison properly.
+
+::: {.exercise}
+Compare the words used in sceptical and supportive statements using weighted log odds.
+Use the same sentences as in the opening example:
+sentences about immigration (not integration) with a sceptical or supportive direction, from all English-language countries.
+It's up to you to decide which cleaning steps make sense here.
+The result should be a data frame with the weighted log odds for each word and direction,
+shown in descending order of log odds.
+
+```{webr}
+#| setup: true
+#| exercise: ['ex_compare_direction', 'ex_compare_direction_challenge']
+library(tidyverse)
+library(tidytext)
+library(tidylo)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+country_words <- tibble(word=c("ireland", "irish", "america", "american", "americans", "united", "states"))
+party_words <- pimpo_en |>
+  filter(country %in% c("United States", "Ireland")) |>
+  select(party) |>
+  unnest_tokens(input = party, output = word) |>
+  distinct()
+custom_stopwords <- bind_rows(country_words, party_words)
+```
+
+```{webr}
+#| exercise: ex_compare_direction
+pimpo_en
+```
+
+::: { .hint exercise="ex_compare_direction"}
+::: { .callout-tip title="Hint:"}
+The steps are the same as in the country comparison above, so have a look at that code.
+
+- First select the right sentences, then split them into words.
+- Do you want to remove the possessive `'s` or stop words, as discussed above?
+- Then count how often each word is used in each direction.
+- Make sure that every word has a count for *both* directions, even if it is zero.
+- Compute the log odds: which column defines the two groups that you are comparing?
+- Arrange by log odds (descending) to show the most typical words.
+:::
+:::
+
+::: {.solution exercise="ex_compare_direction"}
+::: { .callout-important icon=false title="🎓 Solution:"}
+
+- Use `filter(topic == "immigration", direction != "neutral")` to select the sentences. As `pimpo_en` only contains English-language countries, there is no need to filter on country.
+- Tokenize with `unnest_tokens`. We chose to remove the possessive `'s` with `str_remove`, but to keep the stop words, as words like *we* or *our* can say a lot about how parties frame immigration. Removing (or keeping) the `'s` or stop words would also be fine, as long as you can justify your choice.
+- Use `count(direction, word)` to count each word per direction.
+- Use `complete()` to add a zero count for words that are only used in one direction. If you skip this step, `bind_log_odds` doesn't know that these words were never used in the other direction, and their log odds will be wrong.
+- `bind_log_odds(direction, word, n)` compares the two directions.
+- `arrange` to see the most typical words.
+
+```{webr}
+#| exercise: ex_compare_direction
+#| solution: true
+pimpo_en |>
+  filter(topic == "immigration", direction != "neutral") |>
+  unnest_tokens(text, output=word) |>
+  mutate(word = str_remove(word, "['’]s$")) |>
+  count(direction, word) |>
+  complete(direction, word, fill = list(n = 0)) |>
+  bind_log_odds(direction, word, n) |>
+  arrange(desc(log_odds_weighted))
+```
+
+Sceptical statements are characterized by *illegal*, *border(s)*, *enforcement*, *aliens*, *boats* and *enter*,
+while supportive statements talk about *refugees*, *rights*, *visa*, *family* and *reform*.
+This is quite similar to the opening example, but the log odds also pick up more frequent words that are only somewhat overused,
+such as *illegal* (22 times in sceptical statements) or even *a* in supportive statements.
+:::
+:::
+
+```{webr}
+#| exercise: ex_compare_direction
+#| check: true
+
+gradethis::grade_this({
+  if (is.data.frame(.result)) {
+    # Diagnose the steps in order, so a partial pipeline gets a hint for the next step
+    gradethis::fail_if("topic" %in% names(.result) && any(.result$topic != "immigration"),
+      "Start by filtering the data to keep only the sentences about immigration (not integration or other topics).")
+    gradethis::fail_if("direction" %in% names(.result) && any(is.na(.result$direction) | .result$direction == "neutral"),
+      "Your data still contains neutral statements -- filter them out so you only keep sceptical and supportive sentences.")
+    gradethis::fail_if("text" %in% names(.result),
+      "Good start! Now split the sentences into words with `unnest_tokens`.")
+    gradethis::fail_if(!"word" %in% names(.result),
+      "We can't find a `word` column -- did you split the sentences into words with `unnest_tokens(text, output=word)`?")
+    gradethis::fail_if(!"n" %in% names(.result),
+      "Now count how often each word is used in each direction.")
+    gradethis::fail_if(!any(.result$n == 0),
+      "None of your words has a count of zero yet. Make sure every word has a count for both directions, even if it is zero (see `complete()` in the country comparison). Without the zeros, the log odds for words used in only one direction will be wrong.")
+    gradethis::fail_if(!"log_odds_weighted" %in% names(.result),
+      "Now compute the log odds with `bind_log_odds`.")
+    gradethis::fail_if(!"direction" %in% names(.result),
+      "We can't find a `direction` column -- are you comparing the words per direction?")
+    # Accept all four combinations of removing (or keeping) the 's and stop words
+    reference <- function(remove_s, remove_stopwords) {
+      words <- get("pimpo_en", envir = .envir_result) |>
+        dplyr::filter(topic == "immigration", direction != "neutral") |>
+        tidytext::unnest_tokens(text, output = word)
+      if (remove_s) words <- dplyr::mutate(words, word = stringr::str_remove(word, "['’]s$"))
+      if (remove_stopwords) words <- dplyr::anti_join(words, tidytext::stop_words, by = "word")
+      words |>
+        dplyr::count(direction, word) |>
+        tidyr::complete(direction, word, fill = list(n = 0)) |>
+        tidylo::bind_log_odds(direction, word, n)
+    }
+    matches <- function(ref) {
+      joined <- dplyr::inner_join(.result, ref, by = c("direction", "word"))
+      nrow(.result) == nrow(ref) && nrow(joined) == nrow(ref) &&
+        isTRUE(all.equal(joined$log_odds_weighted.x, joined$log_odds_weighted.y))
+    }
+    correct <- matches(reference(TRUE, FALSE)) || matches(reference(FALSE, FALSE)) ||
+      matches(reference(TRUE, TRUE)) || matches(reference(FALSE, TRUE))
+    gradethis::fail_if(correct && is.unsorted(-.result$log_odds_weighted),
+      "Almost there! Now sort the result in descending order of log odds, so the most typical words come first.")
+    gradethis::pass_if(correct,
+      "Well done! You found the log odds for each word and direction. Have a look at the solution to see which cleaning steps we chose.")
+    gradethis::fail(
+      "Your result is different from ours. Check your filter: we want only sentences about immigration (not integration) that are sceptical or supportive. If you used other cleaning steps than removing the `'s` or the standard `stop_words`, your result may well be fine -- compare it with the solution.")
+  }
+
+  {{< include exercises/_check.qmd >}}
+})
+```
+:::
+
+::: {.challenge title="Australia versus the US"}
+- Which of the two comparisons (the proportions at the start of the chapter, or the log odds above) tells you more about how sceptical parties talk about immigration? Why?
+- Can you change the code below to compare Australian and American manifestos? What do you notice about the top words? How can you fix this?
+
+```{webr}
+#| exercise: ex_compare_direction_challenge
+pimpo_en |>
+  filter(topic %in% c("immigration", "integration"),
+         country %in% c("United States", "Ireland")) |>
+  unnest_tokens(text, output=word) |>
+  mutate(word = str_remove(word, "['’]s$")) |>
+  anti_join(custom_stopwords) |>
+  count(country, word) |>
+  complete(country, word, fill = list(n = 0)) |>
+  bind_log_odds(country, word, n) |>
+  arrange(desc(log_odds_weighted))
+```
+:::

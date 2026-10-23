@@ -1,0 +1,29 @@
+```{webr}
+#| setup: true
+#| exercise: ex_dictionary_playground
+library(tidyverse)
+library(tidytext)
+pimpo <- read_csv("data/pimpo.csv")
+pimpo_en <- filter(pimpo, country != "Austria")
+```
+
+::: {.challenge title="Improving the dictionary"}
+The code below combines all steps from this section: matching the dictionary, and computing precision and recall.
+
+```{webr}
+#| exercise: ex_dictionary_playground
+immigration_pattern <- "asyl|immigra|migra|refugee|foreigner|emigra"
+pimpo_en |>
+  select(id, topic, text) |>
+  unnest_tokens(input="text", output="word") |>
+  mutate(immigration = str_starts(word, immigration_pattern)) |>
+  summarize(match = any(immigration), .by = c(id, topic)) |>
+  mutate(relevant = topic != "other") |>
+  summarize(precision = sum(relevant & match) / sum(match),
+            recall = sum(relevant & match) / sum(relevant))
+```
+
+- How would you extend the dictionary to get better recall, especially for integration? Does it work? What happens to the precision?
+- How could you use the corpus analysis and comparison techniques from @sec-textasdata-corpus to find candidate words for the dictionary? Which sentences would you compare?
+- If you choose words that way, do you think the precision and recall computed above are still a good estimate of how well your dictionary would work on new texts? Why (not)? How can this be improved?
+:::

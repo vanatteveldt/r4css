@@ -1,0 +1,95 @@
+<div class="quiz">
+<div class="quiz-title">Q1: Matching word stems</div>
+<p class="quiz-question">The immigration dictionary is applied to tokens with <code>str_starts(word, "asyl|immigra|migra")</code>. What does it return for these four words?</p>
+
+| word |
+|---|
+| immigrants |
+| asylum |
+| emigrated |
+| transmigration |
+
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — str_starts() only matches at the start of the word. 'emigrated' and 'transmigration' contain 'migra', but don't start with it. That's why the chapter's pattern also includes 'emigra'."><code>TRUE</code>, <code>TRUE</code>, <code>FALSE</code>, <code>FALSE</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — that is what str_detect() would give, as it finds the pattern anywhere in the word. str_starts() only matches at the start, so 'emigrated' and 'transmigration' are not matched."><code>TRUE</code>, <code>TRUE</code>, <code>TRUE</code>, <code>TRUE</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 'asyl' is a stem, not a full word: str_starts() matches any word that starts with it, including 'asylum'."><code>TRUE</code>, <code>FALSE</code>, <code>FALSE</code>, <code>FALSE</code></li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the | means 'or': the word needs to start with any one of the alternatives, not with all of them."><code>FALSE</code>, <code>FALSE</code>, <code>FALSE</code>, <code>FALSE</code> — no word starts with all three stems.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q2: Precision and recall</div>
+<p class="quiz-question">A dictionary for detecting sentences about the economy gives this confusion matrix on 1,000 hand-coded sentences:</p>
+
+| topic | FALSE | TRUE |
+|---|---:|---:|
+| economy | 120 | 80 |
+| other | 780 | 20 |
+
+<p>What are the precision and recall of the dictionary?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the dictionary matched 80 + 20 = 100 sentences, of which 80 were really about the economy: precision is 80/100 = 80%. Of the 80 + 120 = 200 economy sentences, it found 80: recall is 80/200 = 40%. As in the chapter, when it finds something it is usually right, but it misses many relevant sentences.">Precision 80%, recall 40%</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this swaps the two. Precision looks at the matched sentences (the TRUE column): how many of them are relevant? Recall looks at the relevant sentences (the economy row): how many of them were found?">Precision 40%, recall 80%</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 86% is the accuracy: (80 + 780) / 1000. Accuracy looks high because most sentences are not about the economy and are correctly left alone, which hides that more than half of the economy sentences are missed.">Precision and recall are both 86%</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — 80 is the number of true positives, but precision and recall are proportions: you need to divide by the number of matched sentences (for precision) or relevant sentences (for recall).">Precision 80%, recall 80%</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q3: Joining the sentiment dictionary</div>
+<p class="quiz-question">Given these <code>tokens</code>, and an excerpt of the Bing dictionary <code>bing</code>:</p>
+
+:::: {layout-ncol=2}
+
+| id | word |
+|---:|---|
+| 1 | effective |
+| 1 | enforcement |
+| 2 | border |
+| 2 | control |
+
+| word | sentiment | value |
+|---|---|---:|
+| effective | positive | 1 |
+| illegal | negative | -1 |
+| secure | positive | 1 |
+
+::::
+
+<p>The sentiment score of each sentence is computed with:</p>
+
+```r
+tokens |>
+  left_join(bing, by = "word") |>
+  summarize(value = sum(value, na.rm = TRUE), .by = id)
+```
+
+<p>Why does the chapter use <code>left_join()</code> here rather than <code>inner_join()</code>?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — inner_join() only keeps tokens that occur in the dictionary, so sentence 2 would disappear completely. With left_join(), all tokens are kept, unmatched words get NA, and sentence 2 ends up with a score of zero when you sum with na.rm = TRUE.">With <code>inner_join()</code>, sentence 2 would silently disappear, as none of its words are in the dictionary.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both joins would give 'effective' a value of 1. The difference is in what happens to the words (and sentences) without any match.">With <code>inner_join()</code>, <em>effective</em> would not get a sentiment value.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — left_join() does not give words a value of zero; it gives them NA, which is why the chapter uses sum(value, na.rm = TRUE).">Because <code>left_join()</code> gives all words that are not in the dictionary a value of 0.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — both joins need a common column, and here both data frames have a word column. Either would run without an error.">Because <code>inner_join()</code> gives an error when not all words are in the dictionary.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
+
+<div class="quiz">
+<div class="quiz-title">Q4: A positive sceptic</div>
+<p class="quiz-question">This sentence was hand-coded as <em>sceptical</em> about immigration:</p>
+
+| text | direction |
+|---|---|
+| We will secure our borders with effective enforcement. | sceptical |
+
+<p>The Bing dictionary gives it a positive score, as <em>secure</em> and <em>effective</em> are positive words. What does this illustrate?</p>
+<ul class="quiz-choices">
+<li class="quiz-choice" data-correct="true" data-explain="Right — the sentence uses positive words, but its stance on immigration is sceptical. A general sentiment dictionary measures tone, not stance, which is why it performs so poorly here, and why you always need to validate a dictionary against hand coding for your own question.">A general sentiment dictionary measures the tone of the words, which is not the same as a position on immigration.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the dictionary did work as intended: 'secure' and 'effective' are positive words. The problem is that positive tone doesn't mean a supportive stance.">The <code>left_join()</code> did not work, so the wrong words were matched.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — removing stop words would remove 'we', 'will', 'our' and 'with', but those have no sentiment value anyway. The score would stay positive.">Stop words should have been removed before applying the dictionary.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — this sentence is fairly clearly sceptical about immigration. The issue is a mismatch between what the dictionary measures and what we want to measure.">The hand coding is probably wrong, as the sentence is clearly positive.</li>
+</ul>
+<p class="quiz-feedback" hidden></p>
+</div>
