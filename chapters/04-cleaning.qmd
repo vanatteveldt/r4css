@@ -1,9 +1,7 @@
----
-title: Data cleaning
----
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
+
+<!-- TODO: Merge this into chapter 3? -->
 
 ```{webr}
 #| setup: true
@@ -15,14 +13,41 @@ gap_asia <- filter(gap, continent == "Asia")
 gap_dirty <- rename(gap, `Life Expectancy`=life_expectancy)
 ```
 
+# Data cleaning {#sec-datacleaning}
+
 In this chapter we will start our real deep dive into tidyverse for data analysis.
 Most of the code here will be aimed at *data cleaning*:
-preparing the data for analysis by selecting the appropriate rows and columns, re-ordering the data, and calculating new columns.
+preparing the data for analysis by selecting the appropriate rows and columns, dealing with missing values, and re-ordering the data.
 
-## The data challenge: Mind the gap!
+## Chapter objectives {.unnumbered}
+
+At the end of this chapter you will be able to use tidyverse functions to:
+
++ Select and rename columns (@sec-select)
++ Filter rows based on one or more conditions (@sec-filter)
++ Deal with missing values (@sec-filter)
++ Sort data (@sec-arrange)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-datacleaning-quizquestions) that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `select()` | keep (or drop) specific columns, optionally renaming them | @sec-select |
+| `rename()` | rename columns, keeping all other columns | @sec-select |
+| `filter()` | keep only rows that match one or more conditions | @sec-filter |
+| `is.na()` | is the value missing? | @sec-filter |
+| `drop_na()` | remove rows with missing values | @sec-filter |
+| `arrange()` | sort rows by one or more columns | @sec-arrange |
+| `desc()` | sort in descending order (within `arrange`) | @sec-arrange |
+
+:::
+
+## Data used in this chapter: Mind the gap! {.unnumbered}
 
 For this example, let's have a look at the `gapminder` dataset,
-which contains collection of worldwide, long-term statistics on social, economic, and environmental development.
+which contains a collection of worldwide, long-term statistics on social, economic, and environmental development.
 
 This dataset is available in R directly in the `dslabs` (data science labs) package. Note that if you run this on your own computer you may have to install the package first with `install.packages("dslabs")`.
 Let's convert the data to a tidyverse 'tibble' and look at the top rows:
@@ -64,7 +89,7 @@ you will be able to answer questions like this.
 :::
 
 
-## Managing columns with `select` and `rename`
+## Managing columns with `select` and `rename` {#sec-select}
 
 Many datasets contain many more columns than you need,
 and sometimes also have column names that are hard to understand (like `q12`)
@@ -270,7 +295,7 @@ Note that if you provide multiple columns to `drop_na` it drops rows where any o
 
 {{< include exercises/_ch04_ex_filter_na.qmd >}}
 
-## Sorting data with `arrange`
+## Sorting data with `arrange` {#sec-arrange}
 
 The output in the examples above were all shown in the sort order the data originally had, which turns out to be by year (starting with 1960) and then by country. In many cases, you want to sort by value so you can immediately see e.g. which countries have the highest life expectancy.
 
@@ -324,7 +349,7 @@ To view missing values, you need to do a (temporary) filter to select the missin
 
 {{< include exercises/_ch04_ex_arrange.qmd >}}
 
-### GDP and life expectancy
+## Wrap-up: GDP and life expectancy
 
 In the exercise above, you prepared the dataset for determining the relation between GDP and life expectancy.
 
@@ -332,7 +357,7 @@ The code below finalizes this exercise by
 using `mutate` to compute the GDP per capita,
 and using `ggplot` to show the relation.
 These functions are the topic of the next two chapters,
-so stay tuned to get a more in-depth explanation
+so stay tuned to get a more in-depth explanation.
 
 ```{webr}
 #| setup: true
@@ -369,7 +394,7 @@ that's no reason to not play around with it:
 - What happens to the plot when you replace `gdp_per_capita` by `log10(gdp_per_capita)`? Does it change the substantive interpretation? Why would you do this?
 :::
 
-## Quiz questions
+## Quiz questions {#sec-datacleaning-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 
