@@ -1,7 +1,3 @@
----
-title: Meet the Tidyverse
----
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
@@ -12,8 +8,7 @@ title: Meet the Tidyverse
 library(tidyverse)
 ```
 
-
-## Introduction to the Tidyverse
+# Meet the Tidyverse {#sec-tidyverse}
 
 The goal of this chapter is to get you acquainted with the
 [Tidyverse](https://www.tidyverse.org/). Tidyverse is a collection of
@@ -30,6 +25,7 @@ packages, which contains most of the tools we’re using below, but it
 also contains functions for reading, analysing and visualising data that
 will be explained later.
 
+
 ::: {.callout-tip title="Info"}
 Throughout this chapter (and other chapters) there are interactive code boxes
 and exercises marked with the [▷ Run Code] button.
@@ -41,7 +37,31 @@ So, feel free to just play around and explore!
 
 
 
-## The tidyverse package
+## Chapter objectives {.unnumbered}
+
+This chapter introduces the tidyverse package and the 'data frame' (or *tibble*) as the main data type we will be using. At the end of the chapter you will be able to:
+
++ Install and activate packages such as `tidyverse`, and dealing with common errors (@sec-tidyverse-package)
++ Inspect data frames using e.g. `glimpse` and `head` (@sec-dataframes)
++ Calling functions and assigning their results to objects (@sec-assigning)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-tidyverse-quizquestions) that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `install.packages()` | install a package (once per computer) | @sec-tidyverse-package |
+| `library()` | activate an installed package (every session) | @sec-tidyverse-package |
+| `head()` | show the first rows of a data frame | @sec-dataframes |
+| `glimpse()` | show all columns with their type and some example values | @sec-dataframes |
+| `View()` | open a data frame in a spreadsheet-like view (RStudio only) | @sec-dataframes |
+| `filter()` | select rows that match a condition | @sec-assigning |
+| `<-` | assign the result of a function to an object | @sec-assigning |
+
+:::
+
+## The tidyverse package {#sec-tidyverse-package}
 
 Tidyverse is a *package* (or actually a collection of packages).
 This means that it's not included in R, but you need to install it separately.  You've probably already done that, but if not,
@@ -79,7 +99,7 @@ By including the command and full error message, they will be able to help you m
 only say that "it doesn't work".
 :::
 
-## Data Frames
+## Data Frames {#sec-dataframes}
 
 In R, most data is in what we call a `data frame`:
 a rectangular data set consisting of rows
@@ -185,7 +205,7 @@ Assign to a new object if you need to do specific analyses on e.g. a subset of t
 but later want to return to the original for other analyses.
 Finally, if you only want to inspect the data there is no need to assign it to anything.
 
-### Looking ahead
+## Looking ahead {.unnumbered}
 
 This chapter introduced the idea of the tidyverse and the *data frame* (or tibble) as its main data structure. It also introduced the idea of using *functions* to inspect or transform data.
 Over the next chapters, we'll dive into the toolkit of functions that tidyverse offers: cleaning data, transforming and summarizing it, visualizing it, and reshaping it for analysis.
@@ -198,7 +218,7 @@ Pick an interesting social science question that could be answered with this dat
 What data cleaning, analysis, and/or visualization would be needed to get to this answer?
 :::
 
-## Quiz questions
+## Quiz questions {#sec-tidyverse-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 
