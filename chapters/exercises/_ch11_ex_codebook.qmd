@@ -215,6 +215,7 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::
 
 ::: {.challenge title="Did the codebook help?"}
 - Compare the accuracy of Gemma with the new instructions to the accuracy we found in @sec-llm-validation.
@@ -228,6 +229,5 @@ gradethis::grade_this({
 - On your own computer, with a real LLM (see @sec-llm-api and @sec-ollama), try to improve the instructions further.
   For example, you could add decision rules for difficult cases, or give an example for each category.
   Does it help? Does it help for all models?
-:::
 :::
 

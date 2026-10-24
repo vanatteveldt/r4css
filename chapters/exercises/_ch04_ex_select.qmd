@@ -4,7 +4,6 @@ As mentioned above, we want to find the relation between GDP per capita and fert
 Select only the country, continent, year, fertility, population and gdp columns.
 As part of the select command, rename the gdp column to GDP.
 Assign the result to a new object named `gap_cleaned`
-:::
 
 
 ```{webr}
@@ -66,3 +65,4 @@ gradethis::grade_this({
 
 })
 ```
+:::

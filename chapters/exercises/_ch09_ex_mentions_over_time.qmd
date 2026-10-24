@@ -99,6 +99,7 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::
 
 ::: {.challenge title="Trump vs. Harris: a battle of attention"}
 Extend the analysis to compare Trump and Harris:
@@ -118,5 +119,4 @@ Some questions to think about:
 #| exercise: ex_mentions_trump_challenge
 head(posts)
 ```
-:::
 :::

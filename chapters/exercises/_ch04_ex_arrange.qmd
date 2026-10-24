@@ -5,7 +5,6 @@ From the `gap_asia` dataset, take the country, year, life_expectancy, population
 Then, subset the data to take only the year 2010.
 Finally, arrange by gdp, starting from the richest country.
 Assign the final and all intermediate results to `gap_asia_subset`
-:::
 
 
 ```{webr}
@@ -81,3 +80,4 @@ if (is.data.frame(.result)) {
 
 })
 ```
+:::

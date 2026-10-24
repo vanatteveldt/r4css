@@ -5,7 +5,6 @@ Starting from the original `gap` dataset,
 filter the data to keep only the data from 2000 (including 2000) from either Southern or South-Eastern Asia.
 
 Assign the result to a new object named `gap_sea_recent`
-:::
 
 
 ```{webr}
@@ -70,3 +69,4 @@ gradethis::grade_this({
 
 })
 ```
+:::

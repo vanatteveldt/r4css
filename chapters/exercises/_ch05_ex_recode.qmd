@@ -4,7 +4,6 @@ To see whether films that pass the Bechdel test do better or worse financially, 
 In the code below, starting from the original `bechdel` dataset, compute two columns:
 - `roi`: the total gross income divided by the budget
 - `passed`: Use `if_else` to determine whether a film passed the test or not. Treat both `ok` and `ok-disagree` as passing.
-:::
 
 
 ```{webr}
@@ -66,6 +65,7 @@ gradethis::grade_this({
 })
 
 ```
+:::
 
 ::: {.challenge}
 The code above computed the needed columns (`roi` and `passed`) -- what would the next step be for answering the question whether there is a relation between the two? What data steps would you need to get to that answer?

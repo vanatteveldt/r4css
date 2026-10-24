@@ -7,7 +7,6 @@ The spaghetti plot was far too crowded to tell which ones, so let's ask the data
 
 Fill in the blanks below to find, for each Asian country, the year in which its fertility was highest,
 and then keep only the countries that peaked after 1980.
-:::
 
 ```{webr}
 #| setup: true
@@ -92,6 +91,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 ::: {.exercise}
 **Part (b): show them**
@@ -108,7 +108,6 @@ Fill in the blanks to:
 
 - make sure the grey background lines are drawn per country rather than all connected;
 - tell the second `geom_line` to use the `outliers` data rather than all of Asia.
-:::
 
 ```{webr}
 #| setup: true
@@ -204,6 +203,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 This exercise represented a typical data science cycle:
 you plot all data (the 'spaghetti plot' made earlier), 

@@ -15,7 +15,6 @@ This should result in a dataset that looks like this:
 | ...         | ...   | ...   | ...    |
 
 Build the pipeline up one step at a time: uncomment and complete a line, run the code to see what you get, and only then move on to the next line.
-:::
 
 ```{webr}
 #| setup: true
@@ -111,3 +110,4 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::

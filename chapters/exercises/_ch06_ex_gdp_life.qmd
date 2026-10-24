@@ -2,7 +2,6 @@
 The code below shows the relation between infant mortality and fertility in 2010.
 Change it to show the relation between GDP per capita (`gdp_percap`) on the x axis 
 and life expectancy (`life_expectancy`) on the y axis instead, keeping the trend line.
-:::
 
 ```{webr}
 #| setup: true
@@ -67,6 +66,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 ::: {.challenge title="Interpreting the effect of GDP"}
 Does the linear trend line fit the cloud of points well? 

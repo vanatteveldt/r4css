@@ -4,7 +4,6 @@ Compute the number of posts per hour on the election date, making sure to use Br
 (`"America/Sao_Paulo"`). 
 Note: To make it easier to check your results, the posts data frame here only contains the 
 created_at and text columns.
-:::
 
 ```{webr}
 #| setup: true
@@ -95,6 +94,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 ::: {.challenge title="Comparing timestamps"}
 One of the wrong ways to 'solve' this exercise is the code below:

@@ -4,7 +4,6 @@ Let's see if we can track which `.com` domains get shared most.
 ::: {.exercise}
 The code below extracts a pattern and shows the most frequent occurrences. Your job is to fill in the pattern. 
 For this exercise, we will only find .com domains. Can you make a pattern for urls that start with `https://` and end with `.com/`?
-:::
 
 ```{webr}
 #| setup: true
@@ -74,6 +73,7 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::
 
 ::: {.challenge title="Two things this pattern gets wrong"}
 Look at the table you just made. Two things about it should bother you:

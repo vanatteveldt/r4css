@@ -4,7 +4,6 @@ modify the code below to compute two new columns:
 
  - `gross`: The total gross income of a movie (international plus domestic)
  - `roi` The Return on Investment of each movie (gross income divided by budget)
-:::
 
 
 ```{webr}
@@ -74,3 +73,4 @@ gradethis::grade_this({
 
 })
 ```
+:::

@@ -5,7 +5,6 @@ Concretely, starting from the `bechdel_decade` data:
 
 - Use `str_remove` to remove the `-disagree` suffix
 - Summarize the data to get the total amount of films per decade for each `test` category
-:::
 
 
 ```{webr}
@@ -77,3 +76,4 @@ gradethis::grade_this({
 
 })
 ```
+:::

@@ -6,7 +6,6 @@ is there a relation between rising global temperatures and cumulative CO2 emissi
 2. `group_by()` year and `summarize()` the co2 data to get the total *cumulative* CO2 emitted (globally) per year.
 3. `inner_join()` the two results together.
 4. Use `cor.test()` to test the correlation between `temp_anomaly` and `co2`.
-:::
 
 ```{webr}
 #| setup: true
@@ -89,3 +88,4 @@ gradethis::grade_this({
   {{< include exercises/_check.qmd >}}
 })
 ```
+:::

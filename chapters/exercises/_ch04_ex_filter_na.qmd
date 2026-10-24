@@ -3,7 +3,6 @@
 For data cleaning you often want to understand why certain values are missing, so it can be useful to select specific subsets for sampling.
 
 Filter the data to show rows where `gdp` is missing, and `infant_mortality` is not missing.
-:::
 
 
 ```{webr}
@@ -65,3 +64,4 @@ gradethis::grade_this({
 
 })
 ```
+:::

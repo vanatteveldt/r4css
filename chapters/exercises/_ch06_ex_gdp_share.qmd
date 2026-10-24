@@ -9,7 +9,6 @@ and plot that instead of the raw GDP.
 
 To do this, use the `group_by |> mutate` pattern explained in @sec-groupbymutate to compare a continent's GDP
 to the total GDP in that decade.
-:::
 
 ```{webr}
 #| setup: true
@@ -99,6 +98,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 ::: {.challenge title="Reading the shares"}
 Which continent's share grew the most over these decades? Which shrank?

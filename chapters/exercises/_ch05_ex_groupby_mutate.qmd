@@ -7,7 +7,6 @@ Concretely, starting from the `bechdel_over_time` data, compute two new columns:
 - `proportion`: The percentage of films per category within each decade
 
 The `ggplot` code to produce the stacked bar chart is given, but don't worry if it doesn't make sense yet - it will be explained in detail in the next chapter.
-:::
 
 
 ```{webr}
@@ -88,6 +87,7 @@ gradethis::grade_this({
 
 })
 ```
+:::
 
 ::: {.challenge}
 In this chapter we got two quite different answers to question whether "do Bechdel-passing films make more money?", depending on seemingly small methodological choices:
