@@ -10,7 +10,11 @@ webr:
      Should we teach that instead of group_by |> summarize?
      It feels cleaner, especially given the silly residual groups
      and the verbose warnings. OTOH, group_by is probably more common
-     'in the wild', so we'd have to mention in any case -->
+     'in the wild', so we'd have to mention in any case
+     
+    Decision: teach group by first, then .by as a shortcut     
+    Also: explain ungroup and how .by interacts
+ -->
 
 
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
@@ -22,6 +26,55 @@ Where the previous chapter dealt with selecting columns, filtering rows,
 and rearranging the resulting data set,
 this chapter will look into transforming data by calculating new values
 and summarizing groups of rows.
+
+## Chapter objectives {.unnumbered}
+
+At the end of the chapter you will be able to:
+
++ Compute new columns and changing existing values with `mutate` (@sec-mutate)
++ Recode values into new categories (@sec-recoding)
++ Group and summarize data (@sec-summarize)
++ Use  pipelines (`|>`) to combine multiple analysis steps (@sec-pipelines)
++ Check and convert column types, and format numbers (@sec-column-types)
++ Work with dates and times: extracr parts, group, parse, format, and deal with time zones (@sec-datetime)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-transforming-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `mutate()` | compute a new column or change an existing one | @sec-mutate |
+| `round()`, `floor()`, `abs()` | round, round down, or take the absolute value of numbers | @sec-mutate |
+| `if_else()` | recode into two options based on a condition | @sec-recoding |
+| `recode_values()` | recode values using a lookup of old and new values | @sec-recoding |
+| `replace_values()` | like `recode_values`, but leaves unmentioned values unchanged | @sec-recoding |
+| `case_when()` | recode using arbitrary conditions | @sec-recoding |
+| `group_by()` | group the rows of a data frame by one or more columns | @sec-summarize |
+| `summarize()` | compute summary statistics, one row per group | @sec-summarize |
+| `n()`, `tally()`, `count()` | the number of rows in each group  | @sec-transforming-counts |
+| `mean()`, `median()` | the mean or median of a column | @sec-summarize |
+| `|>` | pipe the result of one function into the next | @sec-summarize |
+| `slice_max()`, `slice_min()` | the row(s) with the highest or lowest value in each group | @sec-groupbyslice |
+| `slice_head()`, `slice_tail()`, `slice_sample()` | the first, last, or a random sample of rows in each group | @sec-groupbyslice |
+| `as.numeric()`, `as.character()` | convert a column to numbers or text | @sec-column-types |
+| `format()` | format numbers or dates as text | @sec-column-types, @sec-datetime |
+| `number()` | format numbers with a fixed precision, prefix, or suffix (from `scales`) | @sec-column-types |
+| `wday()`, `year()`, `month()`, `hour()` | extract a part of a date or timestamp | @sec-datetime |
+| `tally()` | count the number of rows (per group) | @sec-datetime |
+| `class()` | the type of an object or column | @sec-datetime |
+| `floor_date()` | round dates down to e.g. the day, week, or month | @sec-datetime |
+| `as.Date()` | convert text or a timestamp to a date | @sec-datetime |
+| `dmy()`, `mdy_hm()`, ... | parse text into a date or timestamp, given the order of the fields | @sec-datetime |
+| `parse_date()` | parse dates using a format string and locale | @sec-datetime |
+| `tz()` | the time zone of a timestamp | @sec-datetime |
+| `with_tz()` | convert a timestamp to a different time zone | @sec-datetime |
+| `force_tz()` | set the time zone of a timestamp, keeping the clock time | @sec-datetime |
+
+:::
+
+
+## Data used in this chapter: The Bechdel test {.unnumbered}
 
 As a running example through this chapter, let's have a look at the `bechdel` data,
 which contains information on the famous *Bechdel test* for female representation in films:
@@ -418,7 +471,7 @@ For example, what is the average `roi` for films that pass the Bechdel test comp
 Using the functions `group_by()` and `summarize()` we can answer this question quite directly:
 
 ```{webr}
-#| exercise: ['demo_summarize','demo_summarize_piped']
+#| exercise: ['demo_summarize','demo_summarize_piped', 'demo_count']
 #| setup: true
 library(tidyverse)
 bechdel <- read_csv("data/bechdel.csv") |>
@@ -453,7 +506,7 @@ Substantively, it seems that films that pass the Bechdel test actually have a lo
 Surprisingly, this seems to go against the conclusions of the [original article](https://archive.ph/e7xDQ).
 We'll dive into this in more detail later, but first we need to introduce a new piece of syntax.
 
-### Pipelines: The `|>` operator
+### Pipelines: The `|>` operator {#sec-pipelines}
 
 The example above used two functions (`group_by` and `summarize`),
 and the output (result) of the first function was used as the input (first argument) of the next function.
@@ -486,7 +539,7 @@ For all our concerns, the two operators are identical, and there is no reason to
 However, you will find many examples on the Internet still use `%>%`, and probably as a result code generated by AI also tends to use it.
 So, if you see `%>%` being used just mentally translate to `|>`, and you should stick to `|>` in your own code.
 
-### Improving the film analysis pipeline
+### Improving the film analysis pipeline {#sec-transforming-counts}
 
 When we first calculated the mean ROI grouped by test outcome,
 we were surprised to find that passing the test was actually a negative predictor of return on investment, contrary to the claim made in the [original 538 article](https://archive.ph/e7xDQ).
@@ -536,6 +589,28 @@ Some things to note about this code:
 - We don't store the result in an object, but only display it on the screen. If you want to continue analysing the summary result, you can simply assign it to an object like any other.
 - We use `str_remove(test, "-disagree")` to remove the `-disagree` suffix from the test column, see @sec-stringr for an in-depth discussion of text handling
 - We prefix the outcomes with a number (1 to 4) to make the alphabetic sorting match the natural ordering. See @sec-beautiful-factor for a more elegant solution
+
+::: {.callout-tip #tip-counting title="Counting things: `n()`, `tally()` and `count()`"}
+
+The code above used `summarize(n=n())` to count how many rows each group contained.
+Since counting rows is such a frequent task, tidyverse includes multiple shortcuts for different use cases.
+The bullets below show how these different ways of counting can be used: 
+
++ `n()` is used within a `group_by |> summarize` and you need to assign it to a column yourself (e.g. `summarize(n=n())`). 
++ `tally()` is shorthand for `summarize(n=n())`. It is (generally) used after a `group_by` but comes *instead* of summarize, and automatically assigns the number of rows to a new column called `n`.
++ `count(columns)` is shorthand for `group_by(columns) |> summarize(n=n())` and so is used on its own to summarize a data frame to a count of rows within groups.   
++ `add_count(columns)` is similar to `count`, but adds a column with the count instead of replacing the data frame. It is shorthand for  `group_by(columns) |> mutate(n=n())` which will be explained in @sec-groupbymutate below.
+
+Thus, the three lines below all produce exactly the same output:
+
+```{webr}
+#| exercise: demo_count
+bechdel |> group_by(test) |> summarize(n=n())
+bechdel |> group_by(test) |> tally()
+bechdel |> count(test)
+```
+
+:::
 
 ### Exercise: Bechdel test over time (part 1)
 
@@ -712,7 +787,7 @@ Interestingly, this works but gives a single decimal digit for the percentages.
 The reason for that is that `digits` specifies the minimum number of *significant digits*, rather than the number of decimal places. 
 
 The easiest way to achieve a fixed number of decimal places is to use the
-`number()` function from the `scales` packages, which is included when you installed
+`number()` function from the `scales` package, which is included when you installed
 tidyverse but not loaded by default:
 
 
@@ -1022,7 +1097,7 @@ including e.g. French and Swahili but also globally less relevant languages like
 
 {{< include exercises/_ch05_ex_daily_posts.qmd >}}
 
-## Quiz questions
+## Quiz questions {#sec-transforming-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 
