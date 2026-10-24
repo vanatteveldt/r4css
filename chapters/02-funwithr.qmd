@@ -1,5 +1,4 @@
 ---
-title: "Fun with R: A look at the Dutch voter"
 webr:
   resources:
     - ../data/dutch_demographics.csv
@@ -16,22 +15,38 @@ webr:
 library(tidyverse)
 ```
 
-## Introduction: Fun with R
+<!-- Note: chapter deliberately does not have a quiz -->
 
-This chapter is intended to showcase a number of 'cool' things you can do with R: read, filter and combine data sets, create bar chart and scatter plots, and even plot information on maps.
-The chapter is intended as a 'guided tour'. Don't worry if you can't write this code yet — try to recognize the building blocks; we'll explain each one in detail in the chapters that follow.
+# Fun with R: A look at the Dutch voter {#sec-funwithr}
+
+R is fun! Or at least, it *should* be. 
+
+When many students encounter R (and programming), it is perceived (and often presented!) as something complicated and scary. We think R should be *empowering*: knowing how to analyse and visualize data allows you to answer many interesting questions. But we also think it should be *creative* and even fun: there is absolutely nothing you can break, and you can learn a lot by just playing with the code and seeing what happens. 
+
+This chapter is intended as a 'guided tour' of data analysis and visualization in R. 
+So, sit back, relax, run all the code snippets, look at the outcomes, play with the code if you want, and don't worry too much about needing to understand everything. 
+
+## Chapter objectives {.unnumbered}
+
+This chapter is intended to showcase a number of 'cool' things you can do with R. By the end of this chapter, you will:
+
+- Have seen ways to read, filter and sort data (@sec-funwithr-cleaning)
+- Have seen examples of creating and customizing bar charts (@sec-funwithr-vis)
+- Have seen how to combine data sets and plot the result as a scatter plot (@sec-funwithr-combining)
+- Have seen how to so simple statistics in R (@sec-funwithr-stats)
+- Have seen ways to plot information on maps (@sec-funwithr-maps)
+
+The objective of this chapter is not for you to necessarily understand everything and learn or memorize all the functions. As said above, the chapter is a 'guided tour', so don't worry if you can't write all this code yourself (yet!) -- try to recognize the building blocks and we'll explain each one in detail in the chapters that follow.
 
 In the chapter there are some `✏️ Exercise` blocks where we ask you to adapt the code to get a different result. You should be able to complete these without much difficulty. There are also some `🧩 Challenges` where we challenge you a bit more to think about or tinker with the code -- feel free to skip these if you want and just enjoy the tour.
 
-## Dutch politics
+## Data for this chapter: Dutch politics {.unnumbered}
 
 For this tutorial, we will use voting results from the Dutch 2023 parliamentary elections.
 We will later enrich this with demographic data about the various Dutch municipalities from CBS (the Dutch
 statistics bureau) and voting results from the election board. Both of
 these can be downloaded from the respective sources, but to make it easy
 we use cleaned up versions from this repository.
-
-### Voting data
 
 After running the code below with the `► Run Code` button, you will see
 a *data frame* on the screen. Data frames are the main data object in R.
@@ -80,7 +95,7 @@ the `↻ Start Over` button and the original code will run.
 | count                    | numeric (dbl) | The absolute number of votes for that party          |
 :::
 
-### Cleaning data
+## Cleaning data {#sec-funwithr-cleaning}
 
 `R` also has powerful commands to clean up and restructure data. For
 example, the code below shows the results for a single municipality
@@ -100,7 +115,7 @@ where the problem is -- but of course it’s only a computer, so it’s not
 always very helpful... It will also sometimes fail to recognize a submission as correct if it's different from its own solution. So, if you're sure you're getting the right results but R won't give you full grades for it, just congratulate yourself for being original!
 :::
 
-## Simple visualizations
+## Simple visualizations {#sec-funwithr-vis}
 
 Besides the ability to read and clean up data, `R` has a very powerful
 visualization suite called `ggplot`. Although this can be hard to
@@ -173,12 +188,12 @@ the party column is mapped to the fill color, etc.
  This produces a sensible default mapping which can then be customized by adding (`+`) additional elements to it such as the scale and guide information in this graph.
 :::
 
-## Combining data sets to visualize patterns
+## Combining data sets to visualize patterns {#sec-funwithr-combining}
 
 The code above showed a simple barplot based on voting results.
 To understand *why* people vote for a certain party,
 we can combine voting records with local demographics -
-does voting depend on the degree or urbanisation, education, ethnicity or average age in a municipality?
+does voting depend on the degree of urbanisation, education, ethnicity or average age in a municipality?
 
 For this, let's load a data set of municipality-level statistics provided by the Dutch stats bureau CBS:
 
@@ -326,7 +341,7 @@ and especially to play around with it a bit.
 
 As you can see, the final plot used a lot of additional commands after the initial `ggplot` and `geom_point` specification. In general, this is how `ggplot` works: it makes it really easy to make a decent-looking, informative graph, and you can then add additional functions to customize anything you want until you have exactly the graph you need. For more example graphs (with their source code!), see the [R Graph Gallery](https://r-graph-gallery.com/). For a more in-depth explanation of visualization principles (also with R source code), see the excellent and free book by Kieran Healy on [Data Visualization](https://socviz.co/).
 
-## Simple statistics
+## Simple statistics {#sec-funwithr-stats}
 
 Even though this part of the book is not focused on statistics,
 it's hard to pass an opportunity to test a nice hypothesis.
@@ -362,7 +377,7 @@ Can you model the vote share for another party such as the progressive PvdA/GL?
 :::
 
 
-## Plotting maps
+## Plotting maps {#sec-funwithr-maps}
 
 As a final example of a cool visualization, let's plot a map of the Netherlands by BBB vote share:
 
