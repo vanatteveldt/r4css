@@ -180,7 +180,7 @@ so it is heartening to see that even this model already does fairly well
 
 Note that we created a new `chat` object, since the old `chat` would have remembered
 the question we asked above. 
-The `parallel_chat_text` ensures that all headlines start from the same context,
+The `parallel_chat_text` ensures that all headlines are prompted in a separate context,
 so the second headline is not influenced by the first. 
 
 ::: {.callout-tip title="ellmer syntax"}
