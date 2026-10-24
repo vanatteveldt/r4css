@@ -21,7 +21,7 @@ headlines |>
   slice_sample(n=10) |>
   mutate(llm_sentiment = parallel_chat_text(
     chat=chat,
-    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")))</code></pre>
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{headline}}")))</code></pre>
 <p>What do you need to change to run the same analysis with <code>llama3.2:3b</code> via Ollama?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — the chat object is the only thing that knows which provider and model are used. The rest of the code (interpolate, parallel_chat_text) works the same for every model, which makes it easy to compare models.">Only the first line: <code>chat &lt;- chat_ollama(model = "llama3.2:3b")</code>.</li>

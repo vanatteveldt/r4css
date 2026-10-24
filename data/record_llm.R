@@ -95,8 +95,8 @@ instruction <- str_c(
   "doing well (positive), poorly (negative), or neither (neutral)? ",
   "Answer with only one word: positive, negative, or neutral.")
 template <- "{{instruction}}\n\nThe headline: {{headline}}"
-english <- interpolate(template, instruction = instruction, headline = headlines$translation)
-dutch <- interpolate(template, instruction = instruction, headline = headlines$headline)
+english <- interpolate(template, instruction = instruction, headline = headlines$headline)
+dutch <- interpolate(template, instruction = instruction, headline = headlines$original)
 
 # The improved prompt from the 'Writing a good prompt' section, based on the codebook for human coders
 codes <- c(
@@ -108,8 +108,8 @@ task <- "You are classifying newspaper headlines by their sentiment about the ec
 context <- "Judge only the headline itself, not anything else you may know about the events it refers to."
 answer <- "Answer with only one word, in lowercase: positive, negative, or neutral."
 instruction_codebook <- str_glue("{task} {context}\n\nCodebook:\n{codebook}\n\n{answer}")
-english_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$translation)
-dutch_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$headline)
+english_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$headline)
+dutch_codebook <- interpolate(template, instruction = instruction_codebook, headline = headlines$original)
 
 # Use exactly the settings shown in the book, as the mock does not check them
 haiku <- chat_anthropic(model = "claude-haiku-4-5")
@@ -133,8 +133,8 @@ type_reasoned <- type_object(
 )
 instruction_noanswer <- str_glue("{task} {context}\n\nCodebook:\n{codebook}")
 example_structured <- interpolate("{{instruction_noanswer}}\n\nThe headline: They have won a great election victory")
-english_structured <- interpolate(template, instruction = instruction_noanswer, headline = headlines$translation)
-dutch_structured <- interpolate(template, instruction = instruction_noanswer, headline = headlines$headline)
+english_structured <- interpolate(template, instruction = instruction_noanswer, headline = headlines$headline)
+dutch_structured <- interpolate(template, instruction = instruction_noanswer, headline = headlines$original)
 record_llm(haiku, c(example_structured, english_structured, dutch_structured), type = type_reasoned)
 
 # The type_array example: economic indicators per headline. Prompt and type must stay identical to the book.
@@ -153,8 +153,8 @@ economic_indicator <- type_object(
 type_indicator_list <- type_array(
   "All economic variables mentioned in the headline. Return an empty list if there are none.",
   items = economic_indicator)
-indicators <- interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{translation}}",
-  translation = headlines$translation)
+indicators <- interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{headline}}",
+  headline = headlines$headline)
 record_llm(haiku, indicators, type = type_indicator_list)
 
 # The first example in the chapter: a short conversation, showing that the chat remembers its history

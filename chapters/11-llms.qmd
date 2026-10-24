@@ -88,7 +88,7 @@ headlines <- read_csv("dutch_sentiment.csv")
 head(headlines)
 ```
 
-As you can see, this has the sentiment and English translation for 284 headlines. They are all from (Dutch) economic news during the 2015 eurocrisis, and are coded by the three authors based on whether the headline describes the economy as doing well or poorly. 
+As you can see, this has the sentiment and text (translated to English) for 284 headlines. They are all from (Dutch) economic news during the 2015 eurocrisis, and are coded by the three authors based on whether the headline describes the economy as doing well or poorly. 
 
 ::: {.challenge}
 - How would you approach a sentiment analysis of this data? 
@@ -168,8 +168,8 @@ headlines |>
   slice_sample(n=10) |>
   mutate(llm_sentiment = parallel_chat_text(
     chat=chat, 
-    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
-  )) |> select(translation, sentiment, llm_sentiment)
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{headline}}")
+  )) |> select(headline, sentiment, llm_sentiment)
 ```
 
 The LLM we used did pretty well: it correctly classified 8 out of 10 example sentences,
@@ -196,7 +196,7 @@ Let's take a second to look at these in detail.
   In this case, it creates a single message containing both the instructions and the headline, 
   similar to asking it as a single question in the chat interface. 
   The `interpolate` function is very similar to the `str_glue` function we saw in @sec-strdetect:
-  it fills the instruction object and translation column values into the template text,
+  it fills the instruction object and headline column values into the template text,
   producing 10 prompts with different headline texts. 
   If `interpolate` is used within `mutate` as it is here,
   it can directly access both columns of the data frame and global objects like `instruction`.
@@ -340,8 +340,8 @@ headlines |>
   slice_sample(n=10) |>
   mutate(llm_sentiment = parallel_chat_text(
     chat=chat,
-    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
-  )) |> select(translation, sentiment, llm_sentiment)
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{headline}}")
+  )) |> select(headline, sentiment, llm_sentiment)
 ```
 
 As you can see, this uses `claude-haiku-4-5`, which is the smallest of the Claude family of models.
@@ -414,8 +414,8 @@ headlines |>
   slice_sample(n=10) |>
   mutate(llm_sentiment = parallel_chat_text(
     chat=chat,
-    prompts=interpolate("{{instruction}}\n\nThe headline: {{translation}}")
-  )) |> select(translation, sentiment, llm_sentiment)
+    prompts=interpolate("{{instruction}}\n\nThe headline: {{headline}}")
+  )) |> select(headline, sentiment, llm_sentiment)
 ```
 
 Results here show an interesting development:
@@ -461,7 +461,7 @@ chat_nano <- chat_openai(model = "gpt-4.1-nano")
 
 results <- headlines |>
   mutate(
-    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"), 
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{headline}}"), 
     llm_llama = parallel_chat_text(chat_llama, prompts),
     llm_haiku = parallel_chat_text(chat_haiku, prompts),
     llm_gemma = parallel_chat_text(chat_gemma, prompts),
@@ -499,7 +499,7 @@ cached_answers <- function(model, prompts) {
 }
 results <- headlines |>
   mutate(
-    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{headline}}"),
     llm_llama = cached_answers("llama3.2:3b", prompts),
     llm_haiku = cached_answers("claude-haiku-4-5", prompts),
     llm_gemma = cached_answers("gemma4:e4b", prompts),
@@ -757,10 +757,10 @@ To apply this to multiple headlines, we can use `parallel_chat_structured`:
 chat <- chat_anthropic(model = "claude-haiku-4-5")
 
 headlines |>
-  mutate(prompt=interpolate("{{instruction_noanswer}}\n\nThe headline: {{translation}}")) |>
+  mutate(prompt=interpolate("{{instruction_noanswer}}\n\nThe headline: {{headline}}")) |>
   mutate(reply=parallel_chat_structured(chat, prompt, type_reasoned)) |> 
   unnest(reply) |> 
-  select(translation, value, reason)
+  select(headline, value, reason)
 ```
 
 As you can see, this works mostly the same as the earlier `parallel_chat_text` call, with the main difference that we inserted an `unnest` call after the `parallel_chat_structured`.
@@ -791,11 +791,11 @@ type_indicator_list <- type_array(
 
 chat <- chat_anthropic(model = "claude-haiku-4-5")
 result <- headlines |>
-  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{translation}}"),
+  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{headline}}"),
          reply = parallel_chat_structured(chat, prompt, type_indicator_list)) |>
   unnest(reply, keep_empty=TRUE)
 
-result |> select(id, translation, indicator:evaluation)
+result |> select(id, headline, indicator:evaluation)
 ```
 
 Looking at the results, we see some interesting details. The first sentence contained no indicators, since it's only about minister Dijsselbloem wanting a solution (and because we specified `keep_empty=TRUE`, the row is kept with the measurement variables set to `NA`). The sentence about 'Deutsche Bank' has two indicators (and hence two rows): the (mega) fines and the spending (cuts). These sentences also nicely show the difference between direction and evaluation: the fines go `'up'`, which is `'bad'`. 
@@ -850,7 +850,7 @@ type_indicator_list <- type_array(
   items = economic_indicator)
 chat <- chat_anthropic(model = "claude-haiku-4-5")
 result <- headlines |>
-  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{translation}}"),
+  mutate(prompt = interpolate("List the economic variables and policy measures mentioned in this headline.\n\nThe headline: {{headline}}"),
          reply = parallel_chat_structured(chat, prompt, type_indicator_list)) |>
   unnest(reply, keep_empty=TRUE)
 ```

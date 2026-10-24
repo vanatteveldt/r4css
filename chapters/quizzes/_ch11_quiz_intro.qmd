@@ -17,13 +17,13 @@ chat&#36;chat("Are you sure?")</code></pre>
 <div class="quiz">
 <div class="quiz-title">Q2: Double braces</div>
 <p class="quiz-question">In the chapter, the prompts are created with</p>
-<pre><code>interpolate("{{instruction}}\n\nThe headline: {{translation}}")</code></pre>
+<pre><code>interpolate("{{instruction}}\n\nThe headline: {{headline}}")</code></pre>
 <p>Why does <code>interpolate()</code> use double curly braces, unlike <code>str_glue()</code>, which uses single ones?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — prompts often contain literal curly braces, for example when asking for JSON output. Using double braces for the variables means those single braces can stay in the text as they are.">Because instructions often contain literal curly braces (e.g. an example of JSON output), which should not be filled in as variables.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — interpolate() fills in single values and columns in exactly the same way; the double braces are about not clashing with literal braces in the prompt text.">Because double braces are needed to fill in a whole column, while single braces only fill in a single value.</li>
 <li class="quiz-choice" data-correct="false" data-explain="Not quite — the model only ever sees the filled-in text, never the braces. The braces are just placeholders for R.">Because the LLM needs to see which parts of the prompt are variables.</li>
-<li class="quiz-choice" data-correct="false" data-explain="Not quite — the braces are only a placeholder syntax. Inside mutate(), interpolate() can use both columns (translation) and objects (instruction), with the same double braces.">Because double braces refer to columns of the data frame, and single braces to objects like <code>instruction</code>.</li>
+<li class="quiz-choice" data-correct="false" data-explain="Not quite — the braces are only a placeholder syntax. Inside mutate(), interpolate() can use both columns (headline) and objects (instruction), with the same double braces.">Because double braces refer to columns of the data frame, and single braces to objects like <code>instruction</code>.</li>
 </ul>
 <p class="quiz-feedback" hidden></p>
 </div>
@@ -46,7 +46,7 @@ chat&#36;chat("Are you sure?")</code></pre>
 <pre><code>headlines |>
   mutate(llm_sentiment = parallel_chat_text(
     chat = chat,
-    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}")))</code></pre>
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{headline}}")))</code></pre>
 <p>What does <code>parallel_chat_text()</code> do differently from calling <code>chat&#36;chat()</code> 284 times?</p>
 <ul class="quiz-choices">
 <li class="quiz-choice" data-correct="true" data-explain="Right — each prompt is sent as a separate question, so the answer for one headline can't be influenced by the other headlines. You get back one answer per prompt, which you can store directly as a column with mutate().">It sends each prompt as a separate conversation and returns one answer per headline that you can store as a column.</li>

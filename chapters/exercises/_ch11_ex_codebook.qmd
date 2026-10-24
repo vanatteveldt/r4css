@@ -43,7 +43,7 @@ head(results_codebook)
 
 ::: { .hint exercise="ex_codebook_run"}
 ::: { .callout-tip title="Hint:"}
-1. Use `interpolate` to create the prompt using the same template as before: `"{{instruction}}\n\nThe headline: {{translation}}"`.
+1. Use `interpolate` to create the prompt using the same template as before: `"{{instruction}}\n\nThe headline: {{headline}}"`.
 2. Use `parallel_chat_text` with the chat object and the prompts.
 :::
 :::
@@ -67,7 +67,7 @@ chat_gemma <- chat_ollama(model = "gemma4:e4b")
 
 results_codebook <- headlines |>
   mutate(
-    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{headline}}"),
     llm_gemma = parallel_chat_text(chat_gemma, prompts)
   )
 head(results_codebook)
@@ -87,7 +87,7 @@ gradethis::grade_this({
       "Your `results_codebook` has no `llm_gemma` column. Did you store the answers under that name?")
     gradethis::fail_if(
       anyNA(results_codebook$llm_gemma),
-      "Some headlines have no answer. Did you use the model `\"gemma4:e4b\"`, and exactly the same template as before, `\"{{instruction}}\\n\\nThe headline: {{translation}}\"`?")
+      "Some headlines have no answer. Did you use the model `\"gemma4:e4b\"`, and exactly the same template as before, `\"{{instruction}}\\n\\nThe headline: {{headline}}\"`?")
   }
 
   {{< include exercises/_check.qmd >}}
@@ -133,7 +133,7 @@ cached_answers <- function(model, prompts) {
 }
 results_codebook <- headlines |>
   mutate(
-    prompts = interpolate("{{instruction}}\n\nThe headline: {{translation}}"),
+    prompts = interpolate("{{instruction}}\n\nThe headline: {{headline}}"),
     llm_llama = cached_answers("llama3.2:3b", prompts),
     llm_haiku = cached_answers("claude-haiku-4-5", prompts),
     llm_gemma = cached_answers("gemma4:e4b", prompts),

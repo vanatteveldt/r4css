@@ -14,7 +14,7 @@
 <div class="quiz-title">Q2: Why unnest?</div>
 <p class="quiz-question">The chapter asks for a reason and a value for each headline:</p>
 <pre><code>headlines |>
-  mutate(prompt = interpolate("{{instruction_noanswer}}\n\nThe headline: {{translation}}"),
+  mutate(prompt = interpolate("{{instruction_noanswer}}\n\nThe headline: {{headline}}"),
          reply = parallel_chat_structured(chat, prompt, type_reasoned)) |>
   unnest(reply)</code></pre>
 <p>Why is the <code>unnest(reply)</code> step needed?</p>
