@@ -3,7 +3,11 @@ if (grepl("\\.\\.\\.", .user_code)) {
 }
 
 
-.msg <- gradethis::code_feedback()
+# code_feedback() itself can error, e.g. when the user's call has fewer arguments than the solution's
+.msg <- tryCatch(
+  gradethis::code_feedback(),
+  error = function(e) "Your code gives a different result than expected. Have a look at the hint and try again."
+)
 if (is.null(.msg)) {
   # code matches the solution exactly
   gradethis::pass_if_equal()

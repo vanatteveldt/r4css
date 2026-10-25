@@ -51,6 +51,8 @@ bechdel_over_time <- bechdel_decade |>
   # summarize total amount of films per decade for each `test` category
   group_by(decade, test) |>
   summarize(n_films=n())
+# Note: using .by instead of group_by would also be fine:
+#   summarize(n_films=n(), .by=c(decade, test))
 head(bechdel_over_time)
 ```
 
@@ -69,6 +71,19 @@ gradethis::grade_this({
         "Some of your test values still have the `-disagree` suffix. Use `str_remove(test, '-disagree')` to clean the column before grouping."
       )
     }
+  }
+
+  # .by and ungroup() give the same counts, but ungrouped and (for .by) in a different order
+  solution_env <- new.env(parent = .envir_prep)
+  eval(parse(text = .solution_code), envir = solution_env)
+  solution <- solution_env$bechdel_over_time
+  normalize <- function(d) d |> ungroup() |> arrange(decade, test)
+  # code_feedback() itself can error when the user's call has fewer arguments than the solution's
+  code_differs <- tryCatch(!is.null(gradethis::code_feedback()), error = function(e) TRUE)
+  if (code_differs && is.data.frame(result) &&
+      all(c("decade", "test") %in% names(result)) &&
+      isTRUE(all.equal(normalize(result), normalize(solution)))) {
+    gradethis::pass("Excellent work!")
   }
 
   # Fall back to default checking

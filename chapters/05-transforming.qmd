@@ -6,17 +6,6 @@ webr:
     - ../data/bluesky_brazil_elections_2024.csv
 ---
 
-<!-- TODO: dplyr now allows summarize(..., .by=c(columns)).
-     Should we teach that instead of group_by |> summarize?
-     It feels cleaner, especially given the silly residual groups
-     and the verbose warnings. OTOH, group_by is probably more common
-     'in the wild', so we'd have to mention in any case
-     
-    Decision: teach group by first, then .by as a shortcut     
-    Also: explain ungroup and how .by interacts
- -->
-
-
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
@@ -53,6 +42,8 @@ As always, the chapter ends with a [multiple choice quiz](#sec-transforming-quiz
 | `group_by()` | group the rows of a data frame by one or more columns | @sec-summarize |
 | `summarize()` | compute summary statistics, one row per group | @sec-summarize |
 | `n()`, `tally()`, `count()` | the number of rows in each group  | @sec-transforming-counts |
+| `ungroup()` | drop all grouping levels | @sec-groupby-multiple |
+| `summarize(.by=)` | summarize with an implicit grouping | @sec-groupby-multiple |
 | `mean()`, `median()` | the mean or median of a column | @sec-summarize |
 | `|>` | pipe the result of one function into the next | @sec-summarize |
 | `slice_max()`, `slice_min()` | the row(s) with the highest or lowest value in each group | @sec-groupbyslice |
@@ -609,6 +600,83 @@ bechdel |> group_by(test) |> summarize(n=n())
 bechdel |> group_by(test) |> tally()
 bechdel |> count(test)
 ```
+
+:::
+
+### Grouping on multiple columns {#sec-groupby-multiple}
+
+The code above grouped by a single column, but you can also group by multiple columns.
+
+For example, we could calculate the median budget and return-on-investment grouped by decade and whether the film passed the test:
+
+```{webr}
+#| exercise: ['demo_multigroup', 'demo_by']
+#| setup: true
+library(tidyverse)
+bechdel <- read_csv("data/bechdel.csv")
+bechdel_passed <- bechdel |>
+  mutate(passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed"),
+         roi = (domestic_gross + foreign_gross) / budget,
+         decade = floor(year / 10) * 10)
+```
+
+```{webr}
+#| exercise: demo_multigroup
+bechdel_passed <- bechdel |>
+  mutate(passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed"),
+         roi = (domestic_gross + foreign_gross) / budget,
+         decade = floor(year / 10) * 10)
+bechdel_passed |>
+  group_by(decade, passed) |>
+  summarize(median_budget=median(budget, na.rm=TRUE)/1000000, 
+            median_roi=median(roi, na.rm=TRUE))
+```
+
+As you can see, from the 1990s there was an increasing budget gap between films that passed and did not pass the Bechdel test, while the return on investment of the passing films was consistently higher. 
+
+::: {.callout-tip title="Multiple grouping levels, ungroup(), .groups, and .by"}
+
+You might have noticed a message from the code above that `` `summarise()` has regrouped the output``. If you run it locally it would give more details:
+
+```
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by decade and passed.
+ℹ Output is grouped by decade.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(decade, passed))` for per-operation
+  grouping instead.
+```
+
+This message is somewhat annoying, but also very informative.
+
+First, after the operation `Output is grouped by decade`. This means that the resulting dataset is still grouped by decade: the default behavior of summarize with multiple grouping levels is to drop the last level (in this case `passed`). This can be useful if the next operation benefits from the `decade` grouping, but sometimes it is also unintended. You can always run `ungroup()` after the summarize to drop all grouping levels.
+
+Next, you can explicitly set this behavior by specifying the `.groups` option, with `"drop_last"` being the default behavior, and `.groups="drop"` dropping all grouping levels after the summarize (so equivalent to adding ungroup after the summarize)
+
+Finally, and perhaps most usefully, the message hints at a new feature introduced in 2023: defining the groups within the summarize using `.by`, removing the need for a preceding `group_by` as well as the confusion over remaining grouping levels. 
+
+Thus, in recent R versions the three calls below are identical*, and the `.by` version is the most compact and probably the most readable:
+
+```{webr}
+#| exercise: demo_by
+bechdel_passed |>
+  group_by(decade, passed) |>
+  summarize(median_roi=median(roi, na.rm=TRUE)) |>
+  ungroup()
+
+bechdel_passed |>
+  group_by(decade, passed) |>
+  summarize(median_roi=median(roi, na.rm=TRUE), 
+            .groups="drop")
+
+bechdel_passed |>
+  summarize(median_roi=median(roi, na.rm=TRUE),
+            .by=c(decade, passed))
+```
+
+We primarily use `group_by` rather than `.by=` in this chapter because it is still the more commonly found construction, but in many cases you will find that `.by` is actually more convenient. In any case, either works fine so use what you find most natural. 
+
+*) Well, almost identical: the first call will emit the message as described before. Moreover, both `group_by` versions will reorder the output by the grouping levels, while the `.by=` version will leave the original ordering intact.
 
 :::
 
