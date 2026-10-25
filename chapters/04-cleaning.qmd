@@ -349,7 +349,7 @@ To view missing values, you need to do a (temporary) filter to select the missin
 
 {{< include exercises/_ch04_ex_arrange.qmd >}}
 
-## Wrap-up: GDP and life expectancy
+## Wrap-up: GDP and life expectancy 
 
 In the exercise above, you prepared the dataset for determining the relation between GDP and life expectancy.
 

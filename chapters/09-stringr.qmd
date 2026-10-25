@@ -733,7 +733,7 @@ so some patterns can actually cause matches to be somewhat slow)
 
 :::
 
-## Regular expression reference and example patterns
+## Regular expression reference and example patterns {#sec-regex-examples}
 
 Below are tables with an overview of the most commonly used functions and regular expression syntax.
 See also the [stringr cheat sheet](https://rstudio.github.io/cheatsheets/strings.pdf).

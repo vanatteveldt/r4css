@@ -1,0 +1,18 @@
+<script>
+// Quarto only adds hover anchor links to headings; add them to tip titles too.
+// A callout with an explicit id ({.callout-tip #my-id}) keeps that id as its link target,
+// otherwise anchor.js derives one from the title text.
+window.addEventListener("load", () => {
+  for (const callout of document.querySelectorAll(".callout-tip[id]")) {
+    const title = callout.querySelector(".callout-title-container");
+    if (title && !title.id) {
+      title.id = callout.id;
+      callout.removeAttribute("id");
+    }
+  }
+  const anchors = new window.AnchorJS();
+  // Same bootstrap-icons glyph Quarto uses for heading anchors
+  anchors.options = { placement: "right", icon: "" };
+  anchors.add(".callout-tip .callout-title-container");
+});
+</script>
