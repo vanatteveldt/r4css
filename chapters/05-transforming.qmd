@@ -25,7 +25,7 @@ At the end of the chapter you will be able to:
 + Group and summarize data (@sec-summarize)
 + Use  pipelines (`|>`) to combine multiple analysis steps (@sec-pipelines)
 + Check and convert column types, and format numbers (@sec-column-types)
-+ Work with dates and times: extracr parts, group, parse, format, and deal with time zones (@sec-datetime)
++ Work with dates and times: extract parts, group, parse, format, and deal with time zones (@sec-datetime)
 
 As always, the chapter ends with a [multiple choice quiz](#sec-transforming-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
 

@@ -3,7 +3,6 @@
 
 # Visualizing data {#sec-vis}
 
-## Why visualize? {#sec-vis-why}
 
 In social sciences, we are often interested in exploring or testing a relation between two variables:
 Does poverty lead to lower health or life expectancy?
@@ -121,14 +120,47 @@ and point at a modelling issue in all cases except the first.
 
 Now that you are convinced of the need for visualization to explore your data (and tell your story to a reader), let's explore how you can do this using ggplot!
 
+## Chapter objectives {.unnumbered}
 
-::: {.callout-note title="Learning more"}
+At the end of the chapter you will be able to:
+
++ Understand the layered syntax of ggplot: a data source, an aesthetic mapping, and geometric layers (@sec-vis-point)
++ Make scatter plots with `geom_point` and add trend lines with `geom_smooth` (@sec-vis-point)
++ Map columns to aesthetics such as color and size, for the whole plot or for a single geom (@sec-vis-aes)
++ Make readable bar charts with `geom_col`, including grouped and stacked bar charts (@sec-vis-bar)
++ Make line charts with `geom_line`, control how points are grouped into lines, and fill in missing rows with `complete` (@sec-vis-line)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-vis-quizquestions) that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `ggplot()` | start a new plot with a data source and (optionally) an aesthetic mapping | @sec-vis-point |
+| `aes()` | map columns in the data to aesthetics such as `x`, `y`, `color`, or `size` | @sec-vis-point, @sec-vis-aes |
+| `geom_point()` | draw a point for each row (scatter plot) | @sec-vis-point |
+| `geom_smooth()` | add a trend line, e.g. a linear regression line with `method="lm"` | @sec-vis-smooth |
+| `geom_col()` | draw a bar for each row, using the `y` value as its height | @sec-vis-bar |
+| `geom_bar()` | draw bars that count the number of rows per category | @sec-vis-bar |
+| `labs()` | set the title, caption, and axis and legend labels | @sec-beautiful-factor |
+| `theme_classic()` | use a clean theme without grid lines | @sec-beautiful-factor |
+| `fct_reorder()`, `fct_*` | order the categories of a factor, e.g. by another column | @sec-beautiful-factor |
+| `as.factor()` | convert a column to a factor, i.e. treat it as categories | @sec-vis-bar-grouped |
+| `geom_line()` | connect the points in each group with a line | @sec-vis-line |
+| `complete()` | add missing combinations of values as explicit rows | @sec-vis-complete |
+| `full_seq()` | create the full sequence of values between the lowest and highest value | @sec-vis-complete |
+| `ggsave()` | save a plot to a file | @sec-vis-complete |
+
+:::
+
+
+::: {.callout-tip title="Learning more"}
 This chapter will introduce most of the technical details of ggplot needed to make visualizations,
 but does not go as deeply into some aspects of visualization as you might want. 
 To learn more, check these fantastic and freely available sources:
 
 - [Data Visualization](https://socviz.co) by Kieran Healy. This is a freely available book which goes much more deeply into the *why* of visualizations.
-  What is a good visualizations? What works and what doesn't? 
+  What is a good visualization? What works and what doesn't? 
   What makes this such a fantastic resource is that it gives many social scientific examples and provides the full ggplot code for all examples.
 - [From data to viz](https://www.data-to-viz.com/) is a website that is a great overview of the different types  
   of visualization, with a nice guide on when to use which chart type and what the strengths and possible drawbacks of each are,
@@ -147,7 +179,7 @@ from the data cleaning functions you've seen so far.
 However, it is extremely well designed and you will find that the better you understand this design,
 the easier it becomes to read and write your own visualization code. 
 
-Let's get started with a minimal graph based on the `gapminder` dataset used earlier. 
+Let's get started with a minimal graph based on the `gapminder` dataset used earlier (@sec-datacleaning). 
 
 ```{webr}
 #| warning: false
@@ -185,7 +217,7 @@ In fact, this is the general pattern of ggplots: a single `ggplot()` function
 which creates the empty canvas, to which any number of elements are added.
 
 
-### Adding more layers: `geom_smooth`
+### Adding more layers: `geom_smooth` {#sec-vis-smooth}
 
 As an  example of building a plot by adding layers, 
 the code below adds a linear regression line to the graph
@@ -217,7 +249,7 @@ Finally, What happens if you use `geom_smooth(method="lm", formula=y ~ poly(x,2)
 :::
 
 
-### Exercise: Effect of GDP on Life Expectancy
+### Exercise: Effect of GDP on Life Expectancy {#sec-vis-ex-gdplife}
 
 {{< include exercises/_ch06_ex_gdp_life.qmd >}}
 
@@ -292,7 +324,7 @@ for default scatter plots, only `color` normally matters,
 while for e.g. bar plots you can change both the outline and the fill color of the bars.
 :::
 
-### Geom-specific mappings 
+### Geom-specific mappings {#sec-vis-geom-aes}
 
 Up till now, we've set the aesthetic mapping in the `ggplot()` function. 
 You can also set mappings in the `geom` function; 
@@ -447,10 +479,10 @@ Looking at the code above, three things were changed apart from adding a theme:
    which very often is not the most logical ordering to tell a story. 
 
 
-:::: {.callout-note collapse="true" title="GGplot and factors (and cats!)"}
+:::: {.callout-tip title="GGplot and factors (and cats!)" #tip-visualization-factors}
 You may have wondered why the `fct_reorder` function started with `fct`. 
 The reason for this is somewhat technical, but it will help you understand
-why ggplot does what it does (but feel free to skip this block for now!)
+why ggplot does what it does.
 
 For ggplot, text columns are treated as nominal variables, i.e. groups.
 Such groups are best represented by `factor` columns,
@@ -460,32 +492,22 @@ Factor levels have an ordering, and ggplot uses that internal ordering for plott
 When you use a normal text column in ggplot, it silently converts it into a factor,
 and the default ordering of factor levels is alphabetically. 
 So, ggplot orders groups by their alphabetical ordering by default. 
+Numeric columns by default are treated as continuous variables, so if you want to 
+use a discrete scale for a numeric column 
+(e.g. to give four numbered groups distinctive colors rather than the default gradient)
+you can convert it to a factor using `as.factor`. 
 
 To change this, you can use functions like `fct_reorder` either in the data preparation step,
 or directly in the `aes` function.
 Some other useful functions are `fct_infreq` to use the frequency of cases;
 `fct_relevel` to manually specify the ordering;
-`fct_rev` to reverse and ordering; and `fct_lump` to turn the least frequent categories into 'other' 
-These functions all come from the `forcats` package,     
-which is of course purely an anagram of factors.
+`fct_rev` to reverse an ordering; and `fct_lump` to turn the least frequent categories into 'other' 
+
+(These functions all come from the `forcats` package,     
+which is of course purely an anagram of factors.)
 ::::
 
-### Grouped bar charts
-
-<!--
-average per decade stacked or grouped per continent
-Claude: Confirmed the GDP idea works technically: gdp in dslabs::gapminder is total 
-(not per capita — values like 1.38e10 for a single country), 
-and the panel spans 1960–2016, 
-so mutate(decade = floor(year/10)*10) |> group_by(decade, continent) |> summarize(total_gdp = sum(gdp, na.rm=TRUE)) 
-gives a genuine aggregation (unlike the single-year case earlier, 
-this one actually sums across multiple countries and years). 
-It also tells a real story — the shifting share of global GDP across continents — 
-which fits the "substantive question" principle well, 
-and sets up a nice later contrast with geom_line in the "over time" section (composition vs. trend).
-nice segway to callout about pre-aggregate vs geom_bar
--->
-
+### Grouped bar charts {#sec-vis-bar-grouped}
 
 ```{webr}
 #| exercise: ['ggplot_dodge', 'ggplot_stack']
@@ -558,7 +580,7 @@ and then dealing with it.
 
 :::
 
-### Stacked bar charts
+### Stacked bar charts {#sec-vis-bar-stacked}
 
 As a final example, let's see how the share of GDP per continent changed over time
 by using a stacked bar chart:
@@ -585,7 +607,7 @@ By default,  ggplot will stack bars if no position is given.
 A third option would be using `position="fill"` - how does that change the graph?
 -->
 
-### Exercise: The share of GDP per continent
+### Exercise: The share of GDP per continent {#sec-vis-ex-gdpshare}
 
 {{< include exercises/_ch06_ex_gdp_share.qmd >}}
 
@@ -646,7 +668,7 @@ and computing the mean fertility, ignoring missing values.
 Then, we use a ggplot as usual, with a `geom_line` and year and mean fertility on the x and y axes. 
 Note that we use color for the continents rather than fill, since it's a line rather than a bar or area. 
 
-### How are data points grouped into lines?
+### How are data points grouped into lines? {#sec-vis-line-group}
 
 The code above worked directly because there was only one data point per year and continent.
 But what if we did not aggregate before drawing the plot?
@@ -743,7 +765,7 @@ Some things to note:
   So, `color=continent` refers to the continent column of the `gap` data for the first geom,
   and to the column with the same name in the `fertility_per_year` data frame in the second geom. 
 
-### Dealing with missing rows using `complete`
+### Dealing with missing rows using `complete` {#sec-vis-complete}
 
 A final gotcha for line graphs is how ggplot deals with missing rows. 
 This is especially important for count data, where a lack of data often implies zero,
@@ -865,11 +887,11 @@ checking the rendered file after each change.
 
 :::
 
-### Exercise: Which countries go against the trend?
+### Exercise: Which countries go against the trend? {#sec-vis-ex-outliers}
 
 {{< include exercises/_ch06_ex_asia_outliers.qmd >}}
 
-## Other chart types
+## Other chart types {#sec-vis-other}
 
 This chapter introduced the main chart types for data visualization:
 the scatter plot, bar plot, and line graph. 
@@ -890,7 +912,7 @@ Pie charts make it very hard to compare groups and in almost all cases a bar cha
 the better choice. However, if you must make a pie chart [you certainly can](https://r-graph-gallery.com/piechart-ggplot2.html): 
 in fact, it's just a bar chart with `coord_polar()` added to create a circular plot.
 
-## Quiz questions
+## Quiz questions {#sec-vis-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 

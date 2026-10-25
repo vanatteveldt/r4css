@@ -109,7 +109,7 @@ str_glue("Number of posts about trump: {nrow(trump_posts)}")
 
 
 :::{.callout-tip title="str_glue"}
-In the example above, we used `str_glue` to display the number of posts in a nice way. You've actually already seen this in @sec-vis-why, where we used it to create a nice label in a graph.
+In the example above, we used `str_glue` to display the number of posts in a nice way. You've actually already seen this in @sec-vis, where we used it to create a nice label in a graph.
 
 `str_glue` is a very useful function for building a text by 'glueing' calculated values (such as `{nrow(posts)}`) into a text. Technically, all R code within curly braces (`{}`) will be evaluated and inserted into the text. 
 
