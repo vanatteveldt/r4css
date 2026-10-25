@@ -477,7 +477,7 @@ with the added benefit that we can now also inspect it to see if the prompt read
 
 ### Analysing the results
 
-An easy way to do this is to use `pivot_longer` (see @sec-pivot-longers) to turn this into a
+An easy way to do this is to use `pivot_longer` (see @sec-pivot-longer) to turn this into a
 long format data frame, so we can see performance per model:
 
 ```{webr}

@@ -23,7 +23,44 @@ library(tidyverse)
 
 # Advanced GGplot usage {#sec-advancedggplot}
 
-### Data used in this chapter
+This chapter builds on @sec-vis to further extend your understanding of visualization with GGplot. In particular, it shows various ways to customize plots using scales, themes, facets and annotations.
+
+
+## Chapter objectives {.unnumbered}
+
+At the end of the chapter you will be able to:
+
++ Use `scale_*` functions to control how values are turned into colors, sizes and axis positions (@sec-vis-scales)
++ Format axis and legend labels as percentages or numbers, and set breaks, limits and transformations (@sec-vis-scales-numeric, @sec-vis-scales-breaks)
++ Customize legends and axis guides (@sec-vis-guides)
++ Change the look of a plot with `theme()`, and re-use a theme across plots (@sec-vis-theming)
++ Compare groups side by side using `facet_wrap` and `facet_grid` (@sec-vis-facets)
++ Add reference lines and text annotations to make a plot self-explanatory (@sec-vis-annotations)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-advancedggplot-quizquestions) that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `scale_color_manual()`, `scale_color_gradient()`, `scale_color_*()`, `scale_fill_*()` | customize colors (manually, using a gradient, or in other ways) | @sec-vis-scales-discrete, @sec-vis-scales-gradient |
+| `scale_x_continuous()`, `scale_x_*()`, `scale_y_*()` | customize the x and y axis: name, labels, breaks and limits | @sec-vis-scales-numeric, @sec-vis-scales-breaks |
+| `scale_size_continuous()` | customize the size scale, e.g. its range or a square root `transform` | @sec-vis-scales-numeric |
+| `label_percent()`, `label_comma()` | format labels as percentages or with thousands separators (`scales` package) | @sec-vis-scales-numeric |
+| `guide_legend()`, `guide_colorbar()`, `guide_axis()` | customize how a legend, color bar or axis is displayed | @sec-vis-guides |
+| `theme()` | customize non-data elements of the plot, such as fonts, background and legend position | @sec-vis-theming |
+| `element_text()`, `element_*()` | style (or remove) individual theme elements | @sec-vis-theming |
+| `theme_set()` | set the default theme for all plots in this session | @sec-vis-theme-reuse |
+| `facet_wrap()`, `facet_grid()` | make separate plots for values of a column | @sec-vis-facets |
+| `annotate()` | add a single text, label or shape at a given position | @sec-vis-annotations |
+| `geom_hline()` | draw a horizontal reference line | @sec-vis-annotations |
+| `coord_cartesian()` | control the coordinate system, e.g. allow drawing outside the plot area with `clip="off"` | @sec-vis-annotations |
+
+:::
+
+
+
+## Data used in this chapter {.unnumbered}
 
 For the examples in this chapter, we will use a dataset of state-level presidential voters
 from 1976 to 2024 published by the [MIT Election Data + Science Lab](https://electionlab.mit.edu/data):
@@ -103,7 +140,7 @@ Democrats and Republicans both hover around 50%, with third parties playing a ve
 However, anyone who follows US politics will probably be bothered by the colors:
 Republicans are traditionally depicted with red, and democrat with blue, which is reversed in the graph. 
 
-### Discrete scales
+### Discrete scales {#sec-vis-scales-discrete}
 
 The reason for this is the way ggplot assigns colors by default: 
 for a categorical variable (like party), it assigns colors alphabetically, starting with red 
@@ -152,7 +189,7 @@ For example, the manual scale had the `values=` argument, while a color gradient
 and a `scale_size_continuous` has a `range=` argument to specify the size of point to represent the smallest and largest values.
 :::
 
-### Color gradients
+### Color gradients {#sec-vis-scales-gradient}
 
 Let's make a scatter plot of 2024 state-level votes:
 
@@ -189,7 +226,7 @@ As you can see, this is close to the `scale_color_manual` we saw earlier, but no
 running from low to high. 
 Also note that we can set the name of the legend (or axis) here, which is equivalent to setting it in the `labs()` as we did earlier.
 
-### Numerical scales and transformations
+### Numerical scales and transformations {#sec-vis-scales-numeric}
 
 A second thing that we could improve is the display of the numerical scales.
 The default setting for the percentages is to display it as a regular number,
@@ -230,7 +267,7 @@ Some points to note:
   rather than having it scale linearly. In this graph the effect is relatively small, but very often a small number of outliers can dominate a scale.
   In that case, using a square root or even `transform=log10` can be an effective way to also see variation in the smaller cases.
 
-### Axis scales: Breaks and limits
+### Axis scales: Breaks and limits {#sec-vis-scales-breaks}
 
 The axis scale above uses the ggplot default of fitting the data and creating a sensible amount of ticks. 
 We can customize this using the `breaks=` and `limits=` arguments to the x and y scales. 
@@ -286,7 +323,7 @@ Some things worthy of note:
 - In the scale_size_continuous, we now explicitly give the range of sizes to use -- try setting it to `range = c(0, 10)` to see the difference!
   We also specify which values should be shown in the legend (1 to 25 million) and set `labels = label_comma()` to suppress scientific notation.
 
-### Guides
+### Guides {#sec-vis-guides}
 
 A final useful argument for the `scale_*` function is `guide=`. \
 This allows you to customize the *guides*, i.e. the legend or axis marks:
@@ -411,7 +448,7 @@ As a rule of thumb, I would advise using `library(package)` for packages (such a
 and `package::` for functions that are only used once or twice. 
 :::
 
-### Re-using themes
+### Re-using themes {#sec-vis-theme-reuse}
 
 If you are writing a report with multiple figures, 
 it makes sense to set things like font and color preferences globally 
@@ -482,7 +519,7 @@ so you can easily compare values between graphs.
 Note that for technical reasons, you need to enclose the column names in `vars()` similar to how
 you put the columns in `aes` for specifying the mapping. 
 
-### Facet on multiple variables with `facet_grid`
+### Facet on multiple variables with `facet_grid` {#sec-vis-facet-grid}
 
 The example above showed faceting on a single variable. If you have multiple variables that you want to facet on,
 you can also use `facet_grid` to specify which variables to use as rows and columns.
@@ -567,13 +604,13 @@ This shows three different annotations:
 Finally, note the use of `breaks = scales::breaks_width(4)` and `guide=guide_axis(angle=90))`
 in the `scale_x`. This ensures every election receives a label on the x axis, setting them at 90 degrees to avoid overlapping.
 
-## Exercise: Recreating a published figure {#sec-vis-stacked}
+## Exercise: Recreating a published figure {#sec-vis-ex-bechdel}
 
 Let's bring together stacking, colors and annotations to recreate a figure from a real published article.
 
 {{< include exercises/_ch08_ex_bechdel_stacked.qmd >}}
 
-## Quiz questions
+## Quiz questions {#sec-advancedggplot-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 

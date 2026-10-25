@@ -1,5 +1,4 @@
 ---
-title: "Reshaping data"
 webr:
   resources:
     - ../data/temperature_anomaly.csv
@@ -18,7 +17,7 @@ editor_options:
 library(tidyverse)
 ```
 
-## Introduction
+# Reshaping data {#sec-reshaping}
 
 So far, all data wrangling operations in this book operated 
 on the rows, columns, or cells of data frames:
@@ -39,7 +38,41 @@ Q: What we don't teach anywhere yet:
 Do we need to teach this anywhere?
 -->
 
-### Data used in this chapter
+## Chapter objectives {.unnumbered}
+
+At the end of the chapter you will be able to:
+
++ Explain the difference between long and wide data (@sec-pivot)
++ Turn rows into columns with `pivot_wider`, selecting only the key and value columns first (@sec-pivot-wider)
++ Turn columns into rows with `pivot_longer` (@sec-pivot-longer)
++ Combine data sets with joins, and specify the key columns with `join_by` (@sec-join, @sec-join-keys)
++ Choose between `inner_join`, `left_join`, `right_join`, and `full_join` (@sec-join-types)
++ Recognize one-to-many and many-to-many joins (@sec-join-one-to-many, @sec-join-many-to-many)
++ Use `semi_join` and `anti_join` to check which rows have a match in another data set (@sec-join-filter)
+
+As always, the chapter ends with a [multiple choice quiz](#sec-reshaping-quizquestions) organized per section that you can use to test your knowledge and understanding. You can also expand the table below to see which functions are covered in this chapter.
+
+::: {.callout-note collapse="true" title="Functions introduced in this chapter"}
+
+| Function | What it does | Section |
+|:-----|:----------|:-----|
+| `pivot_wider()` | turn long data into wide data: values from one column become new columns | @sec-pivot-wider |
+| `pivot_longer()` | turn wide data into long data: columns become rows | @sec-pivot-longer, @sec-co2 |
+| `geom_tile()` | draw a filled rectangle at each `x` and `y` position | @sec-pivot |
+| `geom_hline()` | draw a horizontal reference line | @sec-pivot-wider |
+| `inner_join()` | combine two data sets, keeping only rows that occur in both | @sec-join, @sec-join-types |
+| `left_join()`, `right_join()` | combine two data sets, keeping all rows of the first (left) or second (right) data set | @sec-join-types |
+| `full_join()` | combine two data sets, keeping all rows of both | @sec-join-types |
+| `join_by()` | specify the key column(s) to join on | @sec-join-keys |
+| `bind_rows()` | stack data sets on top of each other | @sec-join-types |
+| `add_column()` | add a column to a data frame | @sec-join-types |
+| `geom_area()` | draw a (stacked) area chart | @sec-join-overtime |
+| `semi_join()` | keep only rows with a match in another data set | @sec-join-filter |
+| `anti_join()` | keep only rows without a match in another data set | @sec-join-filter |
+
+:::
+
+## Data used in this chapter {.unnumbered}
 
 This chapter will use data from the website [Our world in data](https://ourworldindata.org).
 This is a very rich resource for various country-level facts and statistics. 
@@ -106,7 +139,7 @@ The neutral midpoint is set to .54, the average value for 1961-2010 also used in
 We also use `geom_tile`, which paints a filled rectangle at the specified position -- 
 and since there are so many years they come out as thin bars)
 
-### Long to wide data: `pivot_wider`
+### Long to wide data: `pivot_wider` {#sec-pivot-wider}
 
 As you can see in the graph, the data is split by 'region', which contains rows for both hemispheres as well as for a global average. 
 It is also clear that the northern hemisphere is warming up more quickly than the southern. 
@@ -157,7 +190,7 @@ Does the result make any sense? Why does it happen?
 
 As you saw when you removed the `select` line, this is a crucial step before pivoting.
 The reason for this is that each column that is not used in the pivot (i.e. the `names_from` and `values_from` columns) 
-are treated as identifying unique rows. So, each year is given a new row (as expected),
+is treated as identifying unique rows. So, each year is given a new row (as expected),
 but without the select each `temp_lower` and `temp_upper` value is also seen as identifying a row!
 So, the result is not one row per year, but one row per year, lower, and upper combination. 
 Since the lower and upper bound tend to be unique, this means we create 3 rows per year.
@@ -165,7 +198,7 @@ Since the lower and upper bound tend to be unique, this means we create 3 rows p
 The lesson here is: **before** doing `pivot_wider`, **always** make sure the data only contains the columns
 uniquely identifying the rows (here: `year`) and the names and values columns (`region` and `temp_anomaly`). 
 
-### From wide to long data: `pivot_longer` {#sec-pivot-longers}
+### From wide to long data: `pivot_longer` {#sec-pivot-longer}
 
 As you might expect, `pivot_longer` is the opposite of pivot_wider,
 turning columns into rows. We can use it to 'undo' our earlier `pivot_wider`:
@@ -297,7 +330,7 @@ Practicality beats purity, as [our competitors in the Python world](https://peps
 :::
 
 
-### Exercise: Change in emissions per capita
+### Exercise: Change in emissions per capita {#sec-pivot-ex-emissions}
 
 {{< include exercises/_ch07_ex_change_emissions.qmd >}}
 
@@ -396,7 +429,7 @@ inner_join(co2, income) |>
 So, looking at all historical CO2 emissions, the rich countries emitted the most CO2 of all income groups by far. 
 How does that change if you look at 2020 emissions rather than historical emissions?
 
-### Joining: key columns
+### Joining: key columns {#sec-join-keys}
 
 If you look closely, right above the graph you can see a warning message printed in red:
 `` Joining with `by = join_by(country, year)` ``. This message is key to understanding how a join works:
@@ -452,7 +485,7 @@ combined <- inner_join(co2_2020, income_2020, join_by(country))
 arrange(combined, desc(co2))
 ```
 
-### Which rows are joined? `inner_join`, `left_join`, `right_join` and `full_join`
+### Which rows are joined? `inner_join`, `left_join`, `right_join` and `full_join` {#sec-join-types}
 
 The income classification data above was given from 1987, while the co2 data starts in 1850. 
 What does that mean for the resulting data set?
@@ -549,7 +582,7 @@ In that case, an `inner_join` would silently drop the US from the result,
 leading to a lower row count than expected. 
 :::
 
-### Emissions over time
+### Emissions over time {#sec-join-overtime}
 
 
 Let's see how emissions by income group changed over time:
@@ -574,7 +607,7 @@ However, at least two things are more puzzling:
 Why would low-income countries actually emit less over time?
 And what can explain the strange jump in upper-middle income country emissions in 2010?
 
-To answer the latter question, you can have a look at the income data for china around that time:
+To answer the latter question, you can have a look at the income data for China around that time:
 
 ```{webr}
 #| exercise: join9
@@ -584,7 +617,7 @@ income |> filter(country == "China", year > 2005)
 How does that explain the shift in 2010? And is there a similar explanation for the drop in emissions by low-income countries?
 :::
 
-### One to many joins
+### One to many joins {#sec-join-one-to-many}
 
 To fix the problem that showed up in the example above, 
 we could 'freeze' the income classifications by taking only the most recent version:
@@ -636,7 +669,7 @@ combined |>
   ggplot(aes(x=year, y=co2, fill=income_group)) + geom_area()
 ```
 
-### Many to many joins
+### Many to many joins {#sec-join-many-to-many}
 
 A final category of joins is the many-to-many join.
 
@@ -671,7 +704,7 @@ which you can suppress by explicitly setting `relationship = "many-to-many"` in 
 to indicate that the many to many join is intentional. 
 
 
-### Semi and anti-join
+### Semi and anti-join {#sec-join-filter}
 
 As a final addition, there are two more joins that are used to filter data rather than combine columns:
 `semi_join(a, b, join_by(columns))` filters `a` to keep only rows where corresponding rows existing in `b`;
@@ -711,13 +744,13 @@ This gives us better terms for understanding the preprocessing needed for pivoti
   that is to be pivoted. Other value columns will be mistakenly seen as key columns and create a row for each value!
 + Before joining, it is important that the key columns match in both datasets, and that only the key columns share the same column name.
   It's easier to use `rename` and/or `select` to ensure that key columns are named the same and value columns are unique,
-  then use the `join_by(a==b)` syntax and/or dealing with suffixed column names later. 
+  than using the `join_by(a==b)` syntax and/or dealing with suffixed column names later. 
 
 Similarly, when doing `pivot_longer`, you have to specify the value columns that are to be pivoted (`pivot_longer(value_1:value_n)`);
 or alternatively you can specify the key column(s) with a negative selection (`pivot_longer(-key_1:-key_n)`).
 :::
 
-### Exercise: Are CO2 emissions and temperature correlated over time?
+### Exercise: Are CO2 emissions and temperature correlated over time? {#sec-join-ex-tempco2}
 
 {{< include exercises/_ch07_ex_temp_co2.qmd >}}
 
@@ -753,7 +786,7 @@ temp_and_co2 |>
 (Note the use of `pivot_longer` to get both series into one column so they can share a single `color` aesthetic,
 and `mutate` within each `group` to rescale both series to the same starting index, so they're comparable despite having very different units and magnitudes)
 
-## Quiz questions
+## Quiz questions {#sec-reshaping-quizquestions .unnumbered}
 
 {{< include quizzes/_quiz_widget.qmd >}}
 

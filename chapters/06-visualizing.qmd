@@ -32,7 +32,7 @@ And if you're brave, feel free to peek into the data preparation box!)
 Don't worry about the data preparation below -- 
 but if you're curious, the `recode_values` was explained in @sec-recoding,
  `group_by |> summarize` was explained in @sec-summarize, 
- and the `pivot_longer` code will be explained in @sec-pivot
+ and the `pivot_longer` code will be explained in @sec-pivot-longer
 
 ```{webr}
 library(tidyverse)
