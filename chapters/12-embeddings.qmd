@@ -1,12 +1,309 @@
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
-# Embeddings and Clustering (todo) {#sec-embeddings}
+# Embeddings and Clustering (in progress) {#sec-embeddings}
 
-If you embedded this chapter and looked up its nearest neighbour, you would find "procrastination". Until it drifts to a better cluster, have a look at [our older embeddings tutorial](https://github.com/ccs-amsterdam/r-course-material/blob/master/tutorials/embeddings.md).
+“You shall know a word by the company it keeps” @firth1957
+
+In language processing, *embeddings* are vectors of numbers that somehow represent the meaning of a word (or text, or image). 
+What this chapter will show is how you can calculate or obtain these embeddings in different ways,  and it will show graphically how words are *embedded* in a spatial representation.
+The location in this space is meaningful, allowing for e.g. finding or clustering words with similar meanings. 
+
+Please note that the first part of this chapter uses a modest amount of geometry to
+represent words as vectors and use inner products to calculate cosine similarities. 
+Although learning how to do vector algebra has never hurt anyone (at least not permanently),
+there is absolutely no need to understand any of that to work through this chapter.
+The core point is that the *meaning* of words and documents can be interpreted as points in a space,
+and the visualizations are intended to give you an intuitive feeling for that.
+You can also skip to @sec-embeddings-api, which gives a more practical tutorial
+to computing and analyzing state-of-the-art embeddings for a real data set.
+
+
+## Chapter Objectives {.unnumbered}
+
+<!-- TODO update after chapter is done -->
+
+The goal of this chapter is to gain a better understanding of what embeddings are, and how you can compute static and contextual embeddings in R.
+
+## Words as vectors: a spatial representation of DTMs {#sec-embeddings-dtm}
+
+In @sec-textasdata-dtm, we've seen how we can create a *document-term matrix* from a corpus.
+Let's use the `unnest_tokens` function introduced there to create a DTM from a toy corpus:
+
+```{webr}
+#| exercise: demo_toy_dtm
+#| warning: false
+library(tidyverse)
+library(tidytext)
+
+texts <- c("The party competed in the election",
+           "The Conservative Party: victory in the election",
+           "They threw a fantastic party after the election",
+           "It was a brilliant and fantastic victory party")
+
+
+dtm_long <- tibble(doc_id=1:4, text=texts) |>
+  unnest_tokens(output="word", input="text") |>
+  count(doc_id, word)
+
+pivot_wider(dtm_long, names_from="word", values_from=n, values_fill=0)
+```
+
+As you can see in the output, the first document contained *competed* once, and the first three documents all contained *election*. The code is similar to that used in @sec-textasdata-dtm: we use `unnest_tokens`
+to list all words as rows, then `count` the frequency per document and per word.
+This results in a 'long format' data frame, and we use `pivot_wider` to
+show the traditional DTM format. 
+
+If you base an analysis on this DTM, for example using a dictionary or classical machine learning, only the word frequencies are used to drive the results.
+In other words, for the computer, the *meaning* of document 1 is the vector
+`c(1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`.
+Similarly, since the only thing the computer knows about the word *election* is in which  document it occurs, we can say that its *meaning* is `c(1, 1, 1, 0)`. 
+With ‘meaning’ (or representation) we mean here that this is all the computer knows of that
+document and that word: If the computer only has this DTM to go by,
+*brilliant* and *it* are essentially identical words because they occur
+in exactly the same documents.
+
+### Spatial representation of vectors {#sec-embeddings-spatial}
+
+
+In R, vectors are essentially a fancy name for a bunch of values,
+but you might remember from geometry that vectors could be drawn graphically as well. 
+In fact, with 4 numbers representing each word, we can think of those words "living" in a 4-dimensional space. Drawing in 4d is really hard, but we can group the first and second
+pair of documents together and then display four selected words as vectors in a
+two-dimensional space:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_toy_vectors', 'demo_toy_cosine']
+library(tidyverse)
+library(tidytext)
+texts <- c("The party competed in the election",
+           "The Conservative Party: victory in the election",
+           "They threw a fantastic party after the election",
+           "It was a brilliant and fantastic victory party")
+dtm_long <- tibble(doc_id=1:4, text=texts) |>
+  unnest_tokens(output="word", input="text") |>
+  count(doc_id, word)
+```
+
+```{webr}
+#| exercise: demo_toy_vectors
+dtm_long |>
+  filter(word %in% c("election", "party", "conservative", "fantastic")) |>
+  mutate(label=if_else(doc_id <= 2, "P", "C")) |>
+  count(word, label, wt=n) |> 
+  pivot_wider(names_from="label", values_from=n, values_fill=0)  |>
+  ggplot(aes(x=C, y=P, label=word, color=word)) + 
+  geom_label(hjust=0)  + 
+  geom_segment(aes(x=0, y=0, xend=C, yend=P),
+               arrow = arrow(length = unit(0.15, "cm"))) +
+  xlim(0, 2.5) +
+  ylim(0, 2.1) + theme_minimal()+theme(legend.position="none")
+```
+
+In the code, we first sum the first two documents as the "P" dimension 
+and the other two as the "C" dimension by assigning that label to the documents
+and then using the same `count` and `pivot_wider` as above. We then plot the words
+as `geom_label` and use `geom_segment` to draw arrows.
+
+Substantively, *election* and *party* are clearly closer to each other
+than *conservative* and *fantastic* in this space. 
+Since the absolute frequency of a
+word is generally less interesting than its distribution over different
+documents or context, we often look at the *angle* between vectors to
+express proximity. 
+A useful metric for this is the *cosine* of the angle, 
+since the cosine of two perpendicular vectors (like
+*conservative* and *fantastic*) is 0, while the cosine of two vectors
+that are pointing in the same general direction (like *election* and
+*party*) is close to one.
+So, a high cosine of the angle between the word vectors can be interpreted as those words being semantically similar. 
+
+To calculate cosine, we can use the fact that the inner product between
+two vectors of length one is the same as the cosine. In other words, if
+we first *normalize* the vectors so they have length one by dividing each vector by its length, we can sum the
+product of each dimension to get the cosine:
+
+```{webr}
+#| exercise: demo_toy_cosine
+election <- c(1, 2)  # co-ordinates in the plot above
+party <- c(2, 2)
+election_normalized <- election / sqrt(sum(election^2))
+party_normalized <- party / sqrt(sum(party^2))
+str_glue("Cosine: {sum(election_normalized * party_normalized)}")
+```
+
+:::{.challenge}
+- What is the cosine between *conservative* and *fantastic*? And between *fantastic* and *party*?
+- How do you interpret these values? Do they make sense?
+- Can you assign a meaning to the two dimensions? What do you think P and C could stand for?
+- You might remember from geometry that cosine runs from -1 to 1. Why is 0 the lowest cosine score for word vectors like this?
+:::
+
+## Clustering of words {#sec-embeddings-wordclusters}
+
+We can use the logic above to find similarities between words in the
+“four-dimensional” space, i.e. which words occur in similar documents?
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_toy_similarity', 'demo_toy_heatmap', 'demo_toy_dendrogram']
+library(tidyverse)
+library(tidytext)
+texts <- c("The party competed in the election",
+           "The Conservative Party: victory in the election",
+           "They threw a fantastic party after the election",
+           "It was a brilliant and fantastic victory party")
+dtm_long <- tibble(doc_id=1:4, text=texts) |>
+  unnest_tokens(output="word", input="text") |>
+  count(doc_id, word)
+word_vectors <- dtm_long |>
+  filter(!word %in% stopwords::stopwords("en")) |>
+  mutate(n = n / sqrt(sum(n^2)), .by=word)
+similarities <- inner_join(word_vectors, word_vectors, join_by(doc_id),
+                           suffix=c("1", "2"), relationship="many-to-many") |>
+  summarize(cosine = sum(n1 * n2), .by=c(word1, word2)) |>
+  complete(word1, word2, fill=list(cosine=0))
+```
+
+```{webr}
+#| exercise: demo_toy_similarity
+# normalize the document frequencies for each word so we can compute the cosine below
+word_vectors <- dtm_long |>
+  filter(!word %in% stopwords::stopwords("en")) |>
+  mutate(n = n / sqrt(sum(n^2)), .by=word)
+
+# Compute cosine similarity by joining the vectors with themselves on `doc_id`.
+# The cosine is then the summed product of their normalized frequencies in each document
+similarities <- inner_join(word_vectors, word_vectors, join_by(doc_id),
+                           suffix=c("1", "2"), relationship="many-to-many") |>
+  summarize(cosine = sum(n1 * n2), .by=c(word1, word2)) |>
+  complete(word1, word2, fill=list(cosine=0))
+
+head(similarities)
+```
+
+So, we can see that *brilliant* is similar to *fantastic* and *party*, but (in this toy corpus)
+completely dissimilar from *conservative* and *election*. 
+
+The code we used for this is essentially a scaled up version of the code we used above
+to manually compute the cosine between two vectors.
+First, we compute the normalized vectors for all words in long format by dividing each frequency
+by the length of that word's vector. 
+Then, we use `inner_join` to join these vectors with themselves, joining by document id.
+This means that for each document, a row is created for each word pair, adding the `suffix`
+to create two column pairs: `word1` and `word2` as well as `n1` and `n2`.
+This is one of the rare cases where a *many-to-many* join and using suffixes for overlapping column names
+is actually what we want -- see @sec-join-many-to-many for more details. 
+Then, we use `summarize` to compute the summed product of the individual normalized frequencies.
+These join and summarize steps compute the inner product of the two (normalized) vectors,
+which gives us the cosine of their angle. 
+Finally, we set all missing word pairs to zero using `complete`. 
+
+We could plot the similarities in what is essentially a correlation plot:
+
+```{webr}
+#| exercise: demo_toy_heatmap
+similarities |>
+  filter(word1 != word2) |>
+  ggplot(aes(x=word1, y=word2, fill=cosine, label=round(cosine, 2))) +
+  geom_tile() + 
+  geom_text(aes(alpha=cosine)) + 
+  scale_fill_gradient(low="white", high="darkgreen") + 
+  theme_minimal() + theme(legend.position="none") +
+  labs(title="Cosine similarity between words", 
+       x=NULL, y=NULL)
+```
+
+:::{.challenge}
+- Do you see any clusters of words in this plot?
+- How are the axes currently sorted? What would be a more informative sorting?
+- The word *party* is the only word that has non-zero similarity to all other words. Why is that? What makes *party* special?
+:::
+
+### Clustering words based on their vectors {#sec-embeddings-hclust}
+
+Finally, we can  *cluster* the words together to find out groups of
+words (‘topics’) which occur in similar documents. For the sake of this
+example we use a simple built-in hierarchical cluster model,
+and use the `ggdendro` package to visualize the tree structure:
+
+```{webr}
+#| exercise: demo_toy_dendrogram
+distance_matrix <- similarities |>
+  mutate(distance=1-cosine) |>
+  select(-cosine) |>
+  pivot_wider(names_from=word2, values_from=distance) |>
+  column_to_rownames("word1")
+  
+clustering <- hclust(as.dist(distance_matrix), method = "average")
+ggdendro::ggdendrogram(clustering) + 
+  labs(title="Hierarchical clustering of words based on cosine distance")
+```
+
+
+Note that `as.dist` is used to create a "distance object" that can be interpreted by the 
+`hclust` function to do the clustering. Since `as.dist` uses the position of the rows and columns,
+not their names, it is important that the data frame created in the `pivot_wider` uses the same
+ordering for the rows and columns. In this case it works because `similarities` is sorted and also contains each word's similarity with itself.
+
+:::{.challenge}
+- Which main clusters emerge from this analysis? Do they make sense?
+- Why did *competed* and *party* end up where they did?
+- What goes wrong if you add `filter(word1 != word2)` to the code above before the `pivot_wider`? Why?
+:::
+
+::: {.callout-note title="Topic Models and Clustering the DTM"}
+Even though the implementation here is very naive, 
+the idea of clustering a document-term matrix is not. 
+If we used `svd` (singular value decomposition) instead of `hclust` we would essentially replicate
+latent semantic analysis [LSA, @deerwester1990indexing].
+Classical topic modeling based on Latent Dirichlet Allocation [LDA, @blei2003latent] can also be seen as a variation on this theme, fitting a generative model instead of a clustering algorithm.
+@sec-embeddings-clustering below will employ the same idea but using *embedding vectors* rather than the raw counts, which brings us close to the state-of-the-art BERTopic procedure [@grootendorst2022bertopic].
+:::
+
+## Static word embeddings with GloVe {#sec-embeddings-glove}
 
 ::: {.callout-note}
-**Proposed chapter scope:** Representing texts as embedding vectors, and exploring those vectors without labels. Covers getting embeddings via `tidyllm` (precomputed/recorded, as in @sec-llm), similarity and nearest neighbours, projection to 2D for visualization (PCA; UMAP if `uwot` runs in webR), and k-means clustering. Clusters are validated by reading examples per cluster; choosing k is a substantive decision as well as a technical one.
+**Proposed section scope:** Follows part 2 of the old tutorial, but actually uses GloVe (the old heading said GloVe while the code used fastText). On the toy words: *party* sits between the political and the celebratory words, shown with MDS. Then dictionary expansion: the nearest neighbours of seed words such as *immigration*, delivering the promise in @sec-textasdata. Because static embeddings are a lookup table, students can query their own seed words live (challenge). Validate a seed dictionary against the expanded one on the English PImPo sentences using the gold `topic` labels. Optional: analogies, a semantic axis [@kozlowski2019geometry] or bias [@caliskan2017semantics], using the same file.
 
-The chapter ends with a do-it-yourself topic model: embed, cluster, then have an LLM label each cluster from a sample of its texts. A callout explains that this is essentially what BERTopic automates (in Python), and mentions LLM-native approaches like TopicGPT. For "where R stops", point to @sec-ml.
+Ship a precomputed subset: the ~20–30k most frequent words plus the PImPo vocabulary, 50 or 100 dimensions, as `.rds`. Check the size and load time in webR.
 :::
+
+## Contextual embeddings with BERT {#sec-embeddings-bert}
+
+::: {.callout-note}
+**Proposed section scope:** Two short steps, both with the `text` package and both precomputed (show the code, replay the results). Mention the Python setup (`textrpp_install()`) and that local models keep data on your own machine.
+:::
+
+### Token embeddings: two kinds of party {#sec-embeddings-tokens}
+
+::: {.callout-note}
+**Proposed section scope:** Follows section 3.2 of the old tutorial: `bert-base-uncased` with token-level output, plus the fifth sentence. Political *party* lands near *organization*, celebratory *party* near *celebration*. This is the contrast with GloVe, where *party* has a single vector.
+:::
+
+### Sentence embeddings with sentence-BERT {#sec-embeddings-sbert}
+
+::: {.callout-note}
+**Proposed section scope:** Embed the toy sentences with a sentence-transformers model through `textEmbed()`. Set the layer and pooling explicitly (last layer, mean over tokens) to match how the model was trained, rather than relying on the `text` defaults. Explain briefly: an embedding model is a transformer whose last hidden state is used as a vector instead of generating text, trained so that similar texts get similar vectors. Raw BERT averages work poorly for this.
+:::
+
+## Embeddings from an API {#sec-embeddings-api}
+
+::: {.callout-note}
+**Proposed section scope:** Moves to a real corpus: PImPo (3,096 sentences, about two thirds from Austria in German). An embedding model (`text-embedding-3-*`, Gemini Embedding) is not a chat model. It is the same kind of model as sentence-BERT, only bigger and multilingual. Record the results as in @sec-llm. Request reduced dimensions (e.g. 256, which works because these models are trained Matryoshka-style), round, and store as `.rds`. Local alternative for data that can't leave your machine: the `text` and sentence-BERT approach from @sec-embeddings-sbert.
+:::
+
+### Nearest neighbour search {#sec-embeddings-search}
+
+::: {.callout-note}
+**Proposed section scope:** Rank sentences by their similarity to a few English seed sentences about immigration. First monolingual (English sentences), then cross-lingual (find German sentences with English seeds). Check the top *n* against the gold `topic` labels, using the development/test set framing from @sec-llm-validation.
+:::
+
+### Clustering documents {#sec-embeddings-clustering}
+
+::: {.callout-note}
+**Proposed section scope:** k-means on the embeddings, choosing k, and interpreting clusters through example texts and the top words per cluster (log odds from @sec-textasdata). Cluster German and English together, sampling countries to equal sizes, since Austria dominates. Note that language is confounded with country, so a cluster that lines up with country can reflect language or politics: that is a limit of the research design, not of the method. End with a pointer to BERTopic (Python) for readers who want to do this properly. This is also the "modern alternative to LDA" promised in @sec-textasdata.
+:::
+
+

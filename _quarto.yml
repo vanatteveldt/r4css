@@ -7,7 +7,7 @@ project:
 
 book:
   title: "R for Computational Social Science"
-  author: "Your Name"
+  author: "Wouter van Atteveldt"
   date: today
   date-format: "YYYY"
   repo-url: https://github.com/vanatteveldt/r4css
