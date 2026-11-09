@@ -1,3 +1,10 @@
+---
+webr:
+  resources:
+    - ../data/glove_2024_100d.rds
+    - ../data/pimpo.csv
+---
+
 {{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
 {{< include ../_extensions/r-wasm/live/_gradethis.qmd >}}
 
@@ -264,6 +271,233 @@ Classical topic modeling based on Latent Dirichlet Allocation [LDA, @blei2003lat
 
 ## Static word embeddings with GloVe {#sec-embeddings-glove}
 
+The example above showed how we could represent words and documents in a
+vector space based on their occurrence within our
+four-sentence ‘corpus’, and then cluster this representation to find 
+groups of words that occur in similar documents.  
+We could use the same logic to analyze larger
+text collections, and of course the many topic modeling papers out there
+show that this is a useful strategy.
+
+In the end, however, the representation of the meaning of each word
+remains dependent on the data we feed into the model. R doesn’t ‘know’
+that brilliant and fantastic are similar words, it can only observe that
+they occur in similar documents.
+
+Assuming that many word meanings are fairly universal, it would make
+sense to use as large a text collection as possible to learn which words
+are similar. In fact, this is exactly what Mikolov and others at Google
+did in 2013 by estimating vector representations of words on a (very)
+large text collection. Although their techniques use a neural network
+approach rather than the simple clustering shown above, the idea is the
+same: words that occur in similar contexts get a similar representation
+vector. This vector is called an **embedding** as it embeds a word in a
+relatively low-dimensional space.
+
+The nice thing of these embedding vectors is that even if the training is
+non-trivial, the result is a simple matrix of (e.g. 300-dimensional)
+vectors for the most frequent words in the English (or another)
+language, and we can just download these vectors:
+
+```{webr}
+#| exercise: demo_glove_load
+#| warning: false
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/vanatteveldt/r4css/refs/heads/main/data/glove_2024_100d.rds", "glove_2024_100d.rds")
+glove <- read_rds("glove_2024_100d.rds")
+glove
+```
+
+As you can see, each row represents a word, sorted by frequency.
+The columns represent the embeddings, so somehow `0.31, -0.32, -0.39, ...` is the *meaning*
+of the word `the`. You can read these as factor loadings, so `the` loads positively on the first dimension, and negatively on the next two.
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_glove_interpret', 'demo_glove_long']
+library(tidyverse)
+glove <- read_rds("data/glove_2024_100d.rds")
+```
+
+:::{.challenge title="Interpreting embeddings"}
+
+Embedding dimensions encode some form of 'meaning', but often cannot be readily interpreted. 
+But that shouldn't stop us from trying!
+
+- In the code below, can you sort by dimension `X10`, descending? Is the result interpretable?
+- What if you sort in ascending order?
+- Try some other dimensions, for example `X2`, `X20`, `X36` or `X50`. Do they make any sense?
+
+```{webr}
+#| exercise: demo_glove_interpret
+glove
+```
+:::
+
+
+
+:::{.callout-tip title="Downloading the GloVe embeddings"}
+
+To limit the size of the download, the code in this chapter uses a subset of the full GloVe embeddings.
+If you want to download the full set of embeddings you can use the code below. 
+Note that this download is over 500MB for 1.2 million embedding vectors, so it might take a while to
+download and unzip. 
+
+
+```r
+modelfile <- "glove.2024.wikigiga.100d.zip"
+options(timeout = 3600)
+download.file(str_glue("https://nlp.stanford.edu/data/wordvecs/{modelfile}"), 
+              destfile=modelfile)
+fn <- unzip(modelfile, list = TRUE) |> pluck("Name")
+unzip(modelfile, files=fn)
+embeddings <- read_delim(fn, delim = " ", col_names = FALSE, quote = "", na = character()) |>
+  rename(word = 1)
+```
+
+You can also check out the [Stanford NLP page](https://github.com/stanfordnlp/glove) 
+to select a different model, e.g. with more or fewer dimensions. 
+:::
+
+### Word similarity
+
+Using similar to what we used above, 
+we can calculate the cosine similarity between words. 
+
+First, let's convert the embeddings to long format and normalize
+
+```{webr}
+#| exercise: demo_glove_long
+embeddings <- glove |>
+  pivot_longer(-word, names_to = "dimension") |>
+  mutate(value = value / sqrt(sum(value^2)), .by = word)
+```
+
+Now, let's calculate the similarities for a subset of words related to parties and partying:
+
+```{webr}
+#| setup: true
+#| exercise: ['demo_glove_similarity', 'demo_glove_mds', 'demo_glove_plot']
+library(tidyverse)
+embeddings <- read_rds("data/glove_2024_100d.rds") |>
+  pivot_longer(-word, names_to = "dimension") |>
+  mutate(value = value / sqrt(sum(value^2)), .by = word)
+words <- c("party", "election", "ballot", "parliament", "government",
+           "minister", "candidate", "campaign", "coalition", "opposition",
+           "conservative", "labour", "liberal", "republican", "democrat",
+           "birthday", "celebration", "dance", "music",
+           "drinks", "friends", "fun", "cake", "gifts",
+           "invite", "crowd", "club", "loud", "festival")
+subset <- filter(embeddings, word %in% words)
+similarities <- inner_join(subset, subset, join_by(dimension),
+                           suffix = c("1", "2"), relationship = "many-to-many") |>
+  summarize(cosine = sum(value1 * value2), .by = c(word1, word2))
+m <- similarities |>
+  pivot_wider(names_from=word2, values_from=cosine) |>
+  column_to_rownames("word1") |>
+  as.matrix()
+scaled <- cmdscale(as.dist(1-m)) |>
+  as.data.frame() |>
+  rownames_to_column(var = "word")
+```
+
+```{webr}
+#| exercise: demo_glove_similarity
+words <- c("party", "election", "ballot", "parliament", "government",
+           "minister", "candidate", "campaign", "coalition", "opposition",
+           "conservative", "labour", "liberal", "republican", "democrat",
+           "birthday", "celebration", "dance", "music",
+           "drinks", "friends", "fun", "cake", "gifts",
+           "invite", "crowd", "club", "loud", "festival")
+subset <- filter(embeddings, word %in% words)
+
+similarities <- inner_join(subset, subset, join_by(dimension),
+                             suffix = c("1", "2"), relationship = "many-to-many") |>
+  summarize(cosine = sum(value1 * value2), .by = c(word1, word2))
+
+similarities |> 
+  filter(word1 == "election") |>
+  arrange(desc(cosine))
+```
+
+As you can see, according to GloVe the words *ballot*, *candidate* and *party*
+are the most similar to the word election.  
+
+### Plotting similarities
+
+ To make
+this even more clear, let’s plot the position of the selected words in a two
+dimensional space.
+
+For this, we place all words in a two-dimensional space using
+multidimensional scaling – the favorite tool of political scientists to
+produce the “political compass” plots one sees in the memes:
+
+```{webr}
+#| exercise: demo_glove_mds
+m <- similarities |>
+  pivot_wider(names_from=word2, values_from=cosine) |>
+  column_to_rownames("word1") |>
+  as.matrix()
+scaled <- cmdscale(as.dist(1-m)) |>
+  as.data.frame() |>
+  rownames_to_column(var = "word") 
+scaled
+```
+
+As you can see, this places each word in two dimensions (labeled `V1` and `V2`).
+To achieve this, we first pivoted the similarities to a wide format,
+and then used `column_to_rownames` and `as.matrix` to convert it to a matrix
+with the words as rownames. 
+Then we use the `cmdscale` command on the distance matrix as before.
+
+We can now plot this space using `ggplot`:
+
+```{webr}
+#| exercise: demo_glove_plot
+ggplot(scaled, aes(x=V1, y=V2, label = word,
+                       color=(word == "party"))) +
+  geom_point() +
+  geom_text(vjust = -0.4) +  
+  coord_equal() +
+  theme_minimal() + 
+  theme(legend.position="none") 
+```
+
+As you can see, all the political words are on the left, while the
+celebratory words are on the right.
+Party is mostly in the political cluster according to GloVe,
+but closer to celebrations than e.g. *candidate* or *democrat*. 
+You can also see that *democrat* is close to *labor*,
+while *republican* is close to *conservative*.
+
+<!-- Claude:  You could either drop the claim or turn it into a challenge: "democrat and labour look close in the plot; check their cosine in similarities. Why does the plot mislead?" That teaches something real about MDS. -->
+
+<!--
+What I'd do for the exercise: keep the change small, as CONTRIBUTING asks. Some options:
+
+Show-and-tell: nearest neighbours of immigration. That's the join from the MDS part again, but with one word's vector against all words.
+Exercise: "find the nearest neighbours of integration". The change is one word and the result is easy to check. The answer is substantively interesting: integrating, development, cooperation, implementation, framework… That's mostly the European/economic sense of integration, not immigrant integration. It's the same lesson as party, where the dominant sense wins, and it shows why one seed word is risky.
+Show-and-tell: averaging several seed words into one vector to fix that, which gives the 25-word expansion.
+For the precision/recall challenge: I'd put the ch10 code in the chunk instead of asking students to find it in the earlier chapter. Ch10's own challenge did the same, and a challenge should be about thinking, not about finding code.
+
+One technical twist students have to spot:
+
+Ch10 matches a regex with str_starts(word, pattern).
+The expanded dictionary is a list of whole words, so they need word %in% dictionary.
+That fits a challenge well, perhaps with a gentle hint.
+
+Questions the challenge could ask:
+
+Comparing: does the expanded dictionary beat your ch10 dictionary? What happens to precision and recall if you take 10, 50 or 100 neighbours instead of 25?
+Inspecting: which of the added words would you remove? There are some clearly wrong ones, such as aid, camps, cubans, families, abroad.
+Fairness of the estimate, following ch10's last question: the neighbours were chosen without looking at the labels, which makes the estimate fairer than hand-picking words with corpus comparison. But if you choose n (or prune words) by looking at the F1, are you back to tuning on your test data? That links to the development/test split.
+Practical points:
+
+Setup chunk: it needs glove_long and pimpo_en. The pivot takes about half a second in the browser, as measured earlier.
+No held-out set: the 0.79 comes from the same data that was used to choose the 25 and the seed words. If you show it in the prose, present it as rough.
+-->
+
 ::: {.callout-note}
 **Proposed section scope:** Follows part 2 of the old tutorial, but actually uses GloVe (the old heading said GloVe while the code used fastText). On the toy words: *party* sits between the political and the celebratory words, shown with MDS. Then dictionary expansion: the nearest neighbours of seed words such as *immigration*, delivering the promise in @sec-textasdata. Because static embeddings are a lookup table, students can query their own seed words live (challenge). Validate a seed dictionary against the expanded one on the English PImPo sentences using the gold `topic` labels. Optional: analogies, a semantic axis [@kozlowski2019geometry] or bias [@caliskan2017semantics], using the same file.
 
@@ -305,5 +539,4 @@ Ship a precomputed subset: the ~20–30k most frequent words plus the PImPo voca
 ::: {.callout-note}
 **Proposed section scope:** k-means on the embeddings, choosing k, and interpreting clusters through example texts and the top words per cluster (log odds from @sec-textasdata). Cluster German and English together, sampling countries to equal sizes, since Austria dominates. Note that language is confounded with country, so a cluster that lines up with country can reflect language or politics: that is a limit of the research design, not of the method. End with a pointer to BERTopic (Python) for readers who want to do this properly. This is also the "modern alternative to LDA" promised in @sec-textasdata.
 :::
-
 

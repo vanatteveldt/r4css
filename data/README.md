@@ -132,7 +132,7 @@ read_csv("~/Downloads/1976-2024-president.csv") |>
   replace_na(list(party="Other")) |>
   mutate(candidate=str_to_title(candidate), party=str_to_title(party), state=str_to_title(state),
          party=if_else(party=="Libertarian", "Other", party)) |>
-  write_csv(here::here("data/us-president.csv))
+  write_csv(here::here("data/us-president.csv"))
 ```
 
 ## US county-level demographics
@@ -342,4 +342,46 @@ other <- pimpo |>
 bind_rows(relevant, other) |>
   arrange(id) |>
   write_csv(here::here("data/pimpo.csv"))
+```
+
+## GloVe word embeddings (subset)
+
+- **File**: [glove_2024_100d.rds](glove_2024_100d.rds)
+- **Source**: [GloVe](https://nlp.stanford.edu/projects/glove/) (Stanford NLP), the 2024 Wikipedia + Gigaword vectors with 100 dimensions (`glove.2024.wikigiga.100d.zip`)
+- **Description**: A tibble with one row per word: a `word` column and the 100 embedding dimensions in columns `X2` to `X101` (the names `read_delim` gives them). The full file has 1.2 million words; this subset keeps the 30,000 most frequent words that consist of letters (plus apostrophes and hyphens), and all other words that occur in the English (non-Austrian) sentences of [pimpo.csv](pimpo.csv), 30,334 words in total. Values are rounded to two decimals, which changes cosine similarities by at most about 0.004 and makes the file a third smaller.
+- **License**: [Public Domain Dedication and License (PDDL) 1.0](https://opendatacommons.org/licenses/pddl/1-0/)
+- **Citation**:
+  - Pennington, Jeffrey, Richard Socher & Christopher D. Manning (2014): GloVe: Global Vectors for Word Representation. *Proceedings of EMNLP 2014*: 1532–1543. <https://doi.org/10.3115/v1/D14-1162>
+  - Carlson, Riley, John Bauer & Christopher D. Manning (2025): A New Pair of GloVes. arXiv:2507.18103. <https://doi.org/10.48550/arXiv.2507.18103>
+
+Code: (the download is 555 MB, unzipped 1.7 GB)
+```{r}
+library(tidyverse)
+library(tidytext)
+modelfile <- "glove.2024.wikigiga.100d.zip"
+options(timeout = 3600)
+download.file(str_glue("https://downloads.cs.stanford.edu/nlp/data/{modelfile}"),
+              destfile = modelfile)
+fn <- unzip(modelfile, list = TRUE) |> pluck("Name")
+unzip(modelfile, files = fn)
+embeddings <- read_delim(fn, delim = " ", col_names = FALSE, quote = "", na = character()) |>
+  rename(word = 1)
+
+# The file is sorted by frequency, but the top ranks include punctuation and tokens like 12:00
+top_words <- embeddings |>
+  filter(str_detect(word, "^\\p{L}[\\p{L}'-]*$")) |>
+  slice_head(n = 30000) |>
+  pull(word)
+
+# Keep all English PImPo words, so the dictionary validation doesn't lose rarer terms
+pimpo_words <- read_csv(here::here("data/pimpo.csv")) |>
+  filter(country != "Austria") |>
+  unnest_tokens(output = "word", input = "text") |>
+  distinct(word) |>
+  pull(word)
+
+embeddings |>
+  filter(word %in% c(top_words, pimpo_words)) |>
+  mutate(across(-word, \(x) round(x, 2))) |>
+  write_rds(here::here("data/glove_2024_100d.rds"), compress = "xz")
 ```
