@@ -135,13 +135,17 @@ If you tried to call `select(gap, Life Expectancy)`, R would throw an error beca
 You can work around this by placing backticks (`` ` ``) around the column name: ``select(gap, `Life Expectancy`)``.
 However, that gets old really fast, especially because the backtick is very often hard to find on a keyboard.
 
-So, the general advice is to *rename* columns that are not a legal name, e.g. by replacing spaces by underscores (`_`) or by just using a different name. In the rename (or select) command, you can place either backticks or normal quotes (`"` or `'`) around the old name. Suppose that `gap_dirty` contains the column with a space, you can simply use quotes in `select` or `rename` to rename it:
+So, the general advice is to *rename* columns that are not a legal name, e.g. by replacing spaces by underscores (`_`) or by just using a different name. In the rename (or select) command, you can place either backticks or normal quotes (`"` or `'`) around the old name. To try this, let's first create a "dirty" version of the data called `gap_dirty`, where the column has a name with a space
+(note that we need backticks here because we are creating the illegal name):
 
 ```{webr}
 #| exercise: demo_illegal_names_show
 #| autorun: true
+gap_dirty <- rename(gap, `Life Expectancy` = life_expectancy)
 head(gap_dirty)
 ```
+
+Now, you can simply use quotes in `select` or `rename` to rename it back to a legal name:
 ```{webr}
 #| exercise: demo_illegal_names_fix
 gap_cleaned <- rename(gap_dirty, life_expectancy = "Life Expectancy")
