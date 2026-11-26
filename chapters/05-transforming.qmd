@@ -459,26 +459,33 @@ For example, what is the average `roi` for films that pass the Bechdel test comp
 
 ### Summarizing data with `group_by` and `summarize`
 
-Using the functions `group_by()` and `summarize()` we can answer this question quite directly:
+Using the functions `group_by()` and `summarize()` we can answer this question quite directly.
+First, we compute the `roi` and `passed` columns as in the exercise above,
+and store the result in a new data frame `bechdel_passed`.
+Then, we group and summarize this data:
 
 ```{webr}
 #| exercise: ['demo_summarize','demo_summarize_piped', 'demo_count']
 #| setup: true
 library(tidyverse)
-bechdel <- read_csv("data/bechdel.csv") |>
-  mutate(
-    roi = (domestic_gross + foreign_gross) / budget,
-    passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed")
-  )
+bechdel <- read_csv("data/bechdel.csv")
+bechdel_passed <- mutate(bechdel,
+  roi = (domestic_gross + foreign_gross) / budget,
+  passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed")
+)
 ```
 ```{webr}
 #| exercise: demo_summarize
-bechdel_grouped <- group_by(bechdel, passed)
+bechdel_passed <- mutate(bechdel,
+  roi = (domestic_gross + foreign_gross) / budget,
+  passed = if_else(test %in% c("ok", "ok-disagree"), "passed", "not passed")
+)
+bechdel_grouped <- group_by(bechdel_passed, passed)
 bechdel_summary <- summarize(bechdel_grouped, mean_roi = mean(roi, na.rm=TRUE))
 bechdel_summary
 ```
 
-The code above consists of two steps.
+After computing the new columns, the code above consists of two steps.
 In the first step, the data is **grouped by** passed.
 This doesn't make any change in the data itself,
 but prepares for the next step by defining the two groups of interest.
@@ -490,7 +497,7 @@ you specify `column = calculation`, and it puts the result of the calculation in
 
 The big difference is that `summarize` computes a single value for each **group** of rows: in this case, it computes the `mean` of the `roi` values (setting `na.rm=TRUE` to ignore any missing values).
 
-As you can see from the result, summarize produces a radically smaller data frame than the original, which had 7 columns and almost 1,800 rows.
+As you can see from the result, summarize produces a radically smaller data frame than the input, which had 9 columns and almost 1,800 rows.
 In fact summarize will always create a data frame with one row per group (in this case, `passed` and `not passed`), and keeps only the grouping columns (`passed`) and the columns with the summary values (`mean_roi`).
 
 Substantively, it seems that films that pass the Bechdel test actually have a lower return on investment than films that don't.
@@ -508,13 +515,13 @@ Let's rewrite the code above with this new operator:
 
 ```{webr}
 #| exercise: demo_summarize_piped
-bechdel_summary <- bechdel |>
+bechdel_summary <- bechdel_passed |>
   group_by(passed) |>
   summarize(mean_roi = mean(roi, na.rm=TRUE))
 bechdel_summary
 ```
 
-As you see, the two statements are now 'chained' together in a single pipeline: the `bechdel` data is piped into the `group_by` function, and the result of the grouping is piped into `summarize`.
+As you see, the two statements are now 'chained' together in a single pipeline: the `bechdel_passed` data is piped into the `group_by` function, and the result of the grouping is piped into `summarize`.
 
 The biggest advantage of this is that it removes the awkward intermediate objects `bechdel_grouped`, and it saves having to type the name of the data set for every function.
 
